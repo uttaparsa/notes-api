@@ -28,7 +28,7 @@ class SingleNoteView(APIView):
     def put(self, request, **kwargs):
         print(f"editing {kwargs['note_id']}")
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.text = request.POST.get("text",item.text)
+        item.text = request.data.get("text")
         item.save()
         return Response("1", status=status.HTTP_200_OK)
 
