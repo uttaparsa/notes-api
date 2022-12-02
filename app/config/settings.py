@@ -34,7 +34,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     'http://127.0.0.1:3000'
 # )
 
-ALLOWED_HOSTS = ['https://*.joumend.ir','notes.joumend.ir', '127.0.0.1']
+ALLOWED_HOSTS = ['https://*.joumend.ir','notes.joumend.ir', '127.0.0.1','localhost']
 
 
 # Application definition
