@@ -7,7 +7,11 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalMessage
         fields = '__all__'
-        write_only_fields =['image']
+        write_only_fields = ['image']
+
+
+class MoveMessageSerializer(serializers.Serializer):
+    list_id = serializers.IntegerField()
 
 
 class NoteListSerializer(serializers.ModelSerializer):

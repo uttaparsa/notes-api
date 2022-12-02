@@ -29,5 +29,6 @@ class LocalMessage(models.Model):
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
     pinned = models.BooleanField(default=False)
     image = ResizedImageField(upload_to=get_upload_path, size=[512, 512], blank=True, null=True)
+    archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
