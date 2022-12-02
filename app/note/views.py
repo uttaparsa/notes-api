@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -15,7 +16,7 @@ class SingleNoteView(APIView):
     serializer_class = serializers.MessageSerializer
     permission_classes = [IsAuthenticated]
     def get(self,request,**kwargs):
-        serialized = self.serializer_class(data=LocalMessage.objects.get(pk=self.kwargs['note_id']))
+        serialized = self.serializer_class(LocalMessage.objects.get(pk=self.kwargs['note_id']))
         return Response(serialized.data, status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
@@ -135,3 +136,40 @@ class UnPinMessageView(APIView):
         item.pinned = False
         item.save()
         return Response("1", status=status.HTTP_200_OK)
+
+class SearchResultsView(GenericAPIView,ListModelMixin):
+    permission_classes = [IsAuthenticated]
+    pagination_class = LimitOffsetPagination
+    serializer_class = serializers.MessageSerializer
+
+
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
+    def get_queryset(self):  # new
+        print(f"self.request.data is {self.request.GET}")
+        query = self.request.GET.get("q","NOOOOOOOO")
+        print(f"searching for {query}")
+
+        if 'list_slug' in self.request.GET:
+            list_slug = self.request.GET.get("list_slug")
+            lst = LocalMessageList.objects.get(slug=list_slug)
+            object_list = LocalMessage.objects.filter(
+                Q(text__icontains=query) & Q(list=lst.id)
+            ).order_by('-created_at')
+            print(f"searching in list {list_slug}")
+            return object_list
+
+        else:
+            return  LocalMessage.objects.filter(
+                Q(text__icontains=query)
+            ).order_by('-created_at')
+
+        # print("not valid")
+        return LocalMessage.objects.none()
+
+    @extend_schema(
+        parameters=[serializers.SeachSerializer]
+    )
+    def get(self, request, **kwargs):
+        # return Response(self.serializer_class(self.get_queryset(),many=True),status=status.HTTP_200_OK)
+        return  self.list(request)

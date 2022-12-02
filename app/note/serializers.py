@@ -10,6 +10,10 @@ class MessageSerializer(serializers.ModelSerializer):
         write_only_fields = ['image']
 
 
+class SeachSerializer(serializers.Serializer):
+    q = serializers.CharField()
+    list_slug = serializers.CharField(required=False)
+
 class MoveMessageSerializer(serializers.Serializer):
     list_id = serializers.IntegerField()
 

@@ -1,10 +1,11 @@
 from django.urls import path
 
 from .views import NoteListView, NoteView, PinMessageView, UnPinMessageView, SingleNoteView, UnArchiveMessageView, \
-    ArchiveMessageView, MoveMessageView
+    ArchiveMessageView, MoveMessageView, SearchResultsView
 
 urlpatterns = [
     path('list/', NoteListView.as_view()),
+    path('search/', SearchResultsView.as_view()),
     path('', NoteView.as_view()),
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),
