@@ -34,7 +34,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     'http://127.0.0.1:3000'
 # )
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['https://*.joumend.ir','notes.joumend.ir', '127.0.0.1']
 
 
 # Application definition
@@ -139,7 +139,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+CONTENT_DIR = os.path.join(BASE_DIR, 'content')
+STATIC_ROOT = os.path.join(CONTENT_DIR, 'static')
 STATIC_URL = '/static/'
+
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
