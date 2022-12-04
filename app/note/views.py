@@ -55,8 +55,10 @@ class NoteView(GenericAPIView, ListModelMixin):
         if 'slug' in self.kwargs:
             slug = self.kwargs['slug']
             print(f"slug is {slug}")
+            archive_lst = LocalMessageList.objects.filter(slug='archive').first() # get archive list to ignore it
+            archive_lst_id = archive_lst.id if archive_lst else -1
             if slug == "All":
-                return LocalMessage.objects.all().order_by('-pinned', 'archived', '-created_at')
+                return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned', 'archived', '-created_at')
             else:
                 lst = LocalMessageList.objects.get(slug=slug)
                 return LocalMessage.objects.filter(list=lst.id).order_by('-pinned', 'archived', '-created_at')
