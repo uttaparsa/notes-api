@@ -202,5 +202,5 @@ SIMPLE_JWT = {
 }
 
 if DEBUG:
-    SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'] = timedelta(days=30)
-    SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'] = timedelta(days=365)
+    SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'] = timedelta(weeks=10)
+    SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'] = timedelta(weeks=100)

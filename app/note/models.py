@@ -25,10 +25,10 @@ def get_upload_path(instance, filename):
 
 
 class LocalMessage(models.Model):
-    text = models.TextField()
+    text = models.TextField(blank=True)
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
     pinned = models.BooleanField(default=False)
-    image = ResizedImageField(upload_to=get_upload_path, size=[512, 512], blank=True, null=True)
+    image = ResizedImageField(upload_to=get_upload_path, size=[1024, 1024], blank=True, null=True)
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

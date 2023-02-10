@@ -12,6 +12,9 @@ from . import serializers
 from .models import LocalMessage, LocalMessageList
 
 
+import json
+
+
 class SingleNoteView(APIView):
     serializer_class = serializers.MessageSerializer
     permission_classes = [IsAuthenticated]
@@ -72,15 +75,26 @@ class NoteView(GenericAPIView, ListModelMixin):
     def get(self, request, **kwargs):
         return self.list(request)
 
+    def save_image(self, request, local_message: LocalMessage):
+        print("saving image")
+        local_message.image = request.FILES['file']
+
+        local_message.save()
     def post(self, request, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+        meta_data = json.loads(str(request.FILES.get('meta').read().decode('utf-8')))
+        serializer = self.serializer_class(data=meta_data)
         lst = None
         if 'slug' in kwargs:
             lst = LocalMessageList.objects.get(slug=self.kwargs['slug'])
         else:
             lst = LocalMessageList.objects.get(id=1)
+
         if serializer.is_valid():
-            serializer.save(list=lst)
+
+            resp = serializer.save(list=lst)
+            if 'file' in request.FILES.keys():
+                self.save_image(request, resp)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
