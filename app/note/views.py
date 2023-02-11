@@ -80,6 +80,12 @@ class NoteView(GenericAPIView, ListModelMixin):
         local_message.image = request.FILES['file']
 
         local_message.save()
+
+    def save_file(self, request, local_message: LocalMessage):
+        print("saving file")
+        local_message.file = request.FILES['file']
+
+        local_message.save()
     def post(self, request, **kwargs):
         meta_data = json.loads(str(request.FILES.get('meta').read().decode('utf-8')))
         serializer = self.serializer_class(data=meta_data)
@@ -93,8 +99,12 @@ class NoteView(GenericAPIView, ListModelMixin):
 
             resp = serializer.save(list=lst)
             if 'file' in request.FILES.keys():
-                self.save_image(request, resp)
-
+                file_extension = request.FILES['file'].name.split('.')[-1]
+                print(f"file_extension is {file_extension}")
+                if file_extension.lower() in ['jpg','png','jpeg']:
+                    self.save_image(request, resp)
+                else:
+                    self.save_file(request, resp)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

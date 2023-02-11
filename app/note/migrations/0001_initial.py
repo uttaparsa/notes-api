@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('text', models.TextField()),
                 ('pinned', models.BooleanField(default=False)),
-                ('image', django_resized.forms.ResizedImageField(blank=True, crop=None, force_format=None, keep_meta=True, null=True, quality=-1, scale=None, size=[512, 512], upload_to=note.models.get_upload_path)),
+                ('image', django_resized.forms.ResizedImageField(blank=True, crop=None, force_format=None, keep_meta=True, null=True, quality=-1, scale=None, size=[512, 512], upload_to=note.models.get_image_upload_path)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('list', models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='note.localmessagelist')),
