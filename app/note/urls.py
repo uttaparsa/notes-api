@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import NoteListView, NoteView, PinMessageView, UnPinMessageView, SingleNoteView, UnArchiveMessageView, \
-    ArchiveMessageView, MoveMessageView, SearchResultsView
+    ArchiveMessageView, MoveMessageView, SearchResultsView, PublicNoteView
 
 urlpatterns = [
     path('list/', NoteListView.as_view()),
@@ -13,6 +13,7 @@ urlpatterns = [
     path('message/unpin/<int:note_id>/', UnPinMessageView.as_view(), name='unpin-message'),
     path('message/archive/<int:note_id>/', ArchiveMessageView.as_view(), name='archive-message'),
     path('message/unarchive/<int:note_id>/', UnArchiveMessageView.as_view(), name='unarchive-message'),
+    path('pp/', PublicNoteView.as_view()),
     path('<slug>/', NoteView.as_view()),
 
 
