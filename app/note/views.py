@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.pagination import  PageNumberPagination
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -51,7 +51,7 @@ class MoveMessageView(APIView):
 
 class PublicNoteView(GenericAPIView, ListModelMixin):
     permission_classes = [AllowAny]
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberPagination
     serializer_class = serializers.MessageSerializer
 
     def get_queryset(self):
@@ -60,21 +60,43 @@ class PublicNoteView(GenericAPIView, ListModelMixin):
         return LocalMessage.objects.filter(list=public_lst_id).order_by('-pinned', 'archived', '-created_at')
     def get(self, request, **kwargs):
         return self.list(request)
+from datetime import date
 
 
+class DateBasedPagination(PageNumberPagination):
+    page_size = 20  # Adjust as per your requirements
+
+    def get_page_number(self, request, paginator):
+        # Retrieve the requested page number based on the date parameter
+
+        if 'date' in request.GET:
+            archive_lst = LocalMessageList.objects.filter(slug='archive').first()  # get archive list to ignore it
+            archive_lst_id = archive_lst.id if archive_lst else -1
+            selected_date = date(*map(int, request.GET.get("date").split('-')))
+            print(f"selected date is {selected_date}")
+            queryset = paginator.object_list.exclude(list=archive_lst_id).order_by('-pinned', 'archived', '-created_at')\
+                .filter((Q(created_at__gt=selected_date) & Q(archived=False)) | Q(pinned=True))
+            page_number = queryset.count() // self.page_size + 1
+            print(f"page_number is {page_number}, page_size = {self.page_size}")
+
+            return page_number
+
+        return super().get_page_number(request, paginator)
 
 class NoteView(GenericAPIView, ListModelMixin):
     permission_classes = [IsAuthenticated]
-    pagination_class = LimitOffsetPagination
+    pagination_class = DateBasedPagination
     serializer_class = serializers.MessageSerializer
 
     def get_queryset(self):
         if 'slug' in self.kwargs:
+
             slug = self.kwargs['slug']
             print(f"slug is {slug}")
             archive_lst = LocalMessageList.objects.filter(slug='archive').first() # get archive list to ignore it
             archive_lst_id = archive_lst.id if archive_lst else -1
             if slug == "All":
+                print(f"self.request.data is {self.request.GET}")
                 return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned', 'archived', '-created_at')
             else:
                 lst = LocalMessageList.objects.get(slug=slug)
@@ -179,7 +201,7 @@ class UnPinMessageView(APIView):
 
 class SearchResultsView(GenericAPIView,ListModelMixin):
     permission_classes = [IsAuthenticated]
-    pagination_class = LimitOffsetPagination
+    pagination_class = DateBasedPagination
     serializer_class = serializers.MessageSerializer
 
 

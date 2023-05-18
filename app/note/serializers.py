@@ -10,6 +10,8 @@ class MessageSerializer(serializers.ModelSerializer):
         write_only_fields = ['image']
 
 
+from rest_framework import serializers
+
 class SeachSerializer(serializers.Serializer):
     q = serializers.CharField()
     list_slug = serializers.CharField(required=False)
