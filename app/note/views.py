@@ -63,7 +63,7 @@ class DateBasedPagination(PageNumberPagination):
             archive_lst_id = archive_lst.id if archive_lst else -1
             selected_date = date(*map(int, request.GET.get("date").split('-')))
             print(f"selected date is {selected_date}")
-            queryset = paginator.object_list.exclude(list=archive_lst_id).order_by('-pinned', 'archived', '-created_at')\
+            queryset = paginator.object_list.exclude(list=archive_lst_id).order_by('-pinned', '-created_at')\
                 .filter((Q(created_at__gt=selected_date) & Q(archived=False)) | Q(pinned=True))
             page_number = queryset.count() // self.page_size + 1
             print(f"page_number is {page_number}, page_size = {self.page_size}")
@@ -81,7 +81,7 @@ class PublicNoteView(GenericAPIView, ListModelMixin):
     def get_queryset(self):
         public_lst = LocalMessageList.objects.filter(slug='public').first()
         public_lst_id = public_lst.id if public_lst else -1
-        return LocalMessage.objects.filter(list=public_lst_id).order_by('-pinned', 'archived', '-created_at')
+        return LocalMessage.objects.filter(list=public_lst_id).order_by('-pinned', '-created_at')
     def get(self, request, **kwargs):
         return self.list(request)
 
@@ -99,10 +99,10 @@ class NoteView(GenericAPIView, ListModelMixin):
             archive_lst_id = archive_lst.id if archive_lst else -1
             if slug == "All":
                 print(f"self.request.data is {self.request.GET}")
-                return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned', 'archived', '-created_at')
+                return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned',  '-created_at')
             else:
                 lst = LocalMessageList.objects.get(slug=slug)
-                return LocalMessage.objects.filter(list=lst.id).order_by('-pinned', 'archived', '-created_at')
+                return LocalMessage.objects.filter(list=lst.id).order_by('-pinned',  '-created_at')
 
         else:
             return LocalMessage.objects.none()
@@ -157,6 +157,13 @@ class NoteListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self,request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
