@@ -166,6 +166,24 @@ class NoteListView(APIView):
 # class DeleteMessageView(APIView):
 
 
+class ArchiveMessageListView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, **kwargs):
+        item = LocalMessageList.objects.get(pk=kwargs['topic_id'])
+        item.archived = True
+        item.save()
+        return Response("1", status=status.HTTP_200_OK)
+
+
+class UnArchiveMessageListView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, **kwargs):
+        item = LocalMessageList.objects.get(pk=kwargs['topic_id'])
+        item.archived = False
+        item.save()
+        return Response("1", status=status.HTTP_200_OK)
+
+
 class ArchiveMessageView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, **kwargs):
