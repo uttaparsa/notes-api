@@ -1,5 +1,5 @@
 # pull official base image
-FROM python:3.9.6
+FROM python:3.8-buster
 
 # set work directory
 WORKDIR /usr/src/app
@@ -8,25 +8,23 @@ WORKDIR /usr/src/app
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update && apt-get install -y apt-transport-https
+#RUN apk update  && apk add --virtual build-deps gcc python3-dev musl-dev && apk add jpeg-dev zlib-dev libjpeg
+#RUN apk update \
+ #   && apk add --virtual build-deps gcc python3-dev musl-dev \
+  #  && apk add postgresql \
+   # && apk add postgresql-dev \
+   # && pip install psycopg2 \
+  #  && apk add jpeg-dev zlib-dev libjpeg \
+ #   && pip install Pillow \
+  #  && apk del build-deps
 
-# install psycopg2 dependencies
-RUN apt-get update \
-    && apt-get -y install libpq-dev gcc \
-    && pip install psycopg2
+#RUN apk add zlib-dev jpeg-dev gcc musl-dev
 
-# install dependencies
-RUN pip install --upgrade pip
-COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+#RUN mkdir /usr/src/app
+COPY ./requirements.txt /usr/src/app
 
-# copy entrypoint.sh
-COPY ./entrypoint.sh .
-RUN sed -i 's/\r$//g' /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
+WORKDIR /usr/src/app
 
-# copy project
+RUN pip install --proxy http://192.168.1.2:8888 --default-timeout=100 -r requirements.txt
+
 COPY . .
-
-# run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
