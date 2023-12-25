@@ -71,19 +71,13 @@
           <img
             v-if="note.image"
             :src="
-              note.image.replace(
-                'http://localhost:9800',
-                'https://notes.joumend.ir'
-              )
+              note.image
             "
             style="max-height: 200px"
             alt="..."
             class="img-thumbnail"
           />
-          <a :href="note.file.replace(
-                'http://localhost:9800',
-                'https://notes.joumend.ir'
-              )"  v-if="note.file">
+          <a :href="note.file"  v-if="note.file">
             <div class="bg-info float-left p-1 rounded text-dark">
               <svg
                 height="20px"

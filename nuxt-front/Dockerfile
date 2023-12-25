@@ -8,6 +8,7 @@ RUN npm run build && npm run generate
 
 # Stage 2: Serve the Nuxt.js app with Nginx
 FROM nginx:1.21-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
+COPY --from=build-stage /app/dist /app
+COPY nginx.conf /etc/nginx/nginx.conf
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
