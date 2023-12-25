@@ -33,8 +33,12 @@ services:
     tty: true
     ports:
       - "80:80"
+      - "443:443"
     networks:
       - app-network
+    volumes:
+      - /etc/letsencrypt/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem
+      - /etc/letsencrypt/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem
 
 networks:
   app-network:
