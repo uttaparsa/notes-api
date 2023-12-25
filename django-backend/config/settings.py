@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n7f6jw=gvf1x7n2v$d4p+c1ldp48a2f%@amohc9(8r=k44&2ms'
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-n7f6jw=gvf1x7n2v$d4p+c1ldp48a2f%@amohc9(8r=k44&2ms")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get("DEBUG", default=1))
@@ -34,7 +34,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 #     'http://127.0.0.1:3000'
 # )
 
-ALLOWED_HOSTS = ['https://*.joumend.ir','notes.joumend.ir', '127.0.0.1','localhost']
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
@@ -94,7 +94,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "db.sqlite3"),
+        "NAME": os.environ.get("SQL_DATABASE", BASE_DIR / "data/db.sqlite3"),
         "USER": os.environ.get("SQL_USER", "user"),
         "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
@@ -139,12 +139,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
-CONTENT_DIR = os.path.join(BASE_DIR, 'content')
-STATIC_ROOT = os.path.join(CONTENT_DIR, 'static')
+DATA_DIR = os.path.join(BASE_DIR, 'data')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = os.path.join(DATA_DIR, 'media')
 MEDIA_URL = '/media/'
 
 # Default primary key field type

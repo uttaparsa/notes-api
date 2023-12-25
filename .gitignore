@@ -6,4 +6,6 @@ __pycache__/
 *.pyc
 **/__pycache__/
 .ipynb_checkpoints/
-**/db.sqlite3
+django-backend/data/db.sqlite3
+
+nuxt-front/node_modules/
