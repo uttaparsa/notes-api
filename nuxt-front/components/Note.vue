@@ -229,62 +229,23 @@
         ok-title="Save"
         no-close-on-backdrop
       >
-        <div class="mb-5 mt-0 px-2">
-          <button
-            type="button"
-            @click.prevent="toggleEditorRtl()"
-            class="btn btn-outline-dark btn-sm float-right"
-          >
-            <svg
-              ref="rtlIcon"
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              viewBox="0 0 24 24"
-              width="24px"
-              fill="#000000"
-            >
-              <path d="M0 0h24v24H0z" fill="none" />
-              <path
-                d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z"
-              />
-            </svg>
-            <svg
-              ref="ltrIcon"
-              xmlns="http://www.w3.org/2000/svg"
-              height="24px"
-              style="display: none"
-              viewBox="0 0 24 24"
-              width="24px"
-              fill="#000000"
-            >
-              <path d="M0 0h24v24H0z" fill="none" />
-              <path
-                d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z"
-              />
-            </svg>
-          </button>
-        </div>
-        <textarea
-          dir="rtl"
-          ref="editMessageTextArea"
-          @keydown.enter="handleEnter"
-          @input="updateTextAreaHeight(arguments[0].target)"
-          class="w-100"
-          style="white-space: pre-line; max-height: 60vh"
-          >{{ note.text }}</textarea
-        >
+
+        <vue-editor v-model="newText"></vue-editor>
       </b-modal>
     </div>
   </div>
 </template>
 
 <script>
+import { VueEditor } from "vue2-editor";
+
 export default {
   props: ["note", "singleView", "hideEdits"],
   emits: ["pin", "unpin", "archived", "unarchived", "delete-note", "edit-note"],
   data() {
     return {
       textInsideDeleteModal: "",
+      newText: ""
     };
   },
   methods: {
@@ -314,8 +275,7 @@ export default {
       }
     },
     editNote() {
-      let newText = this.$refs.editMessageTextArea.value;
-      this.$emit("edit-note", this.note.id, newText);
+      this.$emit("edit-note", this.note.id, this.newText);
       // this.$refs["editModal"].hide();
     },
     hideEditModal: function () {
@@ -386,29 +346,30 @@ export default {
       }
     },
     showEditModal() {
+      this.newText = this.note.text;
       this.$refs["editModal"].show();
-      setTimeout(() => {
-        this.updateTextAreaHeight(this.$refs.editMessageTextArea);
+      // setTimeout(() => {
+      //   this.updateTextAreaHeight(this.$refs.editMessageTextArea);
 
-        this.$refs.editMessageTextArea.focus();
-        let current = (this.$refs.editMessageTextArea.dir = this.isRTL(
-          this.note.text
-        )
-          ? "rtl"
-          : "ltr");
-      }, 100);
+      //   this.$refs.editMessageTextArea.focus();
+      //   let current = (this.$refs.editMessageTextArea.dir = this.isRTL(
+      //     this.note.text
+      //   )
+      //     ? "rtl"
+      //     : "ltr");
+      // }, 100);
     },
-    toggleEditorRtl() {
-      let current = this.$refs.editMessageTextArea.dir;
-      if (current === "rtl") {
-        this.$refs.rtlIcon.style.display = "none";
-        this.$refs.ltrIcon.style.display = "block";
-      } else if (current === "ltr") {
-        this.$refs.ltrIcon.style.display = "none";
-        this.$refs.rtlIcon.style.display = "block";
-      }
-      this.$refs.editMessageTextArea.dir = current === "rtl" ? "ltr" : "rtl";
-    },
+    // toggleEditorRtl() {
+    //   let current = this.$refs.editMessageTextArea.dir;
+    //   if (current === "rtl") {
+    //     this.$refs.rtlIcon.style.display = "none";
+    //     this.$refs.ltrIcon.style.display = "block";
+    //   } else if (current === "ltr") {
+    //     this.$refs.ltrIcon.style.display = "none";
+    //     this.$refs.rtlIcon.style.display = "block";
+    //   }
+    //   this.$refs.editMessageTextArea.dir = current === "rtl" ? "ltr" : "rtl";
+    // },
     showDeleteModal() {
       const textInModal =
         this.note.text.length > 30

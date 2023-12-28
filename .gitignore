@@ -9,3 +9,5 @@ __pycache__/
 django-backend/data/
 
 nuxt-front/node_modules/
+
+nuxt-front/.nuxt/

@@ -64,7 +64,8 @@ export default {
     // https://go.nuxtjs.dev/axios
     "@nuxtjs/axios",
     "@nuxtjs/auth-next",
-    '@nuxtjs/proxy'
+    "@nuxtjs/proxy",
+    "vue2-editor/nuxt"
   ],
 
   bootstrapVue: {
