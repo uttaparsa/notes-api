@@ -34,6 +34,7 @@ class SingleNoteView(APIView):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
         item.text = request.data.get("text")
         item.save()
+        insert_links(item);
         return Response("1", status=status.HTTP_200_OK)
 
 
