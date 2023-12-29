@@ -12,7 +12,7 @@
         backlinks
       </span>
         <ul class="list-group">
-          <nuxt-link v-for="link in note.source_links" :to="'/message/'+link.source_message">
+          <nuxt-link v-for="link in note.source_links" :key="link.id" :to="'/message/'+link.source_message">
           <li  class="list-group-item list-group-item-secondary">{{link.source_message}}</li>
           
           </nuxt-link>

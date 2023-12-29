@@ -90,6 +90,9 @@ class PublicNoteView(GenericAPIView, ListModelMixin):
 def insert_links(note: LocalMessage):
     """ extract links from text and insert them as links """
     print(f"inserting links for {note}")
+    # delete all links for this note
+    Link.objects.filter(source_message=note).delete()
+    
     # find all markdown links with regex
     links = re.findall(r'\[.*?\]\((.*?)\)', note.text)
     print(f"links are {links}")
