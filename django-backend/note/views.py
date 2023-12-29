@@ -9,17 +9,18 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import serializers
-from .models import LocalMessage, LocalMessageList
+from .models import LocalMessage, LocalMessageList, Link
 
 
 import json
+import re
 
 
 class SingleNoteView(APIView):
     serializer_class = serializers.MessageSerializer
     permission_classes = [IsAuthenticated]
     def get(self,request,**kwargs):
-        serialized = self.serializer_class(LocalMessage.objects.get(pk=self.kwargs['note_id']))
+        serialized = self.serializer_class(LocalMessage.objects.prefetch_related("source_links").get(pk=self.kwargs['note_id']))
         return Response(serialized.data, status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
@@ -43,7 +44,6 @@ class MoveMessageView(APIView):
         message: LocalMessage = LocalMessage.objects.get(pk=self.kwargs['note_id'])
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            print(f"serializer.data is {serializer.data}")
             message.list = LocalMessageList.objects.get(pk=serializer.data['list_id'])
             message.save()
         return Response("1", status=status.HTTP_200_OK)
@@ -84,6 +84,24 @@ class PublicNoteView(GenericAPIView, ListModelMixin):
         return LocalMessage.objects.filter(list=public_lst_id).order_by('-pinned', '-created_at')
     def get(self, request, **kwargs):
         return self.list(request)
+    
+    
+def insert_links(note: LocalMessage):
+    """ extract links from text and insert them as links """
+    print(f"inserting links for {note}")
+    # find all markdown links with regex
+    links = re.findall(r'\[.*?\]\((.*?)\)', note.text)
+    print(f"links are {links}")
+    for link in links:
+        print(f"link is {link}")
+        link_id = re.findall(r'\d+', link)[0]
+        print(f"link_id is {link_id}")
+        dest_note = LocalMessage.objects.filter(id=link_id).first()
+        if dest_note:
+            print(f"dest_note is {dest_note}")
+            Link.objects.create(source_message=note, dest_message=dest_note)
+
+
 
 class NoteView(GenericAPIView, ListModelMixin):
     permission_classes = [IsAuthenticated]
@@ -124,6 +142,7 @@ class NoteView(GenericAPIView, ListModelMixin):
         local_message.file = request.FILES['file']
 
         local_message.save()
+
     def post(self, request, **kwargs):
         meta_data = json.loads(str(request.FILES.get('meta').read().decode('utf-8')))
         serializer = self.serializer_class(data=meta_data)
@@ -134,8 +153,11 @@ class NoteView(GenericAPIView, ListModelMixin):
             lst = LocalMessageList.objects.get(id=1)
 
         if serializer.is_valid():
-
+            
             resp = serializer.save(list=lst)
+
+            insert_links(resp);
+
             if 'file' in request.FILES.keys():
                 file_extension = request.FILES['file'].name.split('.')[-1]
                 print(f"file_extension is {file_extension}")
@@ -169,8 +191,6 @@ class NoteListView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# class DeleteMessageView(APIView):
 
 
 class ArchiveMessageListView(APIView):
@@ -257,7 +277,7 @@ class SearchResultsView(GenericAPIView,ListModelMixin):
         return LocalMessage.objects.none()
 
     @extend_schema(
-        parameters=[serializers.SeachSerializer]
+        parameters=[serializers.SearchSerializer]
     )
     def get(self, request, **kwargs):
         # return Response(self.serializer_class(self.get_queryset(),many=True),status=status.HTTP_200_OK)

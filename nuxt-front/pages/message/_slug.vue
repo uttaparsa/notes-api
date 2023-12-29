@@ -1,8 +1,25 @@
 <template>
-  <div class="container py-5" dir="ltr">
-    <span v-if="!busy">
-    <Note ref="note-component" :note="note" @edit-note="editNote" :singleView="true"></Note>
-    </span>
+
+  <div class="container-fluid py-5" dir="ltr">
+    <div class="row" v-if="!busy">
+<div class="col-lg-2"></div>
+      <div class="col-lg-8 ">
+        <Note ref="note-component" :note="note" @edit-note="editNote" :singleView="true"></Note>
+      </div>
+    <div class="col-lg-2 px-0">
+      
+      <span class="text-white" v-if="note.source_links.length > 0">
+        backlinks
+      </span>
+        <ul class="list-group">
+          <nuxt-link v-for="link in note.source_links" :to="'/message/'+link.source_message">
+          <li  class="list-group-item list-group-item-secondary">{{link.source_message}}</li>
+          
+          </nuxt-link>
+  
+</ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -33,7 +50,8 @@ export default {
         {}
       );
       this.note = response;
-      console.log("current note is " + this.note);
+      console.log("current note is");
+      console.log( this.note);
       this.busy=false;
     },
     async editNote(targetNoteId,newText) {
