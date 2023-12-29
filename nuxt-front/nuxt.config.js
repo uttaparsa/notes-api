@@ -65,8 +65,12 @@ export default {
     "@nuxtjs/axios",
     "@nuxtjs/auth-next",
     "@nuxtjs/proxy",
-    "vue2-editor/nuxt"
+    '@nuxtjs/markdownit'
   ],
+
+  markdownit: {
+    runtime: true // Support `$md()`
+  },
 
   bootstrapVue: {
     // bootstrapCSS: false, // Or `css: false`
@@ -93,16 +97,6 @@ export default {
     proxy: true
   },
 
-  // proxy: {
-  //   '/api': {
-  //     target: 'http://localhost:3000',
-  //     changeOrigin: true,
-  //     pathRewrite: { '^/api': '/' },
-  //   },
-  // },
-  // proxy: {
-  //   "/api": "http://localhost:8000"
-  // },
   proxy: {
     '/api/': { target: 'http://localhost:8000/', pathRewrite: {'^/api/': '/api/'}, changeOrigin: true }
   },
