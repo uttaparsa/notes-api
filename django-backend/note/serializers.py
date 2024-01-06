@@ -2,7 +2,24 @@ from rest_framework import serializers
 
 from .models import LocalMessage, LocalMessageList,Link
 
+
+class NoteShortViewSerializer(serializers.ModelSerializer):
+    def truncate_text(self, value):
+        max_length = 25  # Replace this with your desired length
+        if len(value) > max_length:
+            return value[:max_length] + '...'  # Truncate and add ellipsis
+        return value
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['text'] = self.truncate_text(representation['text'])
+        return representation
+    class Meta:
+        model = LocalMessage
+        fields = ['text','id']
+
 class LinkSerializer(serializers.ModelSerializer):
+    source_message =  NoteShortViewSerializer(many=False, read_only=True)
     class Meta:
         model = Link
         fields = '__all__'

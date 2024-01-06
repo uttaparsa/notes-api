@@ -6,14 +6,14 @@
       <div class="col-lg-8 ">
         <Note ref="note-component" :note="note" @edit-note="editNote" :singleView="true"></Note>
       </div>
-    <div class="col-lg-2 px-0">
+    <div class="col-lg-2 pl-lg-0 ">
       
       <span class="text-white" v-if="note.source_links.length > 0">
         backlinks
       </span>
         <ul class="list-group">
-          <nuxt-link v-for="link in note.source_links" :key="link.id" :to="'/message/'+link.source_message">
-          <li  class="list-group-item list-group-item-secondary">{{link.source_message}}</li>
+          <nuxt-link v-for="link in note.source_links" :key="link.id" :to="'/message/'+link.source_message.id">
+          <li  class="list-group-item list-group-item-secondary">{{link.source_message.text}}</li>
           
           </nuxt-link>
   
