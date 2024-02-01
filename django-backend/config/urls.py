@@ -30,7 +30,7 @@ from drf_spectacular.views import (
 from account.views import CustomTokenObtainPairView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('xpanel/admin/', admin.site.urls),
     path('api/account/', include('account.urls')),
     path('api/note/', include('note.urls')),
     path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
