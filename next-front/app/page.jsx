@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useContext } from 'react';
+import { useRouter } from 'next/navigation';
+import { Form, Pagination, FormCheck, Row, Col } from 'react-bootstrap';
+import { NoteListContext } from '../app/layout';
 import NoteList from "./components/NoteList";
 import SendMessage from "./components/SendMessage";
 
-export default function NotesIndex() {
+
+export default function NotesPage() {
   const [searchText, setSearchText] = useState('');
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -13,23 +16,38 @@ export default function NotesIndex() {
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   const perPage = 20;
   const listSlug = 'All';
+  const router = useRouter();
+  const noteLists = useContext(NoteListContext);
 
-  const getRecords = useCallback(async (fetchDate = null) => {
+  useEffect(() => {
+    getRecords();
+  }, [currentPage, showArchived]);
+
+  const sendSearch = (e) => {
+    e.preventDefault();
+    router.push(`/search/?q=${searchText}`);
+  };
+
+  const showMessagesForDate = (selectedDate) => {
+    console.log("showing messages for date " + selectedDate);
+    setDate(selectedDate);
+    getRecords(selectedDate);
+  };
+
+  const getRecords = async (selectedDate = null) => {
+    console.log("getting records!");
     setIsBusy(true);
     try {
-      const url = new URL(`/api/note/${listSlug}`, window.location.origin);
-      url.searchParams.append('page', currentPage.toString());
-      if (fetchDate) {
-        url.searchParams.append('date', fetchDate);
-      }
-
-      const response = await fetch(url);
+      let url = `/api/note/${listSlug}/`;
+      const params = new URLSearchParams({
+        page: currentPage,
+        ...(selectedDate && { date: selectedDate }),
+      });
+      
+      const response = await fetch(`${url}?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch notes');
       const data = await response.json();
 
       setNotes(data.results.map(note => ({
@@ -39,40 +57,21 @@ export default function NotesIndex() {
 
       setTotalCount(data.count);
 
-      if (fetchDate) {
-        if (data.next) {
+      if (selectedDate != null) {
+        if (data.next !== null) {
           const nextPage = new URL(data.next).searchParams.get('page');
           setCurrentPage(parseInt(nextPage) - 1);
-        } else if (data.previous) {
+        } else if (data.previous !== null) {
           const prevPage = new URL(data.previous).searchParams.get('page');
           setCurrentPage(parseInt(prevPage) + 1);
         }
       }
+
+      setIsBusy(false);
     } catch (err) {
       console.error(`Error: ${err}`);
       // Implement error handling here
-    } finally {
-      setIsBusy(false);
     }
-  }, [currentPage, listSlug]);
-
-  useEffect(() => {
-    getRecords();
-  }, [getRecords]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    router.push(`/search?q=${searchText}`);
-  };
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    getRecords();
-  };
-
-  const showMessagesForDate = (newDate) => {
-    setDate(newDate);
-    getRecords(newDate);
   };
 
   const addNewNote = (note) => {
@@ -81,7 +80,7 @@ export default function NotesIndex() {
 
   return (
     <div dir="ltr" className="bg-dark">
-      <form onSubmit={handleSearch}>
+      <form onSubmit={sendSearch}>
         <nav className="navbar navbar-dark bg-info py-1">
           <div className="container px-0" dir="auto">
             <div className="d-flex row justify-content-center w-100 px-0 px-lg-5 mx-0">
@@ -97,16 +96,7 @@ export default function NotesIndex() {
                   />
                   <div className="input-group-append">
                     <button type="submit" className="input-group-text">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        className="bi bi-search"
-                        viewBox="0 0 16 16"
-                      >
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
+                      {/* Add search icon SVG here */}
                     </button>
                   </div>
                 </div>
@@ -117,49 +107,47 @@ export default function NotesIndex() {
       </form>
 
       <div dir="ltr">
-        {/* Pagination component (you may need to implement this) */}
-        <div className="mt-3 d-flex justify-content-center">
-          {/* Implement pagination controls here */}
-        </div>
+        <Pagination
+          className="mt-3 justify-content-center"
+          current={currentPage}
+          total={totalCount}
+          pageSize={perPage}
+          onChange={(page) => setCurrentPage(page)}
+        />
+        
+        <FormCheck
+          type="checkbox"
+          id="show-archived"
+          label="Show Archived"
+          checked={showArchived}
+          onChange={(e) => setShowArchived(e.target.checked)}
+          className="text-light mb-3"
+        />
 
-        <div className="form-check text-light">
-          <input
-            type="checkbox"
-            className="form-check-input"
-            id="showArchivedCheck"
-            checked={showArchived}
-            onChange={(e) => setShowArchived(e.target.checked)}
-          />
-          <label className="form-check-label" htmlFor="showArchivedCheck">
-            Show Archived
-          </label>
-        </div>
+        <Row className="m-0 p-0">
+          <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+            <Form.Group>
+              <Form.Label className="text-light">Show messages for</Form.Label>
+              <Form.Control
+                type="date"
+                value={date}
+                onChange={(e) => showMessagesForDate(e.target.value)}
+              />
+            </Form.Group>
+          </Col>
 
-        <div className="d-flex row m-0 p-0">
-          <div className="col-lg-2 mx-0 mb-3 mb-lg-0">
-            <label className="text-light" htmlFor="datePicker">
-              Show messages for
-            </label>
-            <input
-              type="date"
-              id="datePicker"
-              className="form-control"
-              value={date}
-              onChange={(e) => showMessagesForDate(e.target.value)}
-            />
-          </div>
-
-          <div className="col-lg-8 mx-0 px-3 px-lg-0" dir="ltr">
+          <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
             <NoteList
               notes={notes}
               isBusy={isBusy}
               showArchived={showArchived}
-              onRefresh={getRecords}
+              setShowArchived={setShowArchived}
+              refreshNotes={getRecords}
             />
-          </div>
+          </Col>
 
-          <div className="col-lg-2"></div>
-        </div>
+          <Col lg={2}></Col>
+        </Row>
       </div>
 
       <SendMessage onNoteSaved={addNewNote} listSlug={listSlug} />

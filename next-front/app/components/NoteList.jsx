@@ -1,26 +1,41 @@
-import React, { useEffect, useRef } from 'react';
-import Note from './Note'; // Assuming you'll convert the Note component separately
-import NoteModals from './NoteModals'; // Assuming you'll convert the NoteModals component separately
+'use client';
 
-const NoteList = ({ notes, isBusy, hideEdits, showArchived, onRefresh }) => {
+import React, { useState, useEffect, useRef } from 'react';
+import { Spinner } from 'react-bootstrap';
+import NoteCard from './Note';
+import NoteModals from './NoteModals';
+
+export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
+  const [notes, setNotes] = useState(initialNotes);
   const noteModalsRef = useRef();
+  const noteRefs = useRef({});
 
   useEffect(() => {
-    onRefresh();
-  }, [onRefresh]);
+    setNotes(initialNotes);
+  }, [initialNotes]);
+
+  useEffect(() => {
+    refreshNotes();
+  }, []);
 
   const updatePinned = (item, pinned) => {
-    item.pinned = pinned;
-    onRefresh();
+    const updatedNotes = notes.map(note => 
+      note.id === item.id ? { ...note, pinned } : note
+    );
+    setNotes(updatedNotes);
+    refreshNotes();
   };
 
   const updateArchived = (item, archived) => {
-    item.archived = archived;
-    onRefresh();
+    const updatedNotes = notes.map(note => 
+      note.id === item.id ? { ...note, archived } : note
+    );
+    setNotes(updatedNotes);
+    refreshNotes();
   };
 
   const addNewNote = (note) => {
-    notes.unshift(note);
+    setNotes(prevNotes => [note, ...prevNotes]);
     sortNotes();
   };
 
@@ -35,13 +50,14 @@ const NoteList = ({ notes, isBusy, hideEdits, showArchived, onRefresh }) => {
   const deleteNote = async (targetNoteId) => {
     // Implement showWaitingModal functionality
     try {
-      await fetch(`/api/note/message/${targetNoteId}/`, {
+      const response = await fetch(`/api/note/message/${targetNoteId}/`, {
         method: 'DELETE',
       });
-      notes = notes.filter((obj) => obj.id !== targetNoteId);
+      if (!response.ok) throw new Error('Failed to delete note');
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== targetNoteId));
     } catch (err) {
-      // Implement error handling
       console.error('Error deleting note:', err);
+      // Implement error handling here
     }
     // Implement hideWaitingModal functionality
   };
@@ -49,39 +65,36 @@ const NoteList = ({ notes, isBusy, hideEdits, showArchived, onRefresh }) => {
   const editNote = async (targetNoteId, newText) => {
     // Implement showWaitingModal functionality
     try {
-      await fetch(`/api/note/message/${targetNoteId}/`, {
+      const response = await fetch(`/api/note/message/${targetNoteId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text: newText }),
       });
-      
-      notes.forEach((note) => {
-        if (note.id === targetNoteId) {
-          note.text = newText;
-        }
-      });
-      
-      // Implement toast notification
-      console.log('Note edited successfully');
+      if (!response.ok) throw new Error('Failed to edit note');
+      setNotes(prevNotes => prevNotes.map(note => 
+        note.id === targetNoteId ? { ...note, text: newText } : note
+      ));
+      noteRefs.current[targetNoteId].hideEditModal();
+      // Implement toast notification here
     } catch (err) {
-      // Implement error handling
       console.error('Error editing note:', err);
+      // Implement error handling here
     }
     // Implement hideWaitingModal functionality
   };
 
   const sortNotes = () => {
-    notes.sort((a, b) => {
+    setNotes(prevNotes => [...prevNotes].sort((a, b) => {
       if (a.pinned === b.pinned) {
         if (a.archived === b.archived) {
-          return b.created_at - a.created_at;
+          return new Date(b.created_at) - new Date(a.created_at);
         }
         return a.archived > b.archived ? 1 : -1;
       }
       return a.pinned < b.pinned ? 1 : -1;
-    });
+    }));
   };
 
   return (
@@ -89,31 +102,33 @@ const NoteList = ({ notes, isBusy, hideEdits, showArchived, onRefresh }) => {
       <div className="mt-1 d-flex row justify-content-center">
         {!isBusy ? (
           <div className="col-xl-12 d-flex flex-vertical flex-column">
-            {notes.map((item) => (
-              (showArchived === 'show' || !item.archived) && (
-                <Note
-                  key={item.id}
-                  note={item}
-                  onPin={() => updatePinned(item, true)}
-                  onUnpin={() => updatePinned(item, false)}
-                  onArchived={() => updateArchived(item, true)}
-                  onUnarchived={() => updateArchived(item, false)}
-                  onDeleteNote={deleteNote}
-                  onEditNote={editNote}
-                  hideEdits={hideEdits}
-                />
-              )
+            {notes.map(item => (
+              <div key={item.id} id="notesListt">
+                {(showArchived === 'show' || !item.archived) && (
+                  <NoteCard
+                    ref={el => noteRefs.current[item.id] = el}
+                    note={item}
+                    singleView={false}
+                    hideEdits={hideEdits}
+                    onPin={() => updatePinned(item, true)}
+                    onUnpin={() => updatePinned(item, false)}
+                    onArchived={() => updateArchived(item, true)}
+                    onUnarchived={() => updateArchived(item, false)}
+                    onDeleteNote={deleteNote}
+                    onEditNote={editNote}
+                  />
+                )}
+              </div>
             ))}
           </div>
         ) : (
           <div className="text-center">
-            <div
-              className="spinner-border mt-5"
+            <Spinner
+              className="mt-5"
               style={{ width: '3rem', height: '3rem' }}
-              role="status"
-            >
-              <span className="visually-hidden">Loading...</span>
-            </div>
+              animation="border"
+              variant="primary"
+            />
           </div>
         )}
       </div>
@@ -123,6 +138,4 @@ const NoteList = ({ notes, isBusy, hideEdits, showArchived, onRefresh }) => {
       <NoteModals ref={noteModalsRef} />
     </div>
   );
-};
-
-export default NoteList;
+}
