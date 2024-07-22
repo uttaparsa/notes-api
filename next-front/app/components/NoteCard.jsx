@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { NoteListContext } from '../layout';
 import { useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import { isRTL } from '../utils/stringUtils';
+import { copyElementTextToClipboard } from '../utils/clipboardUtils';
+import { formatDateSmall, formatDateLarge } from '../utils/dateFormatters';
+import { fetchWithAuth } from '../lib/api';
+import { handleApiError } from '../utils/errorHandler';
+import { ToastContext } from '../layout';
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onArchived, onUnarchived, onDeleteNote, onEditNote }, ref) => {
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -11,8 +17,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
   const [showEditModal, setShowEditModal] = useState(false);
   const [textInsideDeleteModal, setTextInsideDeleteModal] = useState('');
   const editMessageTextAreaRef = useRef(null);
+  const rtlIcon = useRef(null);
+  const ltrIcon = useRef(null);
   const noteLists = useContext(NoteListContext);
-  const router = useRouter();
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false)
@@ -42,7 +49,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
       // You might want to add some state update or notification here
     } catch (err) {
       console.error('Error moving note:', err);
-      // Handle error (e.g., show an error message)
+      handleApiError(err);
     }
   };
 
@@ -106,26 +113,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
     }
   };
 
-  // Implement these functions
-  const isRTL = (text) => {
-    // Implement RTL detection logic here
-    return false;
-  };
-
-  const copyElementTextToClipboard = (element) => {
-    // Implement copy to clipboard logic here
-  };
-
-  // Implement date formatting functions
-  const formatDateSmall = (date) => {
-    // Implement date formatting logic here
-    return date;
-  };
-
-  const formatDateLarge = (date) => {
-    // Implement date formatting logic here
-    return date;
-  };
 
   return (
     <div className="card rounded bg-secondary mb-2">
@@ -239,12 +226,10 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
               )}
             </span>
             <span className="d-md-none">
-              {/* You'll need to implement date formatting */}
-              {/* {formatDateSmall(note.created_at)} */}
+              {formatDateSmall(note.created_at)}
             </span>
             <span className="d-none d-md-block">
-              {/* You'll need to implement date formatting */}
-              {/* {formatDateLarge(note.created_at)} */}
+              {formatDateLarge(note.created_at)}
             </span>
           </div>
           <span className="ml-2">
@@ -272,7 +257,28 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
 
       {/* Modals */}
       <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)}>
-        {/* ... (Modal content remains the same) ... */}
+        <Modal.Header closeButton>
+          <Modal.Title>Moving note</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {noteLists.map(lst => (
+            lst.id !== note.list && (
+              <Button
+                key={lst.id}
+                variant="info"
+                className="m-1"
+                onClick={() => moveNote(lst.id)}
+              >
+                {lst.name}
+              </Button>
+            )
+          ))}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowMoveModal(false)}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
@@ -291,7 +297,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
       </Modal>
 
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="xl">
-        {/* ... (Modal content remains largely the same) ... */}
         <Modal.Body>
           <div className="mb-5 mt-0 px-2">
             <Button
@@ -300,7 +305,38 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
               className="float-right"
               onClick={toggleEditorRtl}
             >
-              {/* SVG icon here */}
+              {  
+              <span>
+             <svg
+                          ref={rtlIcon}
+                          xmlns="http://www.w3.org/2000/svg"
+                          height="24px"
+                          viewBox="0 0 24 24"
+                          width="24px"
+                          fill="#000000"
+                        >
+                          <path d="M0 0h24v24H0z" fill="none" />
+                          <path
+                            d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z"
+                          />
+                        </svg>
+                        <svg
+                          ref={ltrIcon}
+                          xmlns="http://www.w3.org/2000/svg"
+                          height="24px"
+                          style={{ display: 'none' }}
+                          viewBox="0 0 24 24"
+                          width="24px"
+                          fill="#000000"
+                        >
+                          <path d="M0 0h24v24H0z" fill="none" />
+                          <path
+                            d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z"
+                          />
+                        </svg>
+              </span>  
+             
+            }
             </Button>
           </div>
           <textarea
@@ -313,7 +349,14 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onPin, onUnpin, onAr
             style={{ whiteSpace: 'pre-line', maxHeight: '60vh' }}
           />
         </Modal.Body>
-        {/* ... (rest of the Modal content remains the same) ... */}
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={editNote}>
+            Save
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

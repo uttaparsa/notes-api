@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
 import NoteCard from './NoteCard';
 import NoteModals from './NoteModals';
+import { fetchWithAuth } from '../lib/api';
+import { handleApiError } from '../utils/errorHandler';
 
 export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
   const [notes, setNotes] = useState(initialNotes);
@@ -50,22 +52,22 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
   const deleteNote = async (targetNoteId) => {
     // Implement showWaitingModal functionality
     try {
-      const response = await fetch(`/api/note/message/${targetNoteId}/`, {
+      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}/`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error('Failed to delete note');
       setNotes(prevNotes => prevNotes.filter(note => note.id !== targetNoteId));
     } catch (err) {
       console.error('Error deleting note:', err);
-      // Implement error handling here
+      handleApiError(err);
     }
     // Implement hideWaitingModal functionality
   };
 
   const editNote = async (targetNoteId, newText) => {
-    // Implement showWaitingModal functionality
+    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
     try {
-      const response = await fetch(`/api/note/message/${targetNoteId}/`, {
+      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -77,12 +79,19 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
         note.id === targetNoteId ? { ...note, text: newText } : note
       ));
       noteRefs.current[targetNoteId].hideEditModal();
-      // Implement toast notification here
+      window.dispatchEvent(new CustomEvent('showToast', {
+        detail: {
+          title: "Success", 
+          body: `Note Saved`, 
+          delay: 5000,
+          status: "success",
+        }
+      }));
     } catch (err) {
       console.error('Error editing note:', err);
-      // Implement error handling here
+      handleApiError(err);
     }
-    // Implement hideWaitingModal functionality
+    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
   const sortNotes = () => {

@@ -144,7 +144,7 @@ export default function NotesPage() {
                       width="16"
                       height="16"
                       fill="currentColor"
-                      class="bi bi-search"
+                      className='bi bi-search'
                       viewBox="0 0 16 16"
                     >
                       <path
