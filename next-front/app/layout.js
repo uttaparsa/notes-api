@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
       <TopNavbar></TopNavbar>
-         <div class="bg-dark h-100" style={{minHeight: '100vh'}}>
+         <div className="bg-dark h-100" style={{minHeight: '100vh'}}>
 
         {children}
         <BootstrapClient />

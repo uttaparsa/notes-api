@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
-import NoteCard from './Note';
+import NoteCard from './NoteCard';
 import NoteModals from './NoteModals';
 
 export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
