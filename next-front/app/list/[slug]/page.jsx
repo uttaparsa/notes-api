@@ -2,39 +2,28 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form, Button, Pagination, FormCheck } from 'react-bootstrap';
+import { Form, Pagination, FormCheck } from 'react-bootstrap';
 import NoteList from '../../components/NoteList';
 import MessageInput from '../../components/MessageInput';
+import SearchBar from '../../components/SearchBar';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
 
 export default function NoteListPage({ params }) {
-  const [searchText, setSearchText] = useState('');
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  const router = useRouter();
   const noteListRef = useRef();
+  const router = useRouter();
   const perPage = 20;
   const { slug } = params;
 
   useEffect(() => {
     getRecords();
   }, [currentPage, showArchived, slug]);
-
-  const sendSearch = (e) => {
-    e.preventDefault();
-    router.push(`/search/?q=${searchText}&list_slug=${slug}`);
-  };
-
-  const showMessagesForDate = (selectedDate) => {
-    console.log("showing messages for date " + selectedDate);
-    setDate(selectedDate);
-    getRecords(selectedDate);
-  };
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");
@@ -75,6 +64,17 @@ export default function NoteListPage({ params }) {
 
   const addNewNote = (note) => {
     noteListRef.current.addNewNote(note);
+  };
+
+  const showMessagesForDate = (selectedDate) => {
+    console.log("showing messages for date " + selectedDate);
+    setDate(selectedDate);
+    getRecords(selectedDate);
+  };
+
+  const handleSearch = (searchText) => {
+    // Redirect to the SearchPage with the appropriate query parameters
+    router.push(`/search/?q=${encodeURIComponent(searchText)}&list_slug=${slug}`);
   };
 
   const renderPagination = () => {
@@ -119,42 +119,10 @@ export default function NoteListPage({ params }) {
     return <Pagination className="custom-pagination justify-content-center mt-3">{items}</Pagination>;
   };
 
+
   return (
     <div dir="ltr" className="bg-dark">
-      <form onSubmit={sendSearch}>
-        <nav className="navbar navbar-dark bg-info py-1">
-          <div className="container px-0" dir="auto">
-            <div className="d-flex row justify-content-center w-100 px-0 px-lg-5 mx-0">
-              <div className="col-10 d-flex flex-row px-0 px-lg-5">
-                <div className="input-group">
-                  <input
-                    dir="auto"
-                    className="rounded form-control"
-                    placeholder={`Search in ${slug}`}
-                    type="text"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                  />
-                  <div className="input-group-append">
-                    <Button type="submit" className="input-group-text">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        className="bi bi-search"
-                        viewBox="0 0 16 16"
-                      >
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                      </svg>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </nav>
-      </form>
+      <SearchBar onSearch={handleSearch} listSlug={slug} />
 
       <div dir="ltr">
         {renderPagination()}
