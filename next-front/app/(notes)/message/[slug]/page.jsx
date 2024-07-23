@@ -6,6 +6,7 @@ import Link from 'next/link';
 import NoteCard from '../../../components/NoteCard';
 import { Toast } from 'react-bootstrap';
 import { fetchWithAuth } from '@/app/lib/api';
+import { handleApiError } from '@/app/utils/errorHandler';
 
 const SingleNoteView = () => {
   const [busy, setBusy] = useState(true);
@@ -31,7 +32,7 @@ const SingleNoteView = () => {
       setBusy(false);
     } catch (error) {
       console.error("Error fetching note:", error);
-      // Handle error (e.g., show error message to user)
+      handleApiError(error);
     }
   };
 

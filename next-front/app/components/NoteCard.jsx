@@ -4,6 +4,7 @@ import React, {
     useContext,
     forwardRef,
     useImperativeHandle,
+    useEffect,
 } from "react";
 import { Dropdown, Modal, Button } from "react-bootstrap";
 
@@ -16,17 +17,8 @@ import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 
-
 const NoteCard = forwardRef(
-    (
-        {
-            note,
-            singleView,
-            hideEdits,
-            onEditNote
-        },
-        ref
-    ) => {
+    ({ note, singleView, hideEdits, onEditNote }, ref) => {
         const showToast = useContext(ToastContext);
         const [showMoveModal, setShowMoveModal] = useState(false);
         const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -37,6 +29,21 @@ const NoteCard = forwardRef(
         const ltrIcon = useRef(null);
         const noteLists = useContext(NoteListContext);
 
+        const updateTextAreaHeight = (textarea) => {
+            if (textarea) {
+                textarea.style.height = "1px";
+                textarea.style.height = 25 + textarea.scrollHeight + "px";
+            }
+        };
+
+        useEffect(() => {
+            updateTextAreaHeight(editMessageTextAreaRef.current);
+        }, [note.text]); 
+
+        const handleChange = (e) => {
+            updateTextAreaHeight(e.target);
+        };
+
         useImperativeHandle(ref, () => ({
             hideEditModal: () => setShowEditModal(false),
         }));
@@ -44,11 +51,15 @@ const NoteCard = forwardRef(
         const expandNote = () => {
             //use setState here to trigger a re-render
             // trigger a re-render
-            
+
             note.expand = true;
         };
 
         const moveNote = async (lstId) => {
+            window.dispatchEvent(
+                new CustomEvent("showWaitingModal", { detail: "Moving note" })
+            );
+
             try {
                 const response = await fetchWithAuth(
                     `/api/note/message/move/${note.id}/`,
@@ -67,11 +78,11 @@ const NoteCard = forwardRef(
 
                 note.list = lstId;
                 setShowMoveModal(false);
-                
             } catch (err) {
                 console.error("Error moving note:", err);
                 handleApiError(err);
             }
+            window.dispatchEvent(new CustomEvent("hideWaitingModal"));
         };
 
         const editNote = () => {
@@ -89,63 +100,71 @@ const NoteCard = forwardRef(
 
         const pinMessage = async () => {
             try {
-              const response = await fetchWithAuth(`/api/note/message/pin/${note.id}/`);
-              if (!response.ok) {
-                throw new Error('Failed to pin message');
-              }
-              // You might want to update some state or trigger a re-fetch here
-              showToast('Success', 'Message pinned', 3000, 'success');
-              window.dispatchEvent(new Event("updateNoteLists"));
+                const response = await fetchWithAuth(
+                    `/api/note/message/pin/${note.id}/`
+                );
+                if (!response.ok) {
+                    throw new Error("Failed to pin message");
+                }
+                // You might want to update some state or trigger a re-fetch here
+                showToast("Success", "Message pinned", 3000, "success");
+                window.dispatchEvent(new Event("updateNoteLists"));
             } catch (err) {
-              console.error('Error pinning message:', err);
+                console.error("Error pinning message:", err);
             }
-          };
-        
-          const unPinMessage = async () => {
+        };
+
+        const unPinMessage = async () => {
             try {
-              const response = await fetchWithAuth(`/api/note/message/unpin/${note.id}/`);
-              if (!response.ok) {
-                throw new Error('Failed to unpin message');
-              }
-              showToast('Success', 'Message unpinned', 3000, 'success');
-              // You might want to update some state or trigger a re-fetch here
+                const response = await fetchWithAuth(
+                    `/api/note/message/unpin/${note.id}/`
+                );
+                if (!response.ok) {
+                    throw new Error("Failed to unpin message");
+                }
+                showToast("Success", "Message unpinned", 3000, "success");
+                // You might want to update some state or trigger a re-fetch here
             } catch (err) {
-              console.error('Error unpinning message:', err);
+                console.error("Error unpinning message:", err);
             }
-          };
-        
-          const archiveMessage = async () => {
+        };
+
+        const archiveMessage = async () => {
             try {
-              const response = await fetchWithAuth(`/api/note/message/archive/${note.id}/`);
-              if (!response.ok) {
-                throw new Error('Failed to archive message');
-              }
-              showToast('Success', 'Message archived', 3000, 'success');
-              // You might want to update some state or trigger a re-fetch here
+                const response = await fetchWithAuth(
+                    `/api/note/message/archive/${note.id}/`
+                );
+                if (!response.ok) {
+                    throw new Error("Failed to archive message");
+                }
+                showToast("Success", "Message archived", 3000, "success");
+                // You might want to update some state or trigger a re-fetch here
             } catch (err) {
-              console.error('Error archiving message:', err);
+                console.error("Error archiving message:", err);
             }
-          };
-        
-          const unArchiveMessage = async () => {
+        };
+
+        const unArchiveMessage = async () => {
             try {
-              const response = await fetchWithAuth(`/api/note/message/unarchive/${note.id}/`);
-              if (!response.ok) {
-                throw new Error('Failed to unarchive message');
-              }
-              showToast('Success', 'Message unarchived', 3000, 'success');
-              
-              // You might want to update some state or trigger a re-fetch here
+                const response = await fetchWithAuth(
+                    `/api/note/message/unarchive/${note.id}/`
+                );
+                if (!response.ok) {
+                    throw new Error("Failed to unarchive message");
+                }
+                showToast("Success", "Message unarchived", 3000, "success");
+
+                // You might want to update some state or trigger a re-fetch here
             } catch (err) {
-              console.error('Error unarchiving message:', err);
+                console.error("Error unarchiving message:", err);
             }
-          };
+        };
 
         const showEditModalHandler = () => {
             setShowEditModal(true);
             setTimeout(() => {
                 if (editMessageTextAreaRef.current) {
-                    // Implement updateTextAreaHeight if needed
+                    updateTextAreaHeight(editMessageTextAreaRef.current);
                     editMessageTextAreaRef.current.focus();
                     editMessageTextAreaRef.current.dir = isRTL(note.text)
                         ? "rtl"
@@ -171,7 +190,7 @@ const NoteCard = forwardRef(
             setTextInsideDeleteModal(textInModal);
             setShowDeleteModal(true);
         };
-   
+
         const handleEnter = (e) => {
             if (e.ctrlKey && e.key === "Enter") {
                 editNote();
@@ -187,9 +206,7 @@ const NoteCard = forwardRef(
                                 <Dropdown.Toggle
                                     variant="dark"
                                     id="dropdown-basic"
-                                >
-                 
-                                </Dropdown.Toggle>
+                                ></Dropdown.Toggle>
 
                                 <Dropdown.Menu>
                                     {!hideEdits && (
@@ -281,7 +298,6 @@ const NoteCard = forwardRef(
                                 </a>
                             )}
                             <span
-                                ref={editMessageTextAreaRef}
                                 className={`card-text text-light ${
                                     isRTL(note.text) ? "text-right" : ""
                                 }`}
@@ -304,13 +320,8 @@ const NoteCard = forwardRef(
                         </div>
                     </div>
 
-                    <NoteCardBottomBar
-                    note={note}
-                    >
-                      
-                    </NoteCardBottomBar>
-
-            </div>
+                    <NoteCardBottomBar note={note}></NoteCardBottomBar>
+                </div>
 
                 {/* Modals */}
                 <Modal
@@ -421,8 +432,7 @@ const NoteCard = forwardRef(
                             ref={editMessageTextAreaRef}
                             defaultValue={note.text}
                             onKeyDown={handleEnter}
-                            // Implement updateTextAreaHeight if needed
-                            // onInput={(e) => updateTextAreaHeight(e.target)}
+                            onChange={handleChange}
                             className="w-100"
                             style={{
                                 whiteSpace: "pre-line",

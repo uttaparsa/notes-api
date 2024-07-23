@@ -2,6 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { Form, Button } from 'react-bootstrap';
+import { fetchWithAuth } from '../lib/api';
+import { handleApiError } from '../utils/errorHandler';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
@@ -15,8 +17,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   };
 
   const sendMessage = async () => {
-    // Implement your showWaitingModal logic here
-    // For example: showWaitingModal("Waiting for server response");
+    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Creating note' }));
 
     try {
       const obj = { text };
@@ -36,7 +37,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         url += `${listSlug}/`;
       }
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: 'POST',
         body: data,
       });
@@ -50,12 +51,10 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
       setFile(null);
       onNoteSaved(responseData);
     } catch (err) {
-      // Implement your error handling logic here
       console.error('Error sending message:', err);
+      handleApiError(err);
     }
-
-    // Implement your hideWaitingModal logic here
-    // For example: hideWaitingModal();
+    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
   const handleInput = (e) => {

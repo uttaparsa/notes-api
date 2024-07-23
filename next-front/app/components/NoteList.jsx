@@ -50,7 +50,7 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
   };
 
   const deleteNote = async (targetNoteId) => {
-    // Implement showWaitingModal functionality
+    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Deleting note' }));
     try {
       const response = await fetchWithAuth(`/api/note/message/${targetNoteId}/`, {
         method: 'DELETE',
@@ -61,7 +61,7 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
       console.error('Error deleting note:', err);
       handleApiError(err);
     }
-    // Implement hideWaitingModal functionality
+    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
   const editNote = async (targetNoteId, newText) => {
