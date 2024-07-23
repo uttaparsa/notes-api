@@ -15,8 +15,7 @@ export default function NavbarComponent({ isLoggedIn }) {
   };
 
   return (
-    <Navbar bg="primary" variant="dark" expand="lg">
-      <Container>
+    <Navbar className='px-3'  bg="primary" variant="dark" expand="lg">
         <Navbar.Brand href="/">Notes</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         {isLoggedIn && (
@@ -38,7 +37,7 @@ export default function NavbarComponent({ isLoggedIn }) {
             </Nav>
           </Navbar.Collapse>
         )}
-      </Container>
     </Navbar>
+
   );
 }

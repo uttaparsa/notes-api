@@ -1,0 +1,15 @@
+.modalFade {
+    transition: opacity 0.3s ease;
+  }
+  
+  .modalFade .modal-content {
+    transition: transform 0.3s ease;
+  }
+  
+  .modalFade.show {
+    opacity: 1;
+  }
+  
+  .modalFade.show .modal-content {
+    transform: translateY(0);
+  }

@@ -20,7 +20,17 @@ export function handleApiError(error) {
           variant: "danger",
         }
       }));
-    } else if (status === 404) {
+    }else if (status === 401) {
+      window.dispatchEvent(new CustomEvent('showToast', {
+        detail: {
+          title: "Error",
+          body: "Authentication Error", 
+          delay: 5000,
+          variant: "danger",
+        }
+      }));
+    }
+     else if (status === 404) {
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
           title: "Error", 

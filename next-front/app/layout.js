@@ -10,6 +10,8 @@ import TopNavbar from './components/TopNavbar'
 import { fetchWithAuth } from './lib/api';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import { handleApiError } from './utils/errorHandler';
+import { Modal, Spinner } from 'react-bootstrap';
+import styles from './layout.module.css';
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -63,6 +65,7 @@ export default function RootLayout({ children }) {
     getLists();
 
     const showWaitingModal = (e) => {
+      console.log('showWaitingModal', e.detail);
       setShowModal(true);
       setModalTitle(e.detail.title);
     };
@@ -116,6 +119,22 @@ export default function RootLayout({ children }) {
                 </Toast>
               </ToastContainer>
             </ToastContext.Provider>
+            <Modal
+      show={showModal}
+      centered
+      backdrop="static"
+      keyboard={false}
+      className={styles.modalFade}
+    >
+      <Modal.Header>
+        <Modal.Title>{modalTitle}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+        <Spinner animation="border" role="status" style={{ width: '8rem', height: '8rem' }}>
+          <span className="sr-only">Loading...</span>
+        </Spinner>
+      </Modal.Body>
+    </Modal>
           </ModalContext.Provider>
         </NoteListContext.Provider>
         </AuthContext.Provider>

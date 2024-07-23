@@ -12,7 +12,6 @@ export default function CategoryList() {
   const [showModal, setShowModal] = useState(false);
   const noteLists = useContext(NoteListContext);
   const showToast = useContext(ToastContext);
-  const router = useRouter();
 
   useEffect(() => {
     window.dispatchEvent(new Event('updateNoteLists'));
@@ -76,7 +75,7 @@ export default function CategoryList() {
                   {lst.name}
                 </Link>
               </div>
-              <div className="ml-auto">
+              <div className="ms-auto">
                 {lst.archived ? (
                   <Button variant="light" size="sm" onClick={() => unArchiveTopic(lst.id)}>UnArchive</Button>
                 ) : (
