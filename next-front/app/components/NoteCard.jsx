@@ -282,12 +282,14 @@ const NoteCard = forwardRef(
                                 {note.sender_name}
                             </h6>
                             {note.image && (
-                                <img
-                                    src={note.image}
-                                    style={{ maxHeight: "200px" }}
-                                    alt="..."
-                                    className="img-thumbnail"
-                                />
+                                <a href={note.image} target="_blank" rel="noopener noreferrer">
+                                    <img
+                                        src={note.image}
+                                        style={{ maxHeight: "200px" }}
+                                        alt="..."
+                                        className="img-thumbnail"
+                                    />
+                                </a>
                             )}
                             {note.file && (
                                 <a href={note.file}>
