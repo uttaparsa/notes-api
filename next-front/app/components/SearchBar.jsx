@@ -1,32 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function SearchBar({ onSearch, initialSearchText = '', listSlug = 'All' }) {
+export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All' }) {
   const [searchText, setSearchText] = useState(initialSearchText);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [listSlug, setListSlug] = useState(initialListSlug);
 
   useEffect(() => {
-    const query = searchParams.get('q');
-    if (query) {
-      setSearchText(query);
-    }
-  }, [searchParams]);
+    setSearchText(initialSearchText);
+    setListSlug(initialListSlug);
+  }, [initialSearchText, initialListSlug]);
 
-  const sendSearch = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    let url = `/search/?q=${searchText}`;
-    if (listSlug !== 'All') {
-      url += `&list_slug=${listSlug}`;
-    }
-    router.push(url);
-    onSearch(searchText, listSlug !== 'All' ? listSlug : false);
+    onSearch(searchText, listSlug);
   };
 
   return (
-    <form onSubmit={sendSearch}>
+    <form onSubmit={handleSubmit}>
       <nav className="navbar navbar-dark bg-info py-1">
         <div className="container px-0" dir="auto">
           <div className="d-flex row justify-content-center w-100 px-0 px-lg-5 mx-0">

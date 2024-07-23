@@ -6,7 +6,7 @@ import { Form, Pagination, FormCheck } from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
 import SearchBar from '../../../components/SearchBar';
-import { handleApiError } from '@/app/(notes)/utils/errorHandler';
+import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
 
 export default function NoteListPage({ params }) {

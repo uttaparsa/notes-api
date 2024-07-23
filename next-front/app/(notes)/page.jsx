@@ -7,7 +7,7 @@ import { NoteListContext } from '../(notes)/layout';
 import NoteList from "../components/NoteList";
 import MessageInput from '../components/MessageInput';
 import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from './utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 
 
 export default function NotesPage() {

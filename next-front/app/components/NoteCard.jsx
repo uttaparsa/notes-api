@@ -9,11 +9,11 @@ import { Dropdown, Modal, Button } from "react-bootstrap";
 
 import { NoteListContext, ToastContext } from "../(notes)/layout";
 import ReactMarkdown from "react-markdown";
-import { isRTL } from "../(notes)/utils/stringUtils";
-import { copyElementTextToClipboard } from "../(notes)/utils/clipboardUtils";
+import { isRTL } from "../utils/stringUtils";
+import { copyElementTextToClipboard } from "../utils/clipboardUtils";
 
 import { fetchWithAuth } from "../lib/api";
-import { handleApiError } from "../(notes)/utils/errorHandler";
+import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 
 

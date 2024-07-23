@@ -9,7 +9,7 @@ import BootstrapClient from '../components/BootstrapClient'
 import TopNavbar from '../components/TopNavbar'
 import { fetchWithAuth } from '../lib/api';
 import { Toast, ToastContainer } from 'react-bootstrap';
-import { handleApiError } from './utils/errorHandler';
+import { handleApiError } from '../utils/errorHandler';
 import { Modal, Spinner } from 'react-bootstrap';
 import styles from './layout.module.css';
 
