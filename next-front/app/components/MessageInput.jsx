@@ -81,7 +81,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
           id="status-bar-bottom"
         >
           <div className="d-flex text-light px-2">
-            <div className="d-flex py-1">You've attached {file.name}</div>
+            <div className="d-flex py-1">You`ve attached {file.name}</div>
             <div id="uploadPreview" className="mx-2" style={{ width: '30px', height: '35px' }}></div>
             <button type="button" className="ml-2 close" aria-label="Close" onClick={clearFile}>
               <span aria-hidden="true">&times;</span>

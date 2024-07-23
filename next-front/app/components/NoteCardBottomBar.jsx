@@ -87,4 +87,6 @@ const NoteCardBottomBar = forwardRef(({ note }, ref) => {
     );
 });
 
+NoteCardBottomBar.displayName = "NoteCardBottomBar";
+
 export default NoteCardBottomBar;

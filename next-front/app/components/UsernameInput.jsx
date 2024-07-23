@@ -14,13 +14,12 @@ const UsernameInput = ({ modelValue, serverErrors, ...rest }) => {
     <div>
       <input
         type="text"
-        className="form-control form-control-lg"
         id="username"
         placeholder="نام کاربری"
         value={username}
         onChange={handleChange}
         {...rest} // Pass through any additional props
-        className={`${rest.className || ''} ${serverErrors ? 'is-invalid' : ''}`} // Combine classNames
+        className={"form-control form-control-lg" + `${rest.className || ''} ${serverErrors ? 'is-invalid' : ''}`} // Combine classNames
       />
       {serverErrors && (
         <div className="invalid-feedback text-right">{serverErrors}</div>

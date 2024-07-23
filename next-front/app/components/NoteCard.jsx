@@ -447,4 +447,6 @@ const NoteCard = forwardRef(
     }
 );
 
+NoteCard.displayName = "NoteCard";
+
 export default NoteCard;
