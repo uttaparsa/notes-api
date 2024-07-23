@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import NoteCard from '../../components/NoteCard';
+import NoteCard from '../../../components/NoteCard';
 import { Toast } from 'react-bootstrap';
 import { fetchWithAuth } from '@/app/lib/api';
 
