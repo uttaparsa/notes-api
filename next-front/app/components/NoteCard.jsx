@@ -18,7 +18,7 @@ import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 
 const NoteCard = forwardRef(
-    ({ note, singleView, hideEdits, onEditNote }, ref) => {
+    ({ note, singleView, hideEdits, onEditNote, onDeleteNote }, ref) => {
         const showToast = useContext(ToastContext);
         const [showMoveModal, setShowMoveModal] = useState(false);
         const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -363,7 +363,12 @@ const NoteCard = forwardRef(
                     show={showDeleteModal}
                     onHide={() => setShowDeleteModal(false)}
                 >
-                    {/* ... (Modal content remains the same, but update the delete logic) ... */}
+                    <Modal.Header closeButton>
+                        <Modal.Title>Deleting note</Modal.Title>
+                    </Modal.Header>
+                <Modal.Body>
+                    {textInsideDeleteModal}
+                </Modal.Body>
                     <Modal.Footer>
                         <Button
                             variant="secondary"
