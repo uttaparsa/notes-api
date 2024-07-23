@@ -14,3 +14,19 @@
   display: block;
   width: 100%;
 }
+
+.markdownImage {
+  position: relative;
+  width: 100%;
+  max-height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.responsiveImage {
+  max-width: 600px;
+  max-height: 600px;
+  object-fit: contain;
+}

@@ -6,7 +6,7 @@ import React, {
     useImperativeHandle,
     useEffect,
 } from "react";
-import { Dropdown, Modal, Button } from "react-bootstrap";
+import { Dropdown, Modal, Button, Image } from "react-bootstrap";
 
 import { NoteListContext, ToastContext } from "../(notes)/layout";
 import ReactMarkdown from "react-markdown";
@@ -19,6 +19,40 @@ import NoteCardBottomBar from "./NoteCardBottomBar";
 
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
+
+
+const ResponsiveImage = ({ src, alt, title }) => {
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+    const containerRef = useRef(null);
+  
+    useEffect(() => {
+      if (containerRef.current) {
+        const resizeObserver = new ResizeObserver(entries => {
+          for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            setDimensions({ width, height });
+          }
+        });
+  
+        resizeObserver.observe(containerRef.current);
+  
+        return () => {
+          resizeObserver.disconnect();
+        };
+      }
+    }, []);
+  
+    return (
+      <span ref={containerRef} className={styles.markdownImage}>
+        <img
+          src={src}
+          alt={alt || ''}
+          title={title || ''}
+          className={styles.responsiveImage}
+        />
+      </span>
+    );
+  };
 
 const NoteCard = forwardRef(
     ({ note, singleView, hideEdits, onEditNote, onDeleteNote }, ref) => {
@@ -38,6 +72,8 @@ const NoteCard = forwardRef(
                 textarea.style.height = 25 + textarea.scrollHeight + "px";
             }
         };
+
+        
 
         useEffect(() => {
             updateTextAreaHeight(editMessageTextAreaRef.current);
@@ -221,7 +257,9 @@ const NoteCard = forwardRef(
                   {children}
                 </code>
               );
-            }
+            },
+            img: (props) => <ResponsiveImage {...props} />
+            
           };
         
                 
