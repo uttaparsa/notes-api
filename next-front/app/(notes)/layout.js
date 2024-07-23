@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
 import { Inter } from 'next/font/google'
-import BootstrapClient from './components/BootstrapClient'
-import TopNavbar from './components/TopNavbar'
-import { fetchWithAuth } from './lib/api';
+import BootstrapClient from '../components/BootstrapClient'
+import TopNavbar from '../components/TopNavbar'
+import { fetchWithAuth } from '../lib/api';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import { handleApiError } from './utils/errorHandler';
 import { Modal, Spinner } from 'react-bootstrap';
@@ -34,6 +34,7 @@ export default function RootLayout({ children }) {
     // Implement your logout logic here
     // For example:
     // await auth.logout();
+    
     router.push('/login');
   }, [router]);
 

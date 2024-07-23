@@ -5,7 +5,7 @@ import { Spinner } from 'react-bootstrap';
 import NoteCard from './NoteCard';
 import NoteModals from './NoteModals';
 import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
+import { handleApiError } from '../(notes)/utils/errorHandler';
 
 export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
   const [notes, setNotes] = useState(initialNotes);

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { NoteListContext, ToastContext } from '../layout';
-import { fetchWithAuth } from '../lib/api';
+import { fetchWithAuth } from '../../lib/api';
 
 export default function CategoryList() {
   const [newListName, setNewListName] = useState('');

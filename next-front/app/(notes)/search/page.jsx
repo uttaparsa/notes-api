@@ -3,16 +3,16 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Pagination, FormCheck } from 'react-bootstrap';
 import dynamic from 'next/dynamic';
-import NoteList from '../components/NoteList';
-import { fetchWithAuth } from '../lib/api';
+import NoteList from '../../components/NoteList';
+import { fetchWithAuth } from '../../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
 // Dynamically import the SearchBar component with ssr disabled
-const SearchBar = dynamic(() => import('../components/SearchBar'), { ssr: false });
+const SearchBar = dynamic(() => import('../../components/SearchBar'), { ssr: false });
 
 // Create a client-side only component for handling search params
 const SearchParamsHandler = dynamic(() => 
-  import('../components/SearchParamsHandler').then((mod) => mod.SearchParamsHandler), 
+  import('../../components/SearchParamsHandler').then((mod) => mod.SearchParamsHandler), 
   { ssr: false }
 );
 
