@@ -17,6 +17,9 @@ import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 
+import remarkGfm from "remark-gfm";
+import styles from "./NoteCard.module.css";
+
 const NoteCard = forwardRef(
     ({ note, singleView, hideEdits, onEditNote, onDeleteNote }, ref) => {
         const showToast = useContext(ToastContext);
@@ -196,6 +199,32 @@ const NoteCard = forwardRef(
                 editNote();
             }
         };
+        const customRenderers = {
+            code: ({node, inline, className, children, ...props}) => {
+              const match = /language-(\w+)/.exec(className || '');
+              const lang = match ? match[1] : '';
+              
+              // Only apply special styling to code blocks (not inline code)
+              if (!inline) {
+                return (
+                  <pre className={styles.codeBlock}>
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  </pre>
+                );
+              }
+              
+              // For inline code or code without language specification, return as is
+              return (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            }
+          };
+        
+                
 
         return (
             <div className="card rounded bg-secondary mb-2">
@@ -306,7 +335,9 @@ const NoteCard = forwardRef(
                                 }`}
                                 dir={isRTL(note.text) ? "rtl" : "ltr"}
                             >
-                                <ReactMarkdown>
+                                <ReactMarkdown       
+                                    components={customRenderers}
+                                 remarkPlugins={[remarkGfm]}>
                                     {processNoteText(note)}
                                 </ReactMarkdown>
                                 {!singleView &&
