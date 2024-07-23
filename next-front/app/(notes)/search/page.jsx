@@ -1,20 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Pagination, FormCheck } from 'react-bootstrap';
-import dynamic from 'next/dynamic';
 import NoteList from '../../components/NoteList';
+import SearchBar from '../../components/SearchBar';
 import { fetchWithAuth } from '../../lib/api';
 import { handleApiError } from '../utils/errorHandler';
-
-// Dynamically import the SearchBar component with ssr disabled
-const SearchBar = dynamic(() => import('../../components/SearchBar'), { ssr: false });
-
-// Create a client-side only component for handling search params
-const SearchParamsHandler = dynamic(() => 
-  import('../../components/SearchParamsHandler').then((mod) => mod.SearchParamsHandler), 
-  { ssr: false }
-);
 
 export default function SearchPage() {
   const [notes, setNotes] = useState([]);
@@ -22,36 +14,60 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [listSlug, setListSlug] = useState('All');
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const perPage = 20;
 
-  const getRecords = async (query, newListSlug = false) => {
+  const getRecords = useCallback(async (query, listSlug) => {
+    if (!query) return;
     console.log("getting records for " + query);
     setIsBusy(true);
     try {
-      let url = `/api/note/search/?q=${query}`;
-      if (newListSlug) {
-        url += `&list_slug=${newListSlug}`;
+      let url = `/api/note/search/?q=${encodeURIComponent(query)}`;
+      if (listSlug && listSlug !== 'All') {
+        url += `&list_slug=${encodeURIComponent(listSlug)}`;
       }
-      const response = await fetchWithAuth(`${url}&page=${currentPage}`);
+      url += `&page=${currentPage}`;
+      const response = await fetchWithAuth(url);
       if (!response.ok) throw new Error('Failed to fetch search results');
       const data = await response.json();
       setNotes(data.results);
       setTotalCount(data.count);
-      if (newListSlug) setListSlug(newListSlug);
     } catch (err) {
       console.error(`Error: ${err}`);
       handleApiError(err);
     } finally {
       setIsBusy(false);
     }
+  }, [currentPage]);
+
+  useEffect(() => {
+    const query = searchParams.get('q');
+    const listSlug = searchParams.get('list_slug') || 'All';
+    if (query) {
+      getRecords(query, listSlug);
+    }
+  }, [searchParams, getRecords]);
+
+  const handleSearch = (searchText, listSlug) => {
+    const currentQuery = searchParams.get('q');
+    const currentListSlug = searchParams.get('list_slug');
+    if (searchText !== currentQuery || listSlug !== currentListSlug) {
+      let url = `/search/?q=${encodeURIComponent(searchText)}`;
+      if (listSlug && listSlug !== 'All') {
+        url += `&list_slug=${encodeURIComponent(listSlug)}`;
+      }
+      router.push(url);
+    }
   };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    // You'll need to implement a way to get the current query here
-    // For now, let's assume you have a state for the current query
-    getRecords(currentQuery, listSlug !== 'All' ? listSlug : false);
+    const query = searchParams.get('q');
+    const listSlug = searchParams.get('list_slug') || 'All';
+    if (query) {
+      getRecords(query, listSlug);
+    }
   };
 
   const renderPagination = () => {
@@ -99,13 +115,11 @@ export default function SearchPage() {
 
   return (
     <div dir="ltr" className="bg-dark">
-      <Suspense fallback={<div>Loading...</div>}>
-        <SearchBar 
-          onSearch={getRecords}
-          listSlug={listSlug} 
-        />
-        <SearchParamsHandler onParamsChange={getRecords} />
-      </Suspense>
+      <SearchBar 
+        onSearch={handleSearch}
+        initialSearchText={searchParams.get('q') || ''}
+        listSlug={searchParams.get('list_slug') || 'All'}
+      />
       <div className="container" dir="ltr">
         {renderPagination()}
         <FormCheck
@@ -119,7 +133,13 @@ export default function SearchPage() {
           notes={notes} 
           isBusy={isBusy} 
           showArchived={showArchived}
-          refreshNotes={getRecords}
+          refreshNotes={() => {
+            const query = searchParams.get('q');
+            const listSlug = searchParams.get('list_slug') || 'All';
+            if (query) {
+              getRecords(query, listSlug);
+            }
+          }}
         />
       </div>
     </div>
