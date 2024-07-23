@@ -11,7 +11,7 @@ import { Dropdown, Modal, Button } from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../(notes)/layout";
 import ReactMarkdown from "react-markdown";
 import { isRTL } from "../utils/stringUtils";
-import { copyElementTextToClipboard } from "../utils/clipboardUtils";
+import { copyTextInsideElementToClipboard, copyTextToClipboard } from "../utils/clipboardUtils";
 
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
@@ -221,8 +221,9 @@ const NoteCard = forwardRef(
                                     <Dropdown.Divider />
                                     <Dropdown.Item
                                         onClick={() =>
-                                            copyElementTextToClipboard(
-                                                `text-${note.id}`
+                                            copyTextToClipboard(
+                                                note.text
+                                                
                                             )
                                         }
                                     >
