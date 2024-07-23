@@ -15,7 +15,7 @@ services:
 
   frontend:
     build:
-      context: ./nuxt-front
+      context: ./next-front
       dockerfile: Dockerfile
     networks:
       - app-network
