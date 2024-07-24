@@ -32,7 +32,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
                   onChange={(e) => setSearchText(e.target.value)}
                 />
                 <div className="input-group-append">
-                  <button type="submit" className="input-group-text">
+                  <button type="submit" className="input-group-text h-100">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="16"
