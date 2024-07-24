@@ -105,7 +105,7 @@ export default function RootLayout({ children }) {
                 {children}
                 <BootstrapClient />
               </div>
-              <ToastContainer position="top-end" className="p-3">
+              <ToastContainer position="top-end" className="p-3 position-fixed">
                 <Toast 
                   onClose={() => setToast(prev => ({ ...prev, show: false }))} 
                   show={toast.show} 
