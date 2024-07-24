@@ -65,6 +65,7 @@ const NoteCard = forwardRef(
         const rtlIcon = useRef(null);
         const ltrIcon = useRef(null);
         const noteLists = useContext(NoteListContext);
+        const [isExpanded, setIsExpanded] = useState(false);
 
         const updateTextAreaHeight = (textarea) => {
             if (textarea) {
@@ -88,11 +89,9 @@ const NoteCard = forwardRef(
         }));
 
         const expandNote = () => {
-            //use setState here to trigger a re-render
-            // trigger a re-render
-
-            note.expand = true;
-        };
+            setIsExpanded(true);
+            console.log("expandNote");
+          };
 
         const moveNote = async (lstId) => {
             window.dispatchEvent(
@@ -132,7 +131,7 @@ const NoteCard = forwardRef(
         };
 
         const processNoteText = (note) => {
-            return singleView || note.text.length < 1000 || note.expand === true
+            return singleView || note.text.length < 1000 || isExpanded === true
                 ? note.text
                 : note.text.substring(0, 1000);
         };
@@ -380,12 +379,12 @@ const NoteCard = forwardRef(
                                 </ReactMarkdown>
                                 {!singleView &&
                                     note.text.length > 1000 &&
-                                    note.expand !== true && (
+                                    isExpanded !== true && (
                                         <span
-                                            onClick={() => expandNote(note)}
+                                            onClick={() => expandNote()}
                                             className="h4 mx-2 px-1 rounded py-0 bg-dark flex-sn-wrap"
                                         >
-                                            <b>...{note.expand}</b>
+                                            <b>...{isExpanded}</b>
                                         </span>
                                     )}
                             </span>
