@@ -37,6 +37,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - frontend-old
     build:
       context: ./nginx
       dockerfile: Dockerfile
