@@ -25,6 +25,13 @@ services:
       - NODE_ENV=production
 
 
+  frontend-old:
+    build:
+      context: ./nuxt-front
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+
 
   webserver:
     depends_on:
