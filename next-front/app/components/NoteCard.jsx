@@ -117,6 +117,8 @@ const NoteCard = forwardRef(
 
                 note.list = lstId;
                 setShowMoveModal(false);
+                // show toast
+                showToast("Success", "Note moved", 3000, "success");
             } catch (err) {
                 console.error("Error moving note:", err);
                 handleApiError(err);
