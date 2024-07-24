@@ -51,6 +51,8 @@ services:
     volumes:
       - /etc/letsencrypt/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem
       - /etc/letsencrypt/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem
+      - /etc/letsencrypt/live/notes-old.joumend.ir/fullchain.pem:/etc/letsencrypt/live/notes-old.joumend.ir/fullchain.pem
+      - /etc/letsencrypt/live/notes-old.joumend.ir/privkey.pem:/etc/letsencrypt/live/notes-old.joumend.ir/privkey.pem
       - ./django-backend/data/media:/opt/data/media
 
 networks:
