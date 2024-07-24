@@ -2,6 +2,7 @@ import React, { forwardRef, useContext } from "react";
 import { formatDateSmall, formatDateLarge } from "../utils/dateFormatters";
 import Link from "next/link";
 import { NoteListContext } from "../(notes)/layout";
+import styles from "../styles/NoteCardBottomBar.module.css";
 
 const NoteCardBottomBar = forwardRef(({ note }, ref) => {
     const getListName = () => {
@@ -19,7 +20,7 @@ const NoteCardBottomBar = forwardRef(({ note }, ref) => {
     return (
         <div className="mt-2 mb-0 d-flex ">
             <div  className="me-auto" >
-                <Link href={`/message/${note.id}/`}>
+                <Link href={`/message/${note.id}/`} >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -37,7 +38,7 @@ const NoteCardBottomBar = forwardRef(({ note }, ref) => {
             <div className="me-2" >
                 <Link
                     href={`/list/${getListSlug()}/`}
-                    className="text-dark"
+                    className={'text-dark ' + styles.categoryLink}
                 >
                     {getListName()}
                 </Link>
