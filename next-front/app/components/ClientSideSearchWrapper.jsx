@@ -74,7 +74,7 @@ export default function ClientSideSearchWrapper() {
   const renderPagination = () => {
     const totalPages = Math.ceil(totalCount / perPage);
     let items = [];
-    const maxVisiblePages = 5;
+    const maxVisiblePages = 3;
     const halfVisible = Math.floor(maxVisiblePages / 2);
     
     let startPage = Math.max(1, currentPage - halfVisible);
