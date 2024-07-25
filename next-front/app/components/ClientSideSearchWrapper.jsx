@@ -74,6 +74,7 @@ export default function ClientSideSearchWrapper() {
   const renderPagination = () => {
     const totalPages = Math.ceil(totalCount / perPage);
     let items = [];
+    // check if on mobile
     const maxVisiblePages = 3;
     const halfVisible = Math.floor(maxVisiblePages / 2);
     

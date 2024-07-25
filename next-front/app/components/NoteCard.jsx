@@ -146,9 +146,9 @@ const NoteCard = forwardRef(
                 if (!response.ok) {
                     throw new Error("Failed to pin message");
                 }
-                // You might want to update some state or trigger a re-fetch here
                 showToast("Success", "Message pinned", 3000, "success");
                 window.dispatchEvent(new Event("updateNoteLists"));
+                note.pinned = true;
             } catch (err) {
                 console.error("Error pinning message:", err);
             }
@@ -163,7 +163,7 @@ const NoteCard = forwardRef(
                     throw new Error("Failed to unpin message");
                 }
                 showToast("Success", "Message unpinned", 3000, "success");
-                // You might want to update some state or trigger a re-fetch here
+                note.pinned = false;
             } catch (err) {
                 console.error("Error unpinning message:", err);
             }
@@ -178,7 +178,7 @@ const NoteCard = forwardRef(
                     throw new Error("Failed to archive message");
                 }
                 showToast("Success", "Message archived", 3000, "success");
-                // You might want to update some state or trigger a re-fetch here
+                note.archived = true;
             } catch (err) {
                 console.error("Error archiving message:", err);
             }
@@ -194,7 +194,7 @@ const NoteCard = forwardRef(
                 }
                 showToast("Success", "Message unarchived", 3000, "success");
 
-                // You might want to update some state or trigger a re-fetch here
+                note.archived = false;
             } catch (err) {
                 console.error("Error unarchiving message:", err);
             }
