@@ -119,7 +119,7 @@ def insert_links(note: LocalMessage):
     Link.objects.filter(source_message=note).delete()
     
     # find all markdown links with regex
-    links = re.findall(r'\[.*?\]\((.*?)\)', note.text)
+    links = re.findall(r'\[\]\(/message/\d+\/?\)', note.text)
     print(f"links are {links}")
     for link in links:
         print(f"link is {link}")
@@ -159,49 +159,10 @@ class NoteView(GenericAPIView, ListModelMixin):
 
     def get(self, request, **kwargs):
         return self.list(request)
-    
-    def save_to_minio(self, file, object_name):
-        try:
-            file_data = file.read()
-            file_size = len(file_data)
-            file_data = io.BytesIO(file_data)
-            
-            minio_client.put_object(
-                settings.MINIO_BUCKET_NAME,
-                object_name,
-                file_data,
-                file_size,
-                content_type=file.content_type
-            )
-            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-            return f"{settings.MINIO_BUCKET_NAME}/{random_str}{object_name}"
-        except S3Error as e:
-            print(f"Error saving to MinIO: {e}")
-            return None
-
-    def save_image(self, request, local_message: LocalMessage):
-        print("saving image")
-        file = request.FILES['file']
-        object_name = f"images/{local_message.id}/{file.name}"
-        url = self.save_to_minio(file, object_name)
-        if url:
-            local_message.image = url
-            local_message.save()
-
-    def save_file(self, request, local_message: LocalMessage):
-        print("saving file")
-        file = request.FILES['file']
-        object_name = f"files/{local_message.id}/{file.name}"
-        url = self.save_to_minio(file, object_name)
-        if url:
-            local_message.file = url
-            local_message.save()
-
 
 
     def post(self, request, **kwargs):
-        meta_data = json.loads(str(request.FILES.get('meta').read().decode('utf-8')))
-        serializer = self.serializer_class(data=meta_data)
+        serializer = self.serializer_class(data=request.data)
         lst = None
         if 'slug' in kwargs:
             lst = LocalMessageList.objects.get(slug=self.kwargs['slug'])
@@ -214,13 +175,6 @@ class NoteView(GenericAPIView, ListModelMixin):
 
             insert_links(resp);
 
-            if 'file' in request.FILES.keys():
-                file_extension = request.FILES['file'].name.split('.')[-1]
-                print(f"file_extension is {file_extension}")
-                if file_extension.lower() in ['jpg','png','jpeg']:
-                    self.save_image(request, resp)
-                else:
-                    self.save_file(request, resp)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -228,24 +182,6 @@ from django.http import HttpResponse, Http404
 
 
 
-def serve_minio_file(request, file_path):
-
-    try:
-        # Get the file data from MinIO
-        data = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_path)
-        
-        # Determine the content type (you might want to store this in your database)
-        content_type = 'application/octet-stream'  # default
-        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-            content_type = f'image/{file_path.split(".")[-1].lower()}'
-        
-        # Create the response
-        response = HttpResponse(data.read(), content_type=content_type)
-        response['Content-Disposition'] = f'inline; filename="{file_path.split("/")[-1]}"'
-        return response
-    except Exception as e:
-        raise Http404("File not found")
-    
 import traceback
 def serve_minio_file(request, file_path):
 
@@ -302,7 +238,7 @@ class FileUploadView(APIView):
 
         file = request.FILES['file']
         object_name = f"uploads/{file.name}"
-        url = self.save_to_minio(file, object_name)
+        url = "/api/note/files/"+self.save_to_minio(file, object_name)
 
         if url:
             return Response({'url': url}, status=status.HTTP_201_CREATED)

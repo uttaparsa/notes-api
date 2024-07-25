@@ -20,16 +20,17 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   };
 
   const sendMessage = async () => {
+    if (!text.trim()) return; // Don't send empty messages
+
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Creating note' }));
 
     try {
-      const obj = { text, fileUrl };
       const response = await fetchWithAuth(`/api/note/${listSlug ? `${listSlug}/` : ''}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(obj),
+        body: JSON.stringify({ text }),
       });
 
       if (!response.ok) {
@@ -38,7 +39,6 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const responseData = await response.json();
       setText('');
-      setFileUrl(null);
       onNoteSaved(responseData);
     } catch (err) {
       console.error('Error sending message:', err);
@@ -66,7 +66,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const { url } = await response.json();
       setFileUrl(url);
-      // Don't close the modal here, just show the URL
+      setText(prevText => prevText + (prevText ? '\n' : '') + url);
     } catch (err) {
       console.error('Error uploading file:', err);
       handleApiError(err);
@@ -77,26 +77,6 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
   return (
     <div dir="ltr">
-      {fileUrl && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '45px',
-            left: 0,
-            width: '100vw',
-            backgroundColor: '#765285',
-            height: '35px',
-          }}
-          id="status-bar-bottom"
-        >
-          <div className="d-flex text-light px-2">
-            <div className="d-flex py-1">File attached: {fileUrl}</div>
-            <button type="button" className="ml-2 close" aria-label="Close" onClick={() => setFileUrl(null)}>
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        </div>
-      )}
       <div
         style={{
           position: 'fixed',

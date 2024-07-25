@@ -25,20 +25,11 @@ class LinkSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MessageSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
     source_links =  LinkSerializer(many=True, read_only=True)
 
-    def get_image(self, obj):
-        return obj.image.url if obj.image else None
-    
-    def get_file(self, obj):
-        return obj.file.url if obj.file else None
-    
-    
     class Meta:
         model = LocalMessage
-        fields = '__all__'
-        write_only_fields = ['image']
+        fields = ["text", "pinned", "archived", "created_at", "updated_at", "source_links"]
 
 
 
