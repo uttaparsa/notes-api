@@ -15,6 +15,28 @@ from .models import LocalMessage, LocalMessageList, Link
 import json
 import re
 
+from minio import Minio
+from minio.error import S3Error
+from django.conf import settings
+import io
+
+minio_client = Minio(
+    settings.MINIO_ENDPOINT,
+    access_key=settings.MINIO_ACCESS_KEY,
+    secret_key=settings.MINIO_SECRET_KEY,
+    secure=settings.MINIO_USE_SSL
+)
+
+# Ensure the bucket exists
+def ensure_bucket_exists(bucket_name):
+    try:
+        if not minio_client.bucket_exists(bucket_name):
+            minio_client.make_bucket(bucket_name)
+    except S3Error as e:
+        print(f"Error creating bucket: {e}")
+
+# Use this function at the start of your Django app
+ensure_bucket_exists(settings.MINIO_BUCKET_NAME)
 
 class SingleNoteView(APIView):
     serializer_class = serializers.MessageSerializer
@@ -51,6 +73,9 @@ class MoveMessageView(APIView):
 
 
 from datetime import date
+
+import string
+import random
 
 
 class DateBasedPagination(PageNumberPagination):
@@ -134,18 +159,45 @@ class NoteView(GenericAPIView, ListModelMixin):
 
     def get(self, request, **kwargs):
         return self.list(request)
+    
+    def save_to_minio(self, file, object_name):
+        try:
+            file_data = file.read()
+            file_size = len(file_data)
+            file_data = io.BytesIO(file_data)
+            
+            minio_client.put_object(
+                settings.MINIO_BUCKET_NAME,
+                object_name,
+                file_data,
+                file_size,
+                content_type=file.content_type
+            )
+            random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+            return f"{settings.MINIO_BUCKET_NAME}/{random_str}{object_name}"
+        except S3Error as e:
+            print(f"Error saving to MinIO: {e}")
+            return None
 
     def save_image(self, request, local_message: LocalMessage):
         print("saving image")
-        local_message.image = request.FILES['file']
-
-        local_message.save()
+        file = request.FILES['file']
+        object_name = f"images/{local_message.id}/{file.name}"
+        url = self.save_to_minio(file, object_name)
+        if url:
+            local_message.image = url
+            local_message.save()
 
     def save_file(self, request, local_message: LocalMessage):
         print("saving file")
-        local_message.file = request.FILES['file']
+        file = request.FILES['file']
+        object_name = f"files/{local_message.id}/{file.name}"
+        url = self.save_to_minio(file, object_name)
+        if url:
+            local_message.file = url
+            local_message.save()
 
-        local_message.save()
+
 
     def post(self, request, **kwargs):
         meta_data = json.loads(str(request.FILES.get('meta').read().decode('utf-8')))
