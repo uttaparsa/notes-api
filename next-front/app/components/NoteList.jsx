@@ -3,13 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
 import NoteCard from './NoteCard';
-import NoteModals from './NoteModals';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
 export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
   const [notes, setNotes] = useState(initialNotes);
-  const noteModalsRef = useRef();
   const noteRefs = useRef({});
 
   useEffect(() => {
@@ -36,18 +34,6 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
     refreshNotes();
   };
 
-  const addNewNote = (note) => {
-    setNotes(prevNotes => [note, ...prevNotes]);
-    sortNotes();
-  };
-
-  const showDeleteModal = (note) => {
-    noteModalsRef.current.showDeleteModal(note);
-  };
-
-  const showEditModal = (note) => {
-    noteModalsRef.current.showEditModal(note);
-  };
 
   const deleteNote = async (targetNoteId) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Deleting note' }));
@@ -94,17 +80,6 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
     window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
-  const sortNotes = () => {
-    setNotes(prevNotes => [...prevNotes].sort((a, b) => {
-      if (a.pinned === b.pinned) {
-        if (a.archived === b.archived) {
-          return new Date(b.created_at) - new Date(a.created_at);
-        }
-        return a.archived > b.archived ? 1 : -1;
-      }
-      return a.pinned < b.pinned ? 1 : -1;
-    }));
-  };
 
   return (
     <div>
@@ -144,7 +119,6 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
       <br className="my-5" />
       <br className="my-5" />
       <br className="my-5" />
-      <NoteModals ref={noteModalsRef} />
     </div>
   );
 }

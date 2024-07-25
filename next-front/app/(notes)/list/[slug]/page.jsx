@@ -63,9 +63,22 @@ export default function NoteListPage({ params }) {
   };
 
   const addNewNote = (note) => {
-    console.log("note saved!");
+    setNotes(prevNotes => [note, ...prevNotes]);
+    sortNotes();
   };
 
+
+  const sortNotes = () => {
+    setNotes(prevNotes => [...prevNotes].sort((a, b) => {
+      if (a.pinned === b.pinned) {
+        if (a.archived === b.archived) {
+          return new Date(b.created_at) - new Date(a.created_at);
+        }
+        return a.archived > b.archived ? 1 : -1;
+      }
+      return a.pinned < b.pinned ? 1 : -1;
+    }));
+  };
   const showMessagesForDate = (selectedDate) => {
     console.log("showing messages for date " + selectedDate);
     setDate(selectedDate);
