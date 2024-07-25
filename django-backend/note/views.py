@@ -187,7 +187,6 @@ def serve_minio_file(request, file_path):
 
     
     # remove last slash
-    file_path = file_path[:-1]
     file_path = file_path.replace("note/","")
     print(f"file_path is {file_path}")
     try:
