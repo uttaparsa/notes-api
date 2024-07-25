@@ -2,9 +2,11 @@ from django.urls import path
 
 from .views import NoteListView, NoteView, PinMessageView, UnPinMessageView, SingleNoteView, UnArchiveMessageView, \
     ArchiveMessageView, MoveMessageView, SearchResultsView, PublicNoteView, ArchiveMessageListView, \
-    UnArchiveMessageListView
+    UnArchiveMessageListView, FileUploadView, serve_minio_file
 
 urlpatterns = [
+    path('upload/', FileUploadView.as_view(), name='file-upload'),
+    path('files/<path:file_path>', serve_minio_file, name='serve_minio_file'),
     path('list/', NoteListView.as_view()),
     path('list/archive/<int:topic_id>/', ArchiveMessageListView.as_view()),
     path('list/unarchive/<int:topic_id>/', UnArchiveMessageListView.as_view()),
@@ -18,6 +20,6 @@ urlpatterns = [
     path('message/unarchive/<int:note_id>/', UnArchiveMessageView.as_view(), name='unarchive-message'),
     path('pp/', PublicNoteView.as_view()),
     path('<slug>/', NoteView.as_view()),
-
+    
 
 ]

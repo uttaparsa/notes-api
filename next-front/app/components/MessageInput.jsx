@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react';
-import { Form, Button, Modal, ProgressBar } from 'react-bootstrap';
+import { useState, useRef } from 'react';
+import { Form, Button, Modal } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
   const [fileUrl, setFileUrl] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [file, setFile] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef(null);
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
@@ -47,45 +47,31 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const uploadFile = async () => {
-    if (!file) return;
+  const handleFileUpload = async () => {
+    if (!uploadFile) return;
 
     setUploading(true);
-    setProgress(0);
-
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', uploadFile);
 
     try {
-      const response = await fetchWithAuth(`/api/note/${listSlug ? `${listSlug}/` : ''}`, {
+      const response = await fetchWithAuth('/api/note/upload/', {
         method: 'POST',
         body: formData,
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setProgress(percentCompleted);
-        },
       });
 
       if (!response.ok) {
-        throw new Error('File upload failed');
+        throw new Error('Failed to upload file');
       }
 
-      const data = await response.json();
-      setFileUrl(data.url);
-      setShowUploadModal(false);
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      // print stack trace
-      console.error(error.stack);
-      
-      handleApiError(error);
+      const { url } = await response.json();
+      setFileUrl(url);
+      // Don't close the modal here, just show the URL
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      handleApiError(err);
     } finally {
       setUploading(false);
-      setFile(null);
     }
   };
 
@@ -138,7 +124,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
             <Button
               variant="outline-light"
               className="h-80 px-1 shadow-none"
-              onClick={() => setShowUploadModal(true)}
+              onClick={() => setShowModal(true)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -158,24 +144,38 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         </Form>
       </div>
 
-      {/* File Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Upload File</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group>
             <Form.Label>Choose a file to upload</Form.Label>
-            <Form.Control type="file" onChange={handleFileChange} />
+            <Form.Control
+              type="file"
+              onChange={(e) => setUploadFile(e.target.files[0])}
+            />
           </Form.Group>
-          {uploading && <ProgressBar now={progress} label={`${progress}%`} />}
+          {fileUrl && (
+            <div className="mt-3">
+              <strong>Uploaded File URL:</strong>
+              <p className="text-break">{fileUrl}</p>
+            </div>
+          )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowUploadModal(false)}>
+          <Button variant="secondary" onClick={() => {
+            setShowModal(false);
+            setUploadFile(null);
+          }}>
             Close
           </Button>
-          <Button variant="primary" onClick={uploadFile} disabled={!file || uploading}>
-            Upload
+          <Button 
+            variant="primary" 
+            onClick={handleFileUpload}
+            disabled={!uploadFile || uploading}
+          >
+            {uploading ? 'Uploading...' : 'Upload'}
           </Button>
         </Modal.Footer>
       </Modal>

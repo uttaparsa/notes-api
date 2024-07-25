@@ -224,7 +224,91 @@ class NoteView(GenericAPIView, ListModelMixin):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from django.http import HttpResponse, Http404
 
+
+
+def serve_minio_file(request, file_path):
+
+    try:
+        # Get the file data from MinIO
+        data = minio_client.get_object(settings.MINIO_BUCKET_NAME, file_path)
+        
+        # Determine the content type (you might want to store this in your database)
+        content_type = 'application/octet-stream'  # default
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            content_type = f'image/{file_path.split(".")[-1].lower()}'
+        
+        # Create the response
+        response = HttpResponse(data.read(), content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{file_path.split("/")[-1]}"'
+        return response
+    except Exception as e:
+        raise Http404("File not found")
+    
+import traceback
+def serve_minio_file(request, file_path):
+
+    
+    # remove last slash
+    file_path = file_path[:-1]
+    file_path = file_path.replace("note/","")
+    print(f"file_path is {file_path}")
+    try:
+        # Get the file data from MinIO
+        data = minio_client.get_object(bucket_name=settings.MINIO_BUCKET_NAME, object_name=file_path)
+
+        
+        # Determine the content type (you might want to store this in your database)
+        content_type = 'application/octet-stream'  # default
+        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            content_type = f'image/{file_path.split(".")[-1].lower()}'
+        
+        # Create the response
+        response = HttpResponse(data.read(), content_type=content_type)
+        response['Content-Disposition'] = f'inline; filename="{file_path.split("/")[-1]}"'
+        return response
+    except Exception as e:
+        # print stack trace
+        
+        traceback.print_exc()
+        raise Http404("File not found")
+    
+
+class FileUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def save_to_minio(self, file, object_name):
+        try:
+            file_data = file.read()
+            file_size = len(file_data)
+            file_data = io.BytesIO(file_data)
+            
+            minio_client.put_object(
+                settings.MINIO_BUCKET_NAME,
+                object_name,
+                file_data,
+                file_size,
+                content_type=file.content_type
+            )
+            return f"{settings.MINIO_BUCKET_NAME}/{object_name}"
+        except S3Error as e:
+            print(f"Error saving to MinIO: {e}")
+            return None
+
+    def post(self, request, format=None):
+        if 'file' not in request.FILES:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        file = request.FILES['file']
+        object_name = f"uploads/{file.name}"
+        url = self.save_to_minio(file, object_name)
+
+        if url:
+            return Response({'url': url}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Failed to upload file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 class NoteListView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.NoteListSerializer
