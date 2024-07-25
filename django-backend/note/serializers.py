@@ -29,7 +29,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LocalMessage
-        fields = ["text", "pinned", "archived", "created_at", "updated_at", "source_links"]
+        fields = "__all__"
 
 
 

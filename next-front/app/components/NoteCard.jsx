@@ -349,25 +349,6 @@ const NoteCard = forwardRef(
                             <h6 className="card-subtitle mb-2 text-info">
                                 {note.sender_name}
                             </h6>
-                            {note.image && (
-                                <a href={note.image} target="_blank" rel="noopener noreferrer">
-                                    <img
-                                        src={note.image}
-                                        style={{ maxHeight: "200px" }}
-                                        alt="..."
-                                        className="img-thumbnail"
-                                    />
-                                </a>
-                            )}
-                            {note.file && (
-                                <a href={note.file}>
-                                    <div className="bg-info float-left p-1 rounded text-dark">
-                                        <span>
-                                            {note.file.split("/").pop()}
-                                        </span>
-                                    </div>
-                                </a>
-                            )}
                             <span
                                 className={`card-text text-light ${
                                     isRTL(note.text) ? "text-right" : ""

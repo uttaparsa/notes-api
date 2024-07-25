@@ -63,7 +63,7 @@ export default function NoteListPage({ params }) {
   };
 
   const addNewNote = (note) => {
-    noteListRef.current.addNewNote(note);
+    console.log("note saved!");
   };
 
   const showMessagesForDate = (selectedDate) => {
