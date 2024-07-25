@@ -66,7 +66,8 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const { url } = await response.json();
       setFileUrl(url);
-      setText(prevText => prevText + (prevText ? '\n' : '') + "[info]("+url+")");
+      const fileName = uploadFile.name;
+      setText(prevText => prevText + (prevText ? '\n' : '') + "["+ fileName+"]("+encodeURI(url)+")");
     } catch (err) {
       console.error('Error uploading file:', err);
       handleApiError(err);
