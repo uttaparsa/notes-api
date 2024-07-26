@@ -237,22 +237,32 @@ const NoteCard = forwardRef(
             }
         };
         const customRenderers = {
-            code: ({node, inline, className, children, ...props}) => {
+            code: ({ node, inline, className, children, ...props }) => {
               const match = /language-(\w+)/.exec(className || '');
               const lang = match ? match[1] : '';
               
-              // Only apply special styling to code blocks (not inline code)
               if (!inline) {
+                const codeString = String(children).replace(/\n$/, '');
+                
+                const copyCode = () => {
+                  copyTextToClipboard(codeString);
+                  showToast("Success", "Code copied to clipboard", 3000, "success");
+                };
+      
                 return (
-                  <pre className={styles.codeBlock}>
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  </pre>
+                  <div className={styles.codeBlockWrapper}>
+                    <pre className={styles.codeBlock}>
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    </pre>
+                    <Button onClick={copyCode}  variant="outline-primary" size="sm" className={styles.copyButton}>
+                      Copy
+                    </Button>
+                  </div>
                 );
               }
               
-              // For inline code or code without language specification, return as is
               return (
                 <code className={className} {...props}>
                   {children}
@@ -260,10 +270,9 @@ const NoteCard = forwardRef(
               );
             },
             img: (props) => <ResponsiveImage {...props} />
-            
           };
-        
-                
+      
+      
 
         return (
             <div className="card rounded bg-secondary mb-2">
