@@ -40,6 +40,16 @@ export function handleApiError(error) {
         }
       }));
     }
+    else if (status > 499) {
+      window.dispatchEvent(new CustomEvent('showToast', {
+        detail: {
+          title: "Error", 
+          body: "Server Error", 
+          delay: 5000,
+          variant: "danger",
+        }
+      }));
+    }
   } else if (error.request) {
     window.dispatchEvent(new CustomEvent('showToast', {
       detail: {
