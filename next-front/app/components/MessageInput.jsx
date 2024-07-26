@@ -11,7 +11,8 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   const [showModal, setShowModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef(null);
+  const [compressImage, setCompressImage] = useState(false)
+  
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
@@ -53,6 +54,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     setUploading(true);
     const formData = new FormData();
     formData.append('file', uploadFile);
+    formData.append('compress_image', compressImage);
 
     try {
       const response = await fetchWithAuth('/api/note/upload/', {
@@ -75,6 +77,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
       setUploading(false);
     }
   };
+
 
   return (
     <div dir="ltr">
@@ -135,6 +138,14 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
             <Form.Control
               type="file"
               onChange={(e) => setUploadFile(e.target.files[0])}
+            />
+          </Form.Group>
+          <Form.Group className="mt-3">
+            <Form.Check
+              type="checkbox"
+              label="Compress Image"
+              checked={compressImage}
+              onChange={(e) => setCompressImage(e.target.checked)}
             />
           </Form.Group>
           {fileUrl && (

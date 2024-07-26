@@ -1,5 +1,6 @@
 
 export function handleApiError(error) {
+  console.log("Error", error);
   if (error.response) {
     const status = error.response.status;
     if (status === 429) {
