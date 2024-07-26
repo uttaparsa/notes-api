@@ -145,7 +145,7 @@ export default function NotesPage() {
           id="show-archived"
           label="Show Archived"
           checked={showArchived}
-          onChange={(e) => setShowArchived(e.target.checked)}
+          onChange={(e) => setShowArchived(!showArchived)}
           className="text-light mb-3"
         />
 
