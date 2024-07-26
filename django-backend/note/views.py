@@ -117,7 +117,7 @@ def insert_links(note: LocalMessage):
     Link.objects.filter(source_message=note).delete()
     
     # find all markdown links with regex
-    links = re.findall(r'\[\]\(/message/\d+\/?\)', note.text)
+    links = re.findall(r'\[.*?\]\((/message/\d+/?)\)', note.text)
     print(f"links are {links}")
     for link in links:
         print(f"link is {link}")
