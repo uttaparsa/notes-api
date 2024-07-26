@@ -230,7 +230,7 @@ class FileUploadView(APIView):
             print(f"Error saving to MinIO: {e}")
             return None
 
-    def compress_image(self, image, max_size=(800, 600), quality=95):
+    def compress_image(self, image, max_size=(1600, 1200), quality=95):
         img = Image.open(image)
         
         # Convert RGBA to RGB if necessary
