@@ -59,7 +59,7 @@ def process_email(email_message):
     # Placeholder for database insertion
     LocalMessage.objects.create(text=body, list=LocalMessageList.objects.get(slug="default"))
 
-def check_for_new_emails(username, password, check_interval=60, reconnect_interval=3600):
+def check_for_new_emails(username, password, interval_seconds=60, reconnect_interval=3600):
     imap = None
     last_connect_time = 0
     
@@ -94,8 +94,8 @@ def check_for_new_emails(username, password, check_interval=60, reconnect_interv
             else:
                 print("No new emails")
             
-            time.sleep(check_interval)
+            time.sleep(interval_seconds)
         except Exception as e:
             print(f"An error occurred: {e}")
             imap = None  # Force reconnection on next iteration
-            time.sleep(check_interval)
+            time.sleep(interval_seconds)
