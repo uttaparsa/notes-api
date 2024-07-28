@@ -8,4 +8,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         username =  settings.EMAIL_USERNAME
         password = settings.EMAIL_PASSWORD
-        check_for_new_emails(username, password, interval_seconds=600)
+        check_for_new_emails(username, password, interval_seconds=600, reconnect_interval=3600)
