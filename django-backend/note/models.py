@@ -20,7 +20,6 @@ class LocalMessageList(models.Model):
         super(LocalMessageList, self).save(*args, **kwargs)
 
 
-
 def get_image_upload_path(instance, filename):
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     return f'images/{instance.id}-{random_str}-{filename}'
