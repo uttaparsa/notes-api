@@ -29,6 +29,7 @@ export default function NotesPage() {
     setDate(selectedDate);
     getRecords(selectedDate);
   };
+  
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");

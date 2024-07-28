@@ -62,8 +62,10 @@ export default function RootLayout({ children }) {
     const accessToken = localStorage.getItem('accessToken');
     setIsAuthenticated(!!accessToken);
 
-
-    getLists();
+    if (accessToken){
+      getLists();
+    }
+    
 
     const showWaitingModal = (e) => {
       console.log('showWaitingModal', e.detail);
