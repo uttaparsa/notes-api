@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
-import { Form, Pagination, FormCheck, Row, Col } from 'react-bootstrap';
+import { useState, useEffect } from 'react';
+import { Form, FormCheck, Row, Col } from 'react-bootstrap';
 import NoteList from "../components/NoteList";
 import MessageInput from '../components/MessageInput';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 import SearchBar from '../components/SearchBar';
 import { useRouter } from 'next/navigation';
+import PaginationComponent from '../components/PaginationComponent';
 
 export default function NotesPage() {
   const [notes, setNotes] = useState([]);
@@ -29,7 +30,6 @@ export default function NotesPage() {
     setDate(selectedDate);
     getRecords(selectedDate);
   };
-  
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");
@@ -74,6 +74,7 @@ export default function NotesPage() {
     sortNotes();
   };
 
+ 
   const sortNotes = () => {
     setNotes(prevNotes => [...prevNotes].sort((a, b) => {
       if (a.pinned === b.pinned) {
@@ -86,52 +87,8 @@ export default function NotesPage() {
     }));
   };
 
-
   const handleSearch = (searchText) => {
-    // Redirect to the SearchPage with the appropriate query parameters
     router.push(`/search/?q=${encodeURIComponent(searchText)}`);
-  };
-
-  const renderPagination = () => {
-    const totalPages = Math.ceil(totalCount / perPage);
-    let items = [];
-    const maxVisiblePages = 3;
-    const halfVisible = Math.floor(maxVisiblePages / 2);
-    
-    let startPage = Math.max(1, currentPage - halfVisible);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    items.push(
-      <Pagination.First key="first" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />,
-      <Pagination.Prev key="prev" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} />
-    );
-
-    if (startPage > 1) {
-      items.push(<Pagination.Ellipsis key="ellipsis-start" />);
-    }
-
-    for (let number = startPage; number <= endPage; number++) {
-      items.push(
-        <Pagination.Item key={number} active={number === currentPage} onClick={() => setCurrentPage(number)}>
-          {number}
-        </Pagination.Item>
-      );
-    }
-
-    if (endPage < totalPages) {
-      items.push(<Pagination.Ellipsis key="ellipsis-end" />);
-    }
-
-    items.push(
-      <Pagination.Next key="next" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} />,
-      <Pagination.Last key="last" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-    );
-
-    return <Pagination className="custom-pagination justify-content-center mt-3">{items}</Pagination>;
   };
 
   return (
@@ -139,7 +96,12 @@ export default function NotesPage() {
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
 
       <div dir="ltr">
-      {renderPagination()}
+        <PaginationComponent 
+          currentPage={currentPage} 
+          totalCount={totalCount} 
+          perPage={perPage} 
+          onPageChange={setCurrentPage}
+        />
         
         <FormCheck
           type="checkbox"

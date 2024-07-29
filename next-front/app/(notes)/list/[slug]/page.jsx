@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Form, Pagination, FormCheck } from 'react-bootstrap';
+import { Form, FormCheck } from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
 import SearchBar from '../../../components/SearchBar';
+import PaginationComponent from '../../../components/PaginationComponent';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
 
@@ -67,7 +68,6 @@ export default function NoteListPage({ params }) {
     sortNotes();
   };
 
-
   const sortNotes = () => {
     setNotes(prevNotes => [...prevNotes].sort((a, b) => {
       if (a.pinned === b.pinned) {
@@ -79,6 +79,7 @@ export default function NoteListPage({ params }) {
       return a.pinned < b.pinned ? 1 : -1;
     }));
   };
+
   const showMessagesForDate = (selectedDate) => {
     console.log("showing messages for date " + selectedDate);
     setDate(selectedDate);
@@ -86,59 +87,24 @@ export default function NoteListPage({ params }) {
   };
 
   const handleSearch = (searchText) => {
-    // Redirect to the SearchPage with the appropriate query parameters
     router.push(`/search/?q=${encodeURIComponent(searchText)}&list_slug=${slug}`);
   };
 
-  const renderPagination = () => {
-    const totalPages = Math.ceil(totalCount / perPage);
-    let items = [];
-    const maxVisiblePages = 3;
-    const halfVisible = Math.floor(maxVisiblePages / 2);
-    
-    let startPage = Math.max(1, currentPage - halfVisible);
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    items.push(
-      <Pagination.First key="first" onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />,
-      <Pagination.Prev key="prev" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} />
-    );
-
-    if (startPage > 1) {
-      items.push(<Pagination.Ellipsis key="ellipsis-start" />);
-    }
-
-    for (let number = startPage; number <= endPage; number++) {
-      items.push(
-        <Pagination.Item key={number} active={number === currentPage} onClick={() => setCurrentPage(number)}>
-          {number}
-        </Pagination.Item>
-      );
-    }
-
-    if (endPage < totalPages) {
-      items.push(<Pagination.Ellipsis key="ellipsis-end" />);
-    }
-
-    items.push(
-      <Pagination.Next key="next" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} />,
-      <Pagination.Last key="last" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-    );
-
-    return <Pagination className="custom-pagination justify-content-center mt-3">{items}</Pagination>;
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
-
 
   return (
     <div dir="ltr" className="bg-dark">
       <SearchBar onSearch={handleSearch} listSlug={slug} />
 
       <div dir="ltr">
-        {renderPagination()}
+        <PaginationComponent
+          currentPage={currentPage}
+          totalCount={totalCount}
+          perPage={perPage}
+          onPageChange={handlePageChange}
+        />
 
         <div className="d-flex row m-0 p-0">
           <div className="col-lg-2 mx-0 mb-3 mb-lg-0">
