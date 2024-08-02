@@ -397,7 +397,8 @@ const NoteCard = forwardRef(
                     <Modal.Body>
                         {noteLists.map(
                             (lst) =>
-                                lst.id !== note.list && (
+                                lst.id !== note.list &&
+                            !lst.archived && (
                                     <Button
                                         key={lst.id}
                                         variant="info"

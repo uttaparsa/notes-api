@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useContext, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { NoteListContext, ToastContext } from '../layout';
@@ -10,6 +9,9 @@ import { fetchWithAuth } from '../../lib/api';
 export default function CategoryList() {
   const [newListName, setNewListName] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [selectedList, setSelectedList] = useState(null);
+  const [renameListName, setRenameListName] = useState('');
   const noteLists = useContext(NoteListContext);
   const showToast = useContext(ToastContext);
 
@@ -20,7 +22,9 @@ export default function CategoryList() {
   const archiveTopic = async (topicId) => {
     try {
       window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: { title: 'Waiting for server response' } }));
-      const response = await fetchWithAuth(`/api/note/list/archive/${topicId}/`, { method: 'GET' });
+      const response = await fetchWithAuth(`/api/note/list/${topicId}/archive/`, {
+        method: 'GET',
+      });
       if (!response.ok) throw new Error('Failed to archive topic');
       window.dispatchEvent(new Event('hideWaitingModal'));
       window.dispatchEvent(new Event('updateNoteLists'));
@@ -33,7 +37,9 @@ export default function CategoryList() {
   const unArchiveTopic = async (topicId) => {
     try {
       window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: { title: 'Waiting for server response' } }));
-      const response = await fetchWithAuth(`/api/note/list/unarchive/${topicId}/`, { method: 'GET' });
+      const response = await fetchWithAuth(`/api/note/list/${topicId}/unarchive/`, {
+        method: 'GET',
+      });
       if (!response.ok) throw new Error('Failed to unarchive topic');
       window.dispatchEvent(new Event('hideWaitingModal'));
       window.dispatchEvent(new Event('updateNoteLists'));
@@ -61,6 +67,30 @@ export default function CategoryList() {
     }
   };
 
+  const renameList = async () => {
+    try {
+      const response = await fetchWithAuth(`/api/note/list/${selectedList.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: renameListName }),
+      });
+      if (!response.ok) throw new Error('Failed to rename list');
+      window.dispatchEvent(new Event('updateNoteLists'));
+      setShowRenameModal(false);
+      showToast('Success', 'List renamed', 3000, 'success');
+    } catch (err) {
+      showToast('Error', 'Failed to rename list', 3000, 'danger');
+    }
+  };
+
+  const openRenameModal = (list) => {
+    setSelectedList(list);
+    setRenameListName(list.name);
+    setShowRenameModal(true);
+  };
+
   return (
     <div className="container">
       <div className="py-4">
@@ -81,7 +111,7 @@ export default function CategoryList() {
                 ) : (
                   <Button variant="light" size="sm" onClick={() => archiveTopic(lst.id)}>Archive</Button>
                 )}
-                <Button variant="info" size="sm" className="ml-2">Rename</Button>
+                <Button variant="info" size="sm" className="ml-2" onClick={() => openRenameModal(lst)}>Rename</Button>
               </div>
             </li>
           </span>
@@ -108,6 +138,30 @@ export default function CategoryList() {
           </Button>
           <Button variant="primary" onClick={sendNewListName}>
             Create
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showRenameModal} onHide={() => setShowRenameModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename List</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="d-flex flex-column">
+            <Form.Label className="col-form-label align-self-start">New List Name</Form.Label>
+            <Form.Control
+              type="text"
+              value={renameListName}
+              onChange={(e) => setRenameListName(e.target.value)}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRenameModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={renameList}>
+            Rename
           </Button>
         </Modal.Footer>
       </Modal>

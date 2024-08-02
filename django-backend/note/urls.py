@@ -1,15 +1,19 @@
 from django.urls import path
 
-from .views import NoteListView, NoteView, PinMessageView, UnPinMessageView, SingleNoteView, UnArchiveMessageView, \
-    ArchiveMessageView, MoveMessageView, SearchResultsView, PublicNoteView, ArchiveMessageListView, \
-    UnArchiveMessageListView, FileUploadView, serve_minio_file
+from .views.file_view import FileUploadView, serve_minio_file
+from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView
+from .views.search_view import SearchResultsView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView
+from .views.public_note_view import PublicNoteView
+
 
 urlpatterns = [
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('files/<path:file_path>', serve_minio_file, name='serve_minio_file'),
-    path('list/', NoteListView.as_view()),
-    path('list/archive/<int:topic_id>/', ArchiveMessageListView.as_view()),
-    path('list/unarchive/<int:topic_id>/', UnArchiveMessageListView.as_view()),
+    path('list/<int:pk>/archive/', ArchiveMessageListView.as_view(), name='archive-list'),
+    path('list/<int:pk>/unarchive/', UnArchiveMessageListView.as_view(), name='unarchive-list'),
+    path('list/<int:pk>/', NoteListView.as_view(), name='note-list-detail'),
+    path('list/', NoteListView.as_view(), name='note-list'),
     path('search/', SearchResultsView.as_view()),
     path('', NoteView.as_view()),
     path('message/<int:note_id>/', SingleNoteView.as_view()),
