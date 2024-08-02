@@ -88,7 +88,7 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
           <div className="col-xl-12 d-flex flex-vertical flex-column">
             {notes.map(item => (
               <div key={item.id} id="notesListt">
-                {(showArchived === 'show' || !item.archived) && (
+                {(showArchived  || !item.archived) && (
                   <NoteCard
                     ref={el => noteRefs.current[item.id] = el}
                     note={item}

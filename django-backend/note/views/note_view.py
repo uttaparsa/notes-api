@@ -107,6 +107,7 @@ class NoteView(GenericAPIView, ListModelMixin):
             archive_lst = LocalMessageList.objects.filter(slug='archive').first()
             archive_lst_id = archive_lst.id if archive_lst else -1
             if slug == "All":
+                # exclude if list is archived
                 return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned', '-created_at')
             else:
                 lst = LocalMessageList.objects.get(slug=slug)

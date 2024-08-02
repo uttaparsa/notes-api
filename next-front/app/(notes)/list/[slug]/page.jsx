@@ -120,7 +120,11 @@ export default function NoteListPage({ params }) {
               id="show-archived"
               label="Show Archived"
               checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
+              onChange={(e) => {
+                console.log("e.target.checked is " + e.target.checked);                                                 
+                setShowArchived(e.target.checked)
+
+              }}
               className="text-light"
             />
           </div>
@@ -131,7 +135,6 @@ export default function NoteListPage({ params }) {
               notes={notes}
               isBusy={isBusy}
               showArchived={showArchived}
-              setShowArchived={setShowArchived}
               refreshNotes={getRecords}
             />
           </div>
