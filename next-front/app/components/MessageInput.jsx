@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react';
-import { Form, Button, Modal } from 'react-bootstrap';
+import { Form, Button, Modal, Spinner } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
@@ -14,12 +14,14 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   const [compressImage, setCompressImage] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
       sendMessage();
     }
   };
+
 
   const sendMessage = async () => {
     if (!text.trim()) return;
@@ -53,6 +55,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     if (!file) return;
 
     setUploading(true);
+    setUploadProgress('Uploading...');
     const formData = new FormData();
     formData.append('file', file);
     formData.append('compress_image', compressImage);
@@ -69,16 +72,19 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const { url } = await response.json();
       setFileUrl(url);
-      const fileName = file.name;
-      setText(prevText => prevText + (prevText ? '\n' : '') + `[${fileName}](${encodeURI(url)})`);
+      setText(prevText => prevText + (prevText ? '\n' : '') + `[${file.name}](${encodeURI(url)})`);
+      setUploadProgress('Upload complete!');
     } catch (err) {
       console.error('Error uploading file:', err);
       handleApiError(err);
+      setUploadProgress('Upload failed');
     } finally {
       setUploading(false);
       setShowModal(false);
+      setTimeout(() => setUploadProgress(null), 3000); // Clear the progress message after 3 seconds
     }
   };
+
 
   const handleDrag = useCallback((e) => {
     e.preventDefault();
@@ -110,12 +116,15 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     fileInputRef.current.click();
   };
 
+
   const handlePaste = useCallback((e) => {
     const items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1) {
         const blob = items[i].getAsFile();
-        handleFileUpload(blob);
+        const pastedFileName = `pasted_image_${new Date().toISOString().replace(/[-:]/g, '')}.png`;
+        const file = new File([blob], pastedFileName, { type: blob.type });
+        handleFileUpload(file);
         break;
       }
     }
@@ -135,7 +144,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         }}
       >
         <Form onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
-          <div className="d-flex">
+          <div className="d-flex align-items-center">
             <Form.Control
               as="textarea"
               id="message_text"
@@ -147,10 +156,16 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               onKeyDown={handleEnter}
               onPaste={handlePaste}
             />
+            {uploadProgress && (
+              <div className="ml-2 d-flex align-items-center">
+                <Spinner animation="border" size="sm" className="mr-2" />
+                <span>{uploadProgress}</span>
+              </div>
+            )}
             <input type="hidden" name="replyTo" id="replyTo" value="" />
             <Button
               variant="outline-light"
-              className="h-80 px-1 shadow-none"
+              className="h-80 px-1 shadow-none ml-2"
               onClick={() => setShowModal(true)}
             >
               <svg
