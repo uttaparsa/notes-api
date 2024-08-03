@@ -9,6 +9,8 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
   const [fileUrl, setFileUrl] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [compressImage, setCompressImage] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
