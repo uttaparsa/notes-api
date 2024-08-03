@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Form, Button, Modal } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
@@ -9,10 +9,9 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
   const [fileUrl, setFileUrl] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [compressImage, setCompressImage] = useState(false)
-  
+  const [compressImage, setCompressImage] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
@@ -21,7 +20,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   };
 
   const sendMessage = async () => {
-    if (!text.trim()) return; // Don't send empty messages
+    if (!text.trim()) return;
 
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Creating note' }));
 
@@ -48,12 +47,12 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
-  const handleFileUpload = async () => {
-    if (!uploadFile) return;
+  const handleFileUpload = async (file) => {
+    if (!file) return;
 
     setUploading(true);
     const formData = new FormData();
-    formData.append('file', uploadFile);
+    formData.append('file', file);
     formData.append('compress_image', compressImage);
 
     try {
@@ -68,16 +67,57 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const { url } = await response.json();
       setFileUrl(url);
-      const fileName = uploadFile.name;
-      setText(prevText => prevText + (prevText ? '\n' : '') + "["+ fileName+"]("+encodeURI(url)+")");
+      const fileName = file.name;
+      setText(prevText => prevText + (prevText ? '\n' : '') + `[${fileName}](${encodeURI(url)})`);
     } catch (err) {
       console.error('Error uploading file:', err);
       handleApiError(err);
     } finally {
       setUploading(false);
+      setShowModal(false);
     }
   };
 
+  const handleDrag = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  const handleChange = useCallback((e) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  }, []);
+
+  const onButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const blob = items[i].getAsFile();
+        handleFileUpload(blob);
+        break;
+      }
+    }
+  }, []);
 
   return (
     <div dir="ltr">
@@ -103,6 +143,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleEnter}
+              onPaste={handlePaste}
             />
             <input type="hidden" name="replyTo" id="replyTo" value="" />
             <Button
@@ -128,17 +169,41 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         </Form>
       </div>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>Upload File</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form.Group>
-            <Form.Label>Choose a file to upload</Form.Label>
-            <Form.Control
-              type="file"
-              onChange={(e) => setUploadFile(e.target.files[0])}
-            />
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              style={{
+                border: `2px dashed ${dragActive ? 'blue' : 'gray'}`,
+                borderRadius: '5px',
+                padding: '20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                minHeight: '200px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onClick={onButtonClick}
+            >
+              <div>
+                <p>Drag and drop your file here or click to select a file</p>
+                <p>You can also paste an image from your clipboard</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
           </Form.Group>
           <Form.Group className="mt-3">
             <Form.Check
@@ -161,13 +226,6 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
             setUploadFile(null);
           }}>
             Close
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleFileUpload}
-            disabled={!uploadFile || uploading}
-          >
-            {uploading ? 'Uploading...' : 'Upload'}
           </Button>
         </Modal.Footer>
       </Modal>
