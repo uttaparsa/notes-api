@@ -181,7 +181,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     # 'TOKEN_USER_CLASS': 'ava.authentication.user.CustomizedTokenUser'
     # 'ROTATE_REFRESH_TOKENS': False,
@@ -213,5 +213,5 @@ SIMPLE_JWT = {
 }
 
 if DEBUG:
-    SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'] = timedelta(weeks=10)
-    SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'] = timedelta(weeks=100)
+    SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'] = timedelta(seconds=10)
+    SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'] = timedelta(days=120)
