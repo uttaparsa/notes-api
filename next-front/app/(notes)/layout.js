@@ -8,10 +8,12 @@ import { Inter } from 'next/font/google'
 import BootstrapClient from '../components/BootstrapClient'
 import TopNavbar from '../components/TopNavbar'
 import { fetchWithAuth } from '../lib/api';
+import { logout } from '../lib/auth';
 import { Toast, ToastContainer } from 'react-bootstrap';
 import { handleApiError } from '../utils/errorHandler';
 import { Modal, Spinner } from 'react-bootstrap';
 import styles from './layout.module.css';
+
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -30,10 +32,10 @@ export default function RootLayout({ children }) {
   const [toast, setToast] = useState({ show: false, title: '', body: '', delay: 3000, variant: 'primary' });
   const router = useRouter();
 
-  const logout = useCallback(async () => {
+  const handleLogout = useCallback(async () => {
     // Implement your logout logic here
     // For example:
-    // await auth.logout();
+    await logout();
     
     router.push('/login');
   }, [router]);
@@ -107,7 +109,7 @@ export default function RootLayout({ children }) {
       <NoteListContext.Provider value={noteLists}>
           <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
             <ToastContext.Provider value={showToast}>
-              <TopNavbar isLoggedIn={isAuthenticated} onLogout={logout} />
+              <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
               <div className="bg-dark h-100" style={{minHeight: '100vh'}}>
                 {children}
                 <BootstrapClient />

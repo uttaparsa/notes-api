@@ -31,3 +31,23 @@ export async function login(username, password) {
     const data = await response.json();
     return data;
   }
+
+  export function logout() {
+    // Clear tokens from storage
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    
+    // If you're using cookies, you'd clear them here
+    // document.cookie = 'accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    // document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  
+    // Optionally, make a call to the backend to invalidate the token
+    // This depends on your backend implementation
+    // await fetch('http://localhost:8000/api/logout/', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+    //   }
+    // });
+  }
+  

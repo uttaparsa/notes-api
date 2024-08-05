@@ -1,18 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 
-export default function NavbarComponent({ isLoggedIn }) {
-  const router = useRouter();
-
-  const logout = async () => {
-    // Implement your logout logic here
-    // For example:
-    // await fetch('/api/logout', { method: 'POST' });
-    router.push('/login');
-  };
+export default function NavbarComponent({ isLoggedIn, onLogout }) {
 
   return (
     <Navbar className='px-3'  bg="primary" variant="dark" expand="lg">
@@ -32,7 +23,7 @@ export default function NavbarComponent({ isLoggedIn }) {
                 </Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link onClick={logout}>Logout</Nav.Link>
+                <Nav.Link onClick={onLogout}>Logout</Nav.Link>
               </Nav.Item>
             </Nav>
           </Navbar.Collapse>
