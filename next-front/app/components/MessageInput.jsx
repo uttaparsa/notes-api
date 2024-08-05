@@ -1,27 +1,21 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react';
-import { Form, Button, Modal, Spinner } from 'react-bootstrap';
+import { useState, useCallback, useRef } from 'react';
+import { Form, Button } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
+import FileUploadComponent from './FileUploadComponent';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
-  const [fileUrl, setFileUrl] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [compressImage, setCompressImage] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const fileInputRef = useRef(null);
-  const [uploadProgress, setUploadProgress] = useState(null);
+  const textareaRef = useRef(null);
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
       sendMessage();
     }
   };
-
 
   const sendMessage = async () => {
     if (!text.trim()) return;
@@ -51,14 +45,30 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
-  const handleFileUpload = async (file) => {
-    if (!file) return;
+  const handlePaste = useCallback(async (e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const blob = items[i].getAsFile();
+        await handleImageUpload(blob);
+        break;
+      }
+    }
+  }, []);
 
+  const handleImageUpload = async (file) => {
     setUploading(true);
-    setUploadProgress('Uploading...');
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('compress_image', compressImage);
+    
+    // Generate a unique name for the image
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+    const uniqueFileName = `pasted_image_${timestamp}.png`;
+    
+    // Create a new File object with the unique name
+    const renamedFile = new File([file], uniqueFileName, { type: file.type });
+    
+    formData.append('file', renamedFile);
 
     try {
       const response = await fetchWithAuth('/api/note/upload/', {
@@ -67,68 +77,23 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error('Failed to upload image');
       }
 
       const { url } = await response.json();
-      setFileUrl(url);
-      setText(prevText => prevText + (prevText ? '\n' : '') + `[${file.name}](${encodeURI(url)})`);
-      setUploadProgress('Upload complete!');
+      const imageMarkdown = `![${uniqueFileName}](${url})`;
+      setText(prevText => prevText + (prevText ? '\n' : '') + imageMarkdown);
     } catch (err) {
-      console.error('Error uploading file:', err);
+      console.error('Error uploading image:', err);
       handleApiError(err);
-      setUploadProgress('Upload failed');
     } finally {
       setUploading(false);
-      setShowModal(false);
-      setTimeout(() => setUploadProgress(null), 3000); // Clear the progress message after 3 seconds
     }
   };
 
-
-  const handleDrag = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileUpload(e.dataTransfer.files[0]);
-    }
-  }, []);
-
-  const handleChange = useCallback((e) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      handleFileUpload(e.target.files[0]);
-    }
-  }, []);
-
-  const onButtonClick = () => {
-    fileInputRef.current.click();
+  const handleFileUpload = (url) => {
+    setText(prevText => prevText + (prevText ? '\n' : '') + url);
   };
-
-
-  const handlePaste = useCallback((e) => {
-    const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        const blob = items[i].getAsFile();
-        const pastedFileName = `pasted_image_${new Date().toISOString().replace(/[-:]/g, '')}.png`;
-        const file = new File([blob], pastedFileName, { type: blob.type });
-        handleFileUpload(file);
-        break;
-      }
-    }
-  }, []);
 
   return (
     <div dir="ltr">
@@ -155,97 +120,21 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleEnter}
               onPaste={handlePaste}
+              ref={textareaRef}
+              disabled={uploading}
             />
-            {uploadProgress && (
-              <div className="ml-2 d-flex align-items-center">
-                <Spinner animation="border" size="sm" className="mr-2" />
-                <span>{uploadProgress}</span>
-              </div>
-            )}
             <input type="hidden" name="replyTo" id="replyTo" value="" />
-            <Button
-              variant="outline-light"
-              className="h-80 px-1 shadow-none ml-2"
-              onClick={() => setShowModal(true)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="32"
-                height="32"
-                fill="currentColor"
-                className="bi bi-paperclip"
-                viewBox="0 0 16 16"
-              >
-                <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z" />
-              </svg>
-            </Button>
-            <Button type="submit" variant="primary" className="mr-2 ml-1">
+            <FileUploadComponent
+              onFileUploaded={handleFileUpload}
+              initialText={text}
+              onTextChange={setText}
+            />
+            <Button type="submit" variant="primary" className="mr-2 ml-1" disabled={uploading}>
               Send
             </Button>
           </div>
         </Form>
       </div>
-
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Upload File</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group>
-            <div
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              style={{
-                border: `2px dashed ${dragActive ? 'blue' : 'gray'}`,
-                borderRadius: '5px',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                minHeight: '200px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onClick={onButtonClick}
-            >
-              <div>
-                <p>Drag and drop your file here or click to select a file</p>
-                <p>You can also paste an image from your clipboard</p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleChange}
-                  style={{ display: 'none' }}
-                />
-              </div>
-            </div>
-          </Form.Group>
-          <Form.Group className="mt-3">
-            <Form.Check
-              type="checkbox"
-              label="Compress Image"
-              checked={compressImage}
-              onChange={(e) => setCompressImage(e.target.checked)}
-            />
-          </Form.Group>
-          {fileUrl && (
-            <div className="mt-3">
-              <strong>Uploaded File URL:</strong>
-              <p className="text-break">{fileUrl}</p>
-            </div>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => {
-            setShowModal(false);
-            setUploadFile(null);
-          }}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </div>
   );
 }

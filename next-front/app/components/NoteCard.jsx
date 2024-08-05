@@ -19,7 +19,7 @@ import NoteCardBottomBar from "./NoteCardBottomBar";
 
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
-
+import FileUploadComponent from './FileUploadComponent'
 
 const ResponsiveImage = ({ src, alt, title }) => {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
@@ -125,12 +125,6 @@ const NoteCard = forwardRef(
             window.dispatchEvent(new CustomEvent("hideWaitingModal"));
         };
 
-        const editNote = () => {
-            const newText = editMessageTextAreaRef.current.value;
-            onEditNote(note.id, newText);
-
-            setShowEditModal(false);
-        };
 
         const processNoteText = (note) => {
             return singleView || note.text.length < 1000 || isExpanded === true
@@ -272,7 +266,19 @@ const NoteCard = forwardRef(
             img: (props) => <ResponsiveImage {...props} />
           };
       
-      
+          const editNote = () => {
+            const newText = editMessageTextAreaRef.current.value;
+            onEditNote(note.id, newText);
+            setShowEditModal(false);
+          };
+        
+          const handleFileUpload = (url) => {
+            const currentText = editMessageTextAreaRef.current.value;
+            editMessageTextAreaRef.current.value = currentText + (currentText ? '\n' : '') + url;
+            updateTextAreaHeight(editMessageTextAreaRef.current);
+          };
+
+          
 
         return (
             <div className="card rounded bg-secondary mb-2">
@@ -448,79 +454,84 @@ const NoteCard = forwardRef(
                         </Button>
                     </Modal.Footer>
                 </Modal>
-
+          
+          
                 <Modal
-                    show={showEditModal}
-                    onHide={() => setShowEditModal(false)}
-                    size="xl"
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        size="xl"
+      >
+        <Modal.Body>
+          <div className="mb-5 mt-0 px-2 d-flex justify-content-end">
+            <FileUploadComponent
+              onFileUploaded={handleFileUpload}
+              initialText={editMessageTextAreaRef.current?.value || ''}
+              onTextChange={(newText) => {
+                if (editMessageTextAreaRef.current) {
+                  editMessageTextAreaRef.current.value = newText;
+                  updateTextAreaHeight(editMessageTextAreaRef.current);
+                }
+              }}
+              variant="outline-dark"
+            />
+            <Button
+              variant="outline-dark"
+              size="sm"
+              className="ml-2"
+              onClick={toggleEditorRtl}
+            >
+              <span>
+                <svg
+                  ref={rtlIcon}
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="24px"
+                  viewBox="0 0 24 24"
+                  width="24px"
+                  fill="#000000"
                 >
-                    <Modal.Body>
-                        <div className="mb-5 mt-0 px-2">
-                            <Button
-                                variant="outline-dark"
-                                size="sm"
-                                className="float-right"
-                                onClick={toggleEditorRtl}
-                            >
-                                {
-                                    <span>
-                                        <svg
-                                            ref={rtlIcon}
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            height="24px"
-                                            viewBox="0 0 24 24"
-                                            width="24px"
-                                            fill="#000000"
-                                        >
-                                            <path
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
-                                        </svg>
-                                        <svg
-                                            ref={ltrIcon}
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            height="24px"
-                                            style={{ display: "none" }}
-                                            viewBox="0 0 24 24"
-                                            width="24px"
-                                            fill="#000000"
-                                        >
-                                            <path
-                                                d="M0 0h24v24H0z"
-                                                fill="none"
-                                            />
-                                            <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
-                                        </svg>
-                                    </span>
-                                }
-                            </Button>
-                        </div>
-                        <textarea
-                            ref={editMessageTextAreaRef}
-                            defaultValue={note.text}
-                            onKeyDown={handleEnter}
-                            onChange={handleChange}
-                            className="w-100"
-                            style={{
-                                whiteSpace: "pre-line",
-                                maxHeight: "60vh",
-                            }}
-                        />
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button
-                            variant="secondary"
-                            onClick={() => setShowEditModal(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button variant="primary" onClick={editNote}>
-                            Save
-                        </Button>
-                    </Modal.Footer>
-                </Modal>
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
+                </svg>
+                <svg
+                  ref={ltrIcon}
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="24px"
+                  style={{ display: "none" }}
+                  viewBox="0 0 24 24"
+                  width="24px"
+                  fill="#000000"
+                >
+                  <path d="M0 0h24v24H0z" fill="none" />
+                  <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
+                </svg>
+              </span>
+            </Button>
+          </div>
+          <textarea
+            ref={editMessageTextAreaRef}
+            defaultValue={note.text}
+            onKeyDown={handleEnter}
+            onChange={handleChange}
+            className="w-100"
+            style={{
+              whiteSpace: "pre-line",
+              maxHeight: "60vh",
+            }}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowEditModal(false)}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={editNote}>
+            Save
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
             </div>
         );
     }
