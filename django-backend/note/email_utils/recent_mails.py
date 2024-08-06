@@ -103,9 +103,12 @@ def check_for_new_emails(username, password, interval_seconds=60, reconnect_inte
                     save_last_processed_id(email_id)
             else:
                 print("No new emails")
-            
+            # print now and when next iteration will be
+            print(f"Last checked: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}, next check in {interval_seconds} seconds")
             time.sleep(interval_seconds)
         except Exception as e:
             print(f"An error occurred: {e}")
             imap = None  # Force reconnection on next iteration
+            
+
             time.sleep(interval_seconds)
