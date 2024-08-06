@@ -88,7 +88,10 @@ def check_for_new_emails(username, password, interval_seconds=60, reconnect_inte
                     for response in msg:
                         if isinstance(response, tuple):
                             email_message = email.message_from_bytes(response[1])
-                            process_email(email_message)
+                            try:
+                                process_email(email_message)
+                            except Exception as e:
+                                print(f"An error occurred while processing email {email_id}: {e}")
                     
                     save_last_processed_id(email_id)
             else:
