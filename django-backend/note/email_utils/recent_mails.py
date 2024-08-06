@@ -29,12 +29,18 @@ def save_last_processed_id(email_id):
 
 def process_email(email_message):
     subject, encoding = decode_header(email_message["Subject"])[0]
+
     if isinstance(subject, bytes):
         subject = subject.decode(encoding if encoding else "utf-8")
     
     sender, encoding = decode_header(email_message.get("From"))[0]
     if isinstance(sender, bytes):
         sender = sender.decode(encoding if encoding else "utf-8")
+
+    # return if title is not "Note"
+    if subject != "Note":
+        print(f"Subject: {subject} is not 'Note', skipping email")
+        return
     
     date_tuple = email.utils.parsedate_tz(email_message["Date"])
     if date_tuple:
@@ -88,6 +94,7 @@ def check_for_new_emails(username, password, interval_seconds=60, reconnect_inte
                     for response in msg:
                         if isinstance(response, tuple):
                             email_message = email.message_from_bytes(response[1])
+
                             try:
                                 process_email(email_message)
                             except Exception as e:
