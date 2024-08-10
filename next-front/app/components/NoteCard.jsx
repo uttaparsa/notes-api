@@ -216,7 +216,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const getMetadata = async (url) => {
     const videoUrl = encodeURIComponent(url);
-    const requestUrl = `http://youtube.com/oembed?url=${videoUrl}&format=json`;
+    const requestUrl = `https://youtube.com/oembed?url=${videoUrl}&format=json`;
     
     try {
       const response = await fetch(requestUrl);
