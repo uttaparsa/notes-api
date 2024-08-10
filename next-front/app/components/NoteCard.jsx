@@ -242,11 +242,14 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   
     return (
       <span className={styles.youtubeLink}>
-        <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
-        {' '}
+        <a href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeUrl}>
+          {url}
+        </a>
         <span className={styles.youtubeTitleWrapper}>
           <span className={styles.youtubeIcon}>▶</span>
-          <span className={styles.youtubeTitle}>{metadata.title}</span>
+          <span className={styles.youtubeTitle} title={metadata.title}>
+            {metadata.title}
+          </span>
         </span>
       </span>
     );
