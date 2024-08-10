@@ -214,6 +214,44 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setEditText(prevText => prevText);
   };
 
+  const getMetadata = async (url) => {
+    const videoUrl = encodeURIComponent(url);
+    const requestUrl = `http://youtube.com/oembed?url=${videoUrl}&format=json`;
+    
+    try {
+      const response = await fetch(requestUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching YouTube metadata:", error);
+      return null;
+    }
+  };
+  
+  const YouTubeLink = ({ url }) => {
+    const [metadata, setMetadata] = useState(null);
+  
+    useEffect(() => {
+      getMetadata(url).then(data => setMetadata(data));
+    }, [url]);
+  
+    if (!metadata) return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
+  
+    return (
+      <span className={styles.youtubeLink}>
+        <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
+        {' '}
+        <span className={styles.youtubeTitleWrapper}>
+          <span className={styles.youtubeIcon}>▶</span>
+          <span className={styles.youtubeTitle}>{metadata.title}</span>
+        </span>
+      </span>
+    );
+  };
+
   const customRenderers = {
     code: ({ node, inline, className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className || '');
@@ -246,6 +284,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           {children}
         </code>
       );
+    },
+    a: ({ href, children }) => {
+      if (href.includes('youtube.com') || href.includes('youtu.be')) {
+        return <YouTubeLink url={href} />;
+      }
+      return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
     },
     img: (props) => <ResponsiveImage {...props} />
   };
