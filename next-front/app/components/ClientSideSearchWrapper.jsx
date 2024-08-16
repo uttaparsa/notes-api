@@ -7,20 +7,23 @@ import NoteList from './NoteList';
 import SearchBar from './SearchBar';
 import PaginationComponent from './PaginationComponent';
 import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler'
+import { handleApiError } from '../utils/errorHandler';
 
 export default function ClientSideSearchWrapper() {
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [listSlug, setListSlug] = useState('All');
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const perPage = 20;
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = searchParams.get('page');
+    return page ? parseInt(page) : 1;
+  });
 
   const getRecords = useCallback(async (query, slug, page) => {
     if (!query) return;
@@ -48,12 +51,16 @@ export default function ClientSideSearchWrapper() {
   useEffect(() => {
     const query = searchParams.get('q');
     const slug = searchParams.get('list_slug') || 'All';
+    const page = searchParams.get('page');
     if (query) {
       setSearchText(query);
       setListSlug(slug);
-      getRecords(query, slug, currentPage);
+      if (page) {
+        setCurrentPage(parseInt(page));
+      }
+      getRecords(query, slug, page || currentPage);
     }
-  }, [searchParams, currentPage, getRecords]);
+  }, [searchParams, getRecords]);
 
   const handleSearch = useCallback((newSearchText, newListSlug) => {
     if (newSearchText !== searchText || newListSlug !== listSlug) {
@@ -68,13 +75,19 @@ export default function ClientSideSearchWrapper() {
     }
   }, [searchText, listSlug, router]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    let url = `/search/?q=${encodeURIComponent(searchText)}`;
+    if (listSlug && listSlug !== 'All') {
+      url += `&list_slug=${encodeURIComponent(listSlug)}`;
+    }
+    url += `&page=${newPage}`;
+    router.push(url, undefined, { shallow: true });
   };
 
   return (
     <div dir="ltr" className="bg-dark">
-      <SearchBar 
+      <SearchBar
         onSearch={handleSearch}
         initialSearchText={searchText}
         initialListSlug={listSlug}
@@ -93,9 +106,9 @@ export default function ClientSideSearchWrapper() {
           label="Show Hidden"
           className="text-light"
         />
-        <NoteList 
-          notes={notes} 
-          isBusy={isBusy} 
+        <NoteList
+          notes={notes}
+          isBusy={isBusy}
           showHidden={showHidden}
           refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
         />

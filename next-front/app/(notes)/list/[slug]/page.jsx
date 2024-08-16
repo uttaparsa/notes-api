@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Form, FormCheck } from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
@@ -13,14 +13,26 @@ import { fetchWithAuth } from '@/app/lib/api';
 export default function NoteListPage({ params }) {
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const noteListRef = useRef();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const perPage = 20;
   const { slug } = params;
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = searchParams.get('page');
+    return page ? parseInt(page) : 1;
+  });
+
+  useEffect(() => {
+    const page = searchParams.get('page');
+    if (page) {
+      setCurrentPage(parseInt(page));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     getRecords();
@@ -90,8 +102,9 @@ export default function NoteListPage({ params }) {
     router.push(`/search/?q=${encodeURIComponent(searchText)}&list_slug=${slug}`);
   };
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    router.push(`?page=${newPage}`, undefined, { shallow: true });
   };
 
   return (
@@ -123,7 +136,6 @@ export default function NoteListPage({ params }) {
               onChange={(e) => {
                 console.log("e.target.checked is " + e.target.checked);                                                 
                 setShowHidden(e.target.checked)
-
               }}
               className="text-light"
             />
