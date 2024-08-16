@@ -155,7 +155,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     }
   };
 
-  const archiveMessage = async () => {
+  const hideMessage = async () => {
     try {
       const response = await fetchWithAuth(`/api/note/message/archive/${note.id}/`);
       if (!response.ok) {
@@ -168,7 +168,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     }
   };
 
-  const unArchiveMessage = async () => {
+  const unHideMessage = async () => {
     try {
       const response = await fetchWithAuth(`/api/note/message/unarchive/${note.id}/`);
       if (!response.ok) {
@@ -332,9 +332,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                       <Dropdown.Item onClick={unPinMessage}>Unpin</Dropdown.Item>
                     )}
                     {!note.archived ? (
-                      <Dropdown.Item onClick={archiveMessage}>Archive</Dropdown.Item>
+                      <Dropdown.Item onClick={hideMessage}>Hide</Dropdown.Item>
                     ) : (
-                      <Dropdown.Item onClick={unArchiveMessage}>UnArchive</Dropdown.Item>
+                      <Dropdown.Item onClick={unHideMessage}>UnHide</Dropdown.Item>
                     )}
                   </>
                 )}
