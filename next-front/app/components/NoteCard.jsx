@@ -321,7 +321,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
         return <YouTubeLink url={href} />;
       }
-      return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
+      return <a href={href} rel="noopener noreferrer">{children}</a>;
     },
     img: (props) => <ResponsiveImage {...props} />
   };
