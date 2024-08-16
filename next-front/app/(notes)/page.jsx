@@ -117,7 +117,6 @@ export default function NotesPage() {
   }, []);
 
   return (
-    <Suspense>
     <div dir="ltr" className="bg-dark">
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
 
@@ -166,7 +165,6 @@ export default function NotesPage() {
 
       <MessageInput onNoteSaved={addNewNote} listSlug={''} />
     </div>
-    </Suspense>
 
   );
 }
