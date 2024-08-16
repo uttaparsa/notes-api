@@ -51,7 +51,7 @@ const ResponsiveImage = ({ src, alt, title }) => {
 
   
 
-const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote }, ref) => {
+const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -117,6 +117,13 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     window.dispatchEvent(new CustomEvent("hideWaitingModal"));
   };
 
+
+  const copyNoteLink = () => {
+    const noteLink = `(/message/${note.id})`;
+    copyTextToClipboard(noteLink);
+    showToast("Success", "Note link copied to clipboard", 3000, "success");
+  };
+
   const editNote = () => {
     onEditNote(note.id, editText);
     setShowEditModal(false);
@@ -127,7 +134,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       ? note.text
       : note.text.substring(0, 1000);
   };
-
   const pinMessage = async () => {
     try {
       const response = await fetchWithAuth(`/api/note/message/pin/${note.id}/`);
@@ -136,9 +142,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       }
       showToast("Success", "Message pinned", 3000, "success");
       window.dispatchEvent(new Event("updateNoteLists"));
-      note.pinned = true;
+      setShowEditModal(false);
+      refreshNotes();
     } catch (err) {
       console.error("Error pinning message:", err);
+      handleApiError(err);
     }
   };
 
@@ -149,9 +157,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         throw new Error("Failed to unpin message");
       }
       showToast("Success", "Message unpinned", 3000, "success");
-      note.pinned = false;
+      refreshNotes();
+      setShowEditModal(false);
     } catch (err) {
       console.error("Error unpinning message:", err);
+      handleApiError(err);
     }
   };
 
@@ -162,9 +172,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         throw new Error("Failed to archive message");
       }
       showToast("Success", "Message archived", 3000, "success");
-      note.archived = true;
+      refreshNotes();
+      setShowEditModal(false);
     } catch (err) {
       console.error("Error archiving message:", err);
+      handleApiError(err);
     }
   };
 
@@ -175,9 +187,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         throw new Error("Failed to unarchive message");
       }
       showToast("Success", "Message unarchived", 3000, "success");
-      note.archived = false;
+      setShowEditModal(false);
+      refreshNotes();
     } catch (err) {
       console.error("Error unarchiving message:", err);
+      handleApiError(err);
     }
   };
 
@@ -317,27 +331,14 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       <div className="card-body pb-1">
         <div className="row">
           <div className="col-sm-1">
-            <Dropdown>
+          <Dropdown>
               <Dropdown.Toggle variant="dark" id="dropdown-basic"></Dropdown.Toggle>
               <Dropdown.Menu>
                 {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
+                <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
                 {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
-                {!singleView && !hideEdits && (
-                  <>
-                    {!note.pinned ? (
-                      <Dropdown.Item onClick={pinMessage}>Pin</Dropdown.Item>
-                    ) : (
-                      <Dropdown.Item onClick={unPinMessage}>Unpin</Dropdown.Item>
-                    )}
-                    {!note.archived ? (
-                      <Dropdown.Item onClick={hideMessage}>Hide</Dropdown.Item>
-                    ) : (
-                      <Dropdown.Item onClick={unHideMessage}>UnHide</Dropdown.Item>
-                    )}
-                  </>
-                )}
                 {!singleView && !hideEdits && (
                   <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
                 )}
@@ -427,39 +428,57 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="xl">
         <Modal.Body>
-          <div className="mb-5 mt-0 px-2 d-flex justify-content-end">
-            <FileUploadComponent
-              onFileUploaded={handleFileUpload}
-              initialText={editText}
-              onTextChange={setEditText}
-            />
-            <Button variant="outline-dark" size="sm" className="ml-2" onClick={toggleEditorRtl}>
-              <span>
-                <svg
-                  ref={rtlIcon}
-                  xmlns="http://www.w3.org/2000/svg"
-                  height="24px"
-                  viewBox="0 0 24 24"
-                  width="24px"
-                  fill="#000000"
-                >
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
-                </svg>
-                <svg
-                  ref={ltrIcon}
-                  xmlns="http://www.w3.org/2000/svg"
-                  height="24px"
-                  style={{ display: "none" }}
-                  viewBox="0 0 24 24"
-                  width="24px"
-                  fill="#000000"
-                >
-                  <path d="M0 0h24v24H0z" fill="none" />
-                  <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
-                </svg>
-              </span>
-            </Button>
+          <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
+          <div>
+              {!singleView && (
+                <>
+                  {!note.pinned ? (
+                    <Button variant="outline-primary" className="mr-2" onClick={pinMessage}>Pin</Button>
+                  ) : (
+                    <Button variant="outline-primary" className="mr-2" onClick={unPinMessage}>Unpin</Button>
+                  )}
+                  {!note.archived ? (
+                    <Button variant="outline-secondary" onClick={hideMessage}>Hide</Button>
+                  ) : (
+                    <Button variant="outline-secondary" onClick={unHideMessage}>Unhide</Button>
+                  )}
+                </>
+              )}
+            </div>
+            <div>
+              <FileUploadComponent
+                onFileUploaded={handleFileUpload}
+                initialText={editText}
+                onTextChange={setEditText}
+              />
+              <Button variant="outline-dark" size="sm" className="ml-2" onClick={toggleEditorRtl}>
+                <span>
+                  <svg
+                    ref={rtlIcon}
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="24px"
+                    viewBox="0 0 24 24"
+                    width="24px"
+                    fill="#000000"
+                  >
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
+                  </svg>
+                  <svg
+                    ref={ltrIcon}
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="24px"
+                    style={{ display: "none" }}
+                    viewBox="0 0 24 24"
+                    width="24px"
+                    fill="#000000"
+                  >
+                    <path d="M0 0h24v24H0z" fill="none" />
+                    <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
+                  </svg>
+                </span>
+              </Button>
+            </div>
           </div>
           <textarea
             ref={editMessageTextAreaRef}

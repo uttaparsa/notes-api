@@ -2,24 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { Form, FormCheck, Row, Col } from 'react-bootstrap';
+import { useRouter, useSearchParams } from 'next/navigation';
 import NoteList from "../components/NoteList";
 import MessageInput from '../components/MessageInput';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 import SearchBar from '../components/SearchBar';
-import { useRouter } from 'next/navigation';
 import PaginationComponent from '../components/PaginationComponent';
 
 export default function NotesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
-  const router = useRouter();
   const perPage = 20;
   const listSlug = 'All';
+
+  useEffect(() => {
+    const page = searchParams.get('page');
+    if (page) {
+      setCurrentPage(parseInt(page));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     getRecords();
@@ -74,7 +82,6 @@ export default function NotesPage() {
     sortNotes();
   };
 
- 
   const sortNotes = () => {
     setNotes(prevNotes => [...prevNotes].sort((a, b) => {
       if (a.pinned === b.pinned) {
@@ -91,6 +98,11 @@ export default function NotesPage() {
     router.push(`/search/?q=${encodeURIComponent(searchText)}`);
   };
 
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    router.push(`?page=${newPage}`, undefined, { shallow: true });
+  };
+
   return (
     <div dir="ltr" className="bg-dark">
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
@@ -100,7 +112,7 @@ export default function NotesPage() {
           currentPage={currentPage} 
           totalCount={totalCount} 
           perPage={perPage} 
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
         />
         
         <FormCheck

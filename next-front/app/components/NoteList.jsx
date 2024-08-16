@@ -94,12 +94,14 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showH
                     note={item}
                     singleView={false}
                     hideEdits={hideEdits}
+                    refreshNotes={refreshNotes}
                     onPin={() => updatePinned(item, true)}
                     onUnpin={() => updatePinned(item, false)}
                     onArchived={() => updateArchived(item, true)}
                     onUnarchived={() => updateArchived(item, false)}
                     onDeleteNote={deleteNote}
                     onEditNote={editNote}
+                    
                   />
                 )}
               </div>
