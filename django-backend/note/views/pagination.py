@@ -2,7 +2,7 @@ from datetime import date
 
 from rest_framework.pagination import  PageNumberPagination
 from ..models import LocalMessageList
-
+from django.db.models import Q
 
 class DateBasedPagination(PageNumberPagination):
     page_size = 20  # Adjust as per your requirements
