@@ -122,7 +122,7 @@ export default function NoteListPage({ params }) {
               checked={showHidden}
               onChange={(e) => {
                 console.log("e.target.checked is " + e.target.checked);                                                 
-                setShowHiddem(e.target.checked)
+                setShowHidden(e.target.checked)
 
               }}
               className="text-light"
