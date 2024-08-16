@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Form, FormCheck, Row, Col } from 'react-bootstrap';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NoteList from "../components/NoteList";
@@ -117,6 +117,7 @@ export default function NotesPage() {
   }, []);
 
   return (
+    <Suspense>
     <div dir="ltr" className="bg-dark">
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
 
@@ -165,5 +166,7 @@ export default function NotesPage() {
 
       <MessageInput onNoteSaved={addNewNote} listSlug={''} />
     </div>
+    </Suspense>
+
   );
 }
