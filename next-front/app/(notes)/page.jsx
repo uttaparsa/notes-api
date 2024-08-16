@@ -103,6 +103,19 @@ export default function NotesPage() {
     router.push(`?page=${newPage}`, undefined, { shallow: true });
   };
 
+  // Add this function to handle initial page load
+  const handleInitialPageLoad = () => {
+    const page = searchParams.get('page');
+    if (page) {
+      setCurrentPage(parseInt(page));
+    }
+  };
+
+  // Use this effect to handle initial page load
+  useEffect(() => {
+    handleInitialPageLoad();
+  }, []);
+
   return (
     <div dir="ltr" className="bg-dark">
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
