@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useContext, forwardRef, useImperativeHandle, useEffect } from "react";
-import { Dropdown, Modal, Button, Image } from "react-bootstrap";
+import { Dropdown, Modal, Button, Collapse} from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../(notes)/layout";
 import ReactMarkdown from "react-markdown";
 import { isRTL } from "../utils/stringUtils";
@@ -18,6 +18,7 @@ import styles from "./NoteCard.module.css";
 const ResponsiveImage = ({ src, alt, title }) => {
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const containerRef = useRef(null);
+    
   
     useEffect(() => {
       if (containerRef.current) {
@@ -61,6 +62,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const rtlIcon = useRef(null);
   const ltrIcon = useRef(null);
   const noteLists = useContext(NoteListContext);
+  const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useImperativeHandle(ref, () => ({
@@ -255,6 +257,19 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     );
   };
 
+  const renderCategoryButtons = (categories, isArchived = false) => {
+    return categories.map(lst => (
+      <Button 
+        key={lst.id} 
+        variant={isArchived ? "secondary" : "info"} 
+        className="m-1" 
+        onClick={() => moveNote(lst.id)}
+      >
+        {lst.name} {isArchived && "(Archived)"}
+      </Button>
+    ));
+  };
+
   const customRenderers = {
     code: ({ node, inline, className, children, ...props }) => {
       const match = /language-(\w+)/.exec(className || '');
@@ -357,13 +372,29 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           <Modal.Title>Moving note</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {noteLists.map(
-            (lst) =>
-              lst.id !== note.list && !lst.archived && (
-                <Button key={lst.id} variant="info" className="m-1" onClick={() => moveNote(lst.id)}>
-                  {lst.name}
-                </Button>
-              )
+          <div className="mb-3">
+            {renderCategoryButtons(noteLists.filter(lst => lst.id !== note.list && !lst.archived))}
+          </div>
+          
+          {noteLists.some(lst => lst.archived) && (
+            <>
+              <hr className="my-3" />
+              <div 
+                className="d-flex align-items-center cursor-pointer" 
+                onClick={() => setShowArchivedCategories(!showArchivedCategories)}
+              >
+                <span className="mr-2">
+                  {showArchivedCategories ? '▼' : '▶'}
+                </span>
+                <h6 className="mb-0">Archived Categories</h6>
+              </div>
+              
+              <Collapse in={showArchivedCategories}>
+                <div className="mt-2">
+                  {renderCategoryButtons(noteLists.filter(lst => lst.id !== note.list && lst.archived), true)}
+                </div>
+              </Collapse>
+            </>
           )}
         </Modal.Body>
         <Modal.Footer>
