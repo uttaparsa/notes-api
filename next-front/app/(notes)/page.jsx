@@ -16,14 +16,14 @@ export default function NotesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const router = useRouter();
   const perPage = 20;
   const listSlug = 'All';
 
   useEffect(() => {
     getRecords();
-  }, [currentPage, showArchived]);
+  }, [currentPage, showHidden]);
 
   const showMessagesForDate = (selectedDate) => {
     console.log("showing messages for date " + selectedDate);
@@ -105,10 +105,10 @@ export default function NotesPage() {
         
         <FormCheck
           type="checkbox"
-          id="show-archived"
-          label="Show Archived"
-          checked={showArchived}
-          onChange={(e) => setShowArchived(!showArchived)}
+          id="show-hidden"
+          label="Show Hidden"
+          checked={showHidden}
+          onChange={(e) => setShowHidden(!showHidden)}
           className="text-light mb-3"
         />
 
@@ -128,8 +128,8 @@ export default function NotesPage() {
             <NoteList
               notes={notes}
               isBusy={isBusy}
-              showArchived={showArchived}
-              setShowArchived={setShowArchived}
+              showHidden={showHidden}
+              setShowHidden={setShowHidden}
               refreshNotes={getRecords}
             />
           </Col>

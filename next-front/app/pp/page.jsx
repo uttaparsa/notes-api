@@ -64,7 +64,7 @@ export default function PaginatedNoteList({ initialNotes = [] }) {
           notes={notes}
           isBusy={isBusy}
           hideEdits={true}
-          showArchived={false}
+          showHidden={false}
           refreshNotes={getRecords}
         />
       </div>

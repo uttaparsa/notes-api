@@ -16,7 +16,7 @@ export default function NoteListPage({ params }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
-  const [showArchived, setShowArchived] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const noteListRef = useRef();
   const router = useRouter();
   const perPage = 20;
@@ -24,7 +24,7 @@ export default function NoteListPage({ params }) {
 
   useEffect(() => {
     getRecords();
-  }, [currentPage, showArchived, slug]);
+  }, [currentPage, showHidden, slug]);
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");
@@ -117,12 +117,12 @@ export default function NoteListPage({ params }) {
               />
             </Form.Group>
             <FormCheck
-              id="show-archived"
-              label="Show Archived"
-              checked={showArchived}
+              id="show-hidden"
+              label="Show Hidden"
+              checked={showHidden}
               onChange={(e) => {
                 console.log("e.target.checked is " + e.target.checked);                                                 
-                setShowArchived(e.target.checked)
+                setShowHiddem(e.target.checked)
 
               }}
               className="text-light"
@@ -134,7 +134,7 @@ export default function NoteListPage({ params }) {
               ref={noteListRef}
               notes={notes}
               isBusy={isBusy}
-              showArchived={showArchived}
+              showHidden={showHidden}
               refreshNotes={getRecords}
             />
           </div>

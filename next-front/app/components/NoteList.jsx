@@ -6,7 +6,7 @@ import NoteCard from './NoteCard';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
-export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showArchived, refreshNotes }) {
+export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showHidden, refreshNotes }) {
   const [notes, setNotes] = useState(initialNotes);
   const noteRefs = useRef({});
 
@@ -88,7 +88,7 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showA
           <div className="col-xl-12 d-flex flex-vertical flex-column">
             {notes.map(item => (
               <div key={item.id} id="notesListt">
-                {(showArchived  || !item.archived) && (
+                {(showHidden  || !item.archived) && (
                   <NoteCard
                     ref={el => noteRefs.current[item.id] = el}
                     note={item}

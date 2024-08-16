@@ -14,7 +14,7 @@ export default function ClientSideSearchWrapper() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [showHidden, setShowHidden] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [listSlug, setListSlug] = useState('All');
 
@@ -88,15 +88,15 @@ export default function ClientSideSearchWrapper() {
         />
         <FormCheck
           id="checkbox-1"
-          checked={showArchived}
-          onChange={(e) => setShowArchived(e.target.checked)}
-          label="Show Archived"
+          checked={showHidden}
+          onChange={(e) => setShowHidden(e.target.checked)}
+          label="Show Hidden"
           className="text-light"
         />
         <NoteList 
           notes={notes} 
           isBusy={isBusy} 
-          showArchived={showArchived}
+          showHidden={showHidden}
           refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
         />
       </div>
