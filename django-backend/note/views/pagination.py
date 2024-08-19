@@ -11,11 +11,10 @@ class DateBasedPagination(PageNumberPagination):
         # Retrieve the requested page number based on the date parameter
 
         if 'date' in request.GET:
-            archive_lst = LocalMessageList.objects.filter(slug='archive').first()  # get archive list to ignore it
-            archive_lst_id = archive_lst.id if archive_lst else -1
+            archived_lists = LocalMessageList.objects.filter(archived=True)  # get archive list to ignore it
             selected_date = date(*map(int, request.GET.get("date").split('-')))
             print(f"selected date is {selected_date}")
-            queryset = paginator.object_list.exclude(list=archive_lst_id).order_by('-pinned', '-created_at')\
+            queryset = paginator.object_list.exclude(list__in=archived_lists).order_by('-pinned', '-created_at')\
                 .filter(Q(created_at__gt=selected_date) | Q(pinned=True))
             page_number = queryset.count() // self.page_size + 1
             print(f"page_number is {page_number}, page_size = {self.page_size}")

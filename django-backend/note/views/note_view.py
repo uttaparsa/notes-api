@@ -104,11 +104,10 @@ class NoteView(GenericAPIView, ListModelMixin):
     def get_queryset(self):
         if 'slug' in self.kwargs:
             slug = self.kwargs['slug']
-            archive_lst = LocalMessageList.objects.filter(slug='archive').first()
-            archive_lst_id = archive_lst.id if archive_lst else -1
+            archived_lists = LocalMessageList.objects.filter(archived=True)
             if slug == "All":
                 # exclude if list is archived
-                return LocalMessage.objects.exclude(list=archive_lst_id).order_by('-pinned', '-created_at')
+                return LocalMessage.objects.exclude(list__in=archived_lists).order_by('-pinned', '-created_at')
             else:
                 lst = LocalMessageList.objects.get(slug=slug)
                 return LocalMessage.objects.filter(list=lst.id).order_by('-pinned', '-created_at')
