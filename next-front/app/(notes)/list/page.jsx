@@ -89,7 +89,7 @@ export default function CategoryList() {
               className="d-flex justify-content-between align-items-center mb-2"
               variant="secondary"
             >
-              <Link href={`/list/${lst.slug}/`} className="text-decoration-none text-dark">
+              <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
                 {lst.name}
               </Link>
               <div>

@@ -108,7 +108,7 @@ export default function NoteListPage({ params }) {
   };
 
   return (
-    <div dir="ltr" className="bg-dark">
+    <div dir="ltr" >
       <SearchBar onSearch={handleSearch} listSlug={slug} />
 
       <div dir="ltr">
@@ -122,7 +122,7 @@ export default function NoteListPage({ params }) {
         <div className="d-flex row m-0 p-0">
           <div className="col-lg-2 mx-0 mb-3 mb-lg-0">
             <Form.Group>
-              <Form.Label className="text-light">Show messages for</Form.Label>
+              <Form.Label >Show messages for</Form.Label>
               <Form.Control
                 type="date"
                 value={date}
@@ -137,7 +137,6 @@ export default function NoteListPage({ params }) {
                 console.log("e.target.checked is " + e.target.checked);                                                 
                 setShowHidden(e.target.checked)
               }}
-              className="text-light"
             />
           </div>
 
