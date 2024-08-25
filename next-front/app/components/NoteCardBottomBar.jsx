@@ -38,7 +38,7 @@ const NoteCardBottomBar = forwardRef(({ note }, ref) => {
             <div className="me-2" >
                 <Link
                     href={`/list/${getListSlug()}/`}
-                    className={'text-dark ' + styles.categoryLink}
+                    className={ styles.categoryLink}
                 >
                     {getListName()}
                 </Link>

@@ -98,58 +98,57 @@ export default function RootLayout({ children }) {
   }, [getLists, showToast]);
 
   return (
-    <html lang="en">
+    <html lang="en"  data-bs-theme="light">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Notes</title>
       </head>
-      <body className={inter.className}>
-      <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
-      <NoteListContext.Provider value={noteLists}>
-          <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
-            <ToastContext.Provider value={showToast}>
-              <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
-              <div className="bg-dark h-100" style={{minHeight: '100vh'}}>
-                {children}
-                <BootstrapClient />
-              </div>
-              <ToastContainer position="top-end" className="p-3 position-fixed">
-                <Toast 
-                  onClose={() => setToast(prev => ({ ...prev, show: false }))} 
-                  show={toast.show} 
-                  delay={toast.delay} 
-                  autohide
-                  bg={toast.variant}
-                >
-                  <Toast.Header>
-                    <strong className="me-auto">{toast.title}</strong>
-                  </Toast.Header>
-                  <Toast.Body>{toast.body}</Toast.Body>
-                </Toast>
-              </ToastContainer>
-            </ToastContext.Provider>
-            <Modal
-      show={showModal}
-      centered
-      backdrop="static"
-      keyboard={false}
-      className={styles.modalFade}
-    >
-      <Modal.Header>
-        <Modal.Title>{modalTitle}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
-        <Spinner animation="border" role="status" style={{ width: '8rem', height: '8rem' }}>
-          <span className="sr-only">Loading...</span>
-        </Spinner>
-      </Modal.Body>
-    </Modal>
-          </ModalContext.Provider>
-        </NoteListContext.Provider>
+      <body className={`${inter.className} `}>
+        <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+          <NoteListContext.Provider value={noteLists}>
+            <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
+              <ToastContext.Provider value={showToast}>
+                <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
+                <div className="h-100" style={{minHeight: '100vh'}}>
+                  {children}
+                  <BootstrapClient />
+                </div>
+                <ToastContainer position="top-end" className="p-3 position-fixed">
+                  <Toast
+                    onClose={() => setToast(prev => ({ ...prev, show: false }))}
+                    show={toast.show}
+                    delay={toast.delay}
+                    autohide
+                    bg={toast.variant}
+                  >
+                    <Toast.Header>
+                      <strong className="me-auto">{toast.title}</strong>
+                    </Toast.Header>
+                    <Toast.Body>{toast.body}</Toast.Body>
+                  </Toast>
+                </ToastContainer>
+              </ToastContext.Provider>
+              <Modal
+                show={showModal}
+                centered
+                backdrop="static"
+                keyboard={false}
+                className={styles.modalFade}
+              >
+                <Modal.Header>
+                  <Modal.Title>{modalTitle}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="d-flex justify-content-center align-items-center" style={{ minHeight: '200px' }}>
+                  <Spinner animation="border" role="status" style={{ width: '8rem', height: '8rem' }}>
+                    <span className="sr-only">Loading...</span>
+                  </Spinner>
+                </Modal.Body>
+              </Modal>
+            </ModalContext.Provider>
+          </NoteListContext.Provider>
         </AuthContext.Provider>
-
       </body>
     </html>
-  )
+  );
 }

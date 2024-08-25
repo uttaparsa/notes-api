@@ -117,30 +117,27 @@ export default function NotesPage() {
   }, []);
 
   return (
-    <div dir="ltr" className="bg-dark">
+    <div dir="ltr" >
       <SearchBar onSearch={handleSearch} listSlug={'All'} />
-
       <div dir="ltr">
-        <PaginationComponent 
-          currentPage={currentPage} 
-          totalCount={totalCount} 
-          perPage={perPage} 
+        <PaginationComponent
+          currentPage={currentPage}
+          totalCount={totalCount}
+          perPage={perPage}
           onPageChange={handlePageChange}
         />
-        
         <FormCheck
           type="checkbox"
           id="show-hidden"
           label="Show Hidden"
           checked={showHidden}
           onChange={(e) => setShowHidden(!showHidden)}
-          className="text-light mb-3"
+          className="mb-3"
         />
-
         <Row className="m-0 p-0">
           <Col lg={2} className="mx-0 mb-3 mb-lg-0">
             <Form.Group>
-              <Form.Label className="text-light">Show messages for</Form.Label>
+              <Form.Label >Show messages for</Form.Label>
               <Form.Control
                 type="date"
                 value={date}
@@ -148,7 +145,6 @@ export default function NotesPage() {
               />
             </Form.Group>
           </Col>
-
           <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
             <NoteList
               notes={notes}
@@ -158,13 +154,10 @@ export default function NotesPage() {
               refreshNotes={getRecords}
             />
           </Col>
-
           <Col lg={2}></Col>
         </Row>
       </div>
-
       <MessageInput onNoteSaved={addNewNote} listSlug={''} />
     </div>
-
   );
 }

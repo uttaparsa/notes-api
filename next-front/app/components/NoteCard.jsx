@@ -327,12 +327,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   };
 
   return (
-    <div className="card rounded bg-secondary mb-2">
+    <div className="card rounded mb-2 border shadow-sm bg-body-tertiary">
       <div className="card-body pb-1">
         <div className="row">
           <div className="col-sm-1">
-          <Dropdown>
-              <Dropdown.Toggle variant="dark" id="dropdown-basic"></Dropdown.Toggle>
+            <Dropdown>
+              <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic"></Dropdown.Toggle>
               <Dropdown.Menu>
                 {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
                 <Dropdown.Divider />
@@ -345,28 +345,26 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
               </Dropdown.Menu>
             </Dropdown>
           </div>
-
           <div className="col-sm-11 pl-md-1">
-            <h6 className="card-subtitle mb-2 text-info">{note.sender_name}</h6>
+            <h6 className="card-subtitle mb-2 text-primary fw-bold">{note.sender_name}</h6>
             <span
-              className={`card-text text-light ${isRTL(note.text) ? "text-right" : ""}`}
+              className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
               dir={isRTL(note.text) ? "rtl" : "ltr"}
             >
               <ReactMarkdown components={customRenderers} remarkPlugins={[remarkGfm]}>
                 {processNoteText(note)}
               </ReactMarkdown>
               {!singleView && note.text.length > 1000 && !isExpanded && (
-                <span onClick={() => expandNote()} className="h4 mx-2 px-1 rounded py-0 bg-dark flex-sn-wrap">
+                <span onClick={() => expandNote()} className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap">
                   <b>...</b>
                 </span>
               )}
             </span>
           </div>
         </div>
-
         <NoteCardBottomBar note={note}></NoteCardBottomBar>
       </div>
-
+      
       {/* Modals */}
       <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)}>
         <Modal.Header closeButton>
