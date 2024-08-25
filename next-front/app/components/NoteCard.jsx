@@ -317,12 +317,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         </code>
       );
     },
-    a: ({ href, children }) => {
-      if (href.includes('youtube.com') || href.includes('youtu.be')) {
-        return <YouTubeLink url={href} />;
-      }
-      return <a href={href} rel="noopener noreferrer">{children}</a>;
-    },
+    // a: ({ href, children }) => {
+    //   if (href.includes('youtube.com') || href.includes('youtu.be')) {
+    //     return <YouTubeLink url={href} />;
+    //   }
+    //   return <a href={href} rel="noopener noreferrer">{children}</a>;
+    // },
     img: (props) => <ResponsiveImage {...props} />
   };
 
