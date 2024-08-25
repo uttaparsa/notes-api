@@ -126,18 +126,20 @@ export default function NotesPage() {
           perPage={perPage}
           onPageChange={handlePageChange}
         />
-        <FormCheck
+
+        <Row className="m-0 p-0">
+          <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+          <FormCheck
           type="checkbox"
           id="show-hidden"
           label="Show Hidden"
+          
           checked={showHidden}
           onChange={(e) => setShowHidden(!showHidden)}
-          className="mb-3"
+          className="mb-3 text-body-emphasis mt-2"
         />
-        <Row className="m-0 p-0">
-          <Col lg={2} className="mx-0 mb-3 mb-lg-0">
             <Form.Group>
-              <Form.Label >Show messages for</Form.Label>
+              <Form.Label className='text-body-secondary small'>Show messages for</Form.Label>
               <Form.Control
                 type="date"
                 value={date}

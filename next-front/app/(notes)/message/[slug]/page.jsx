@@ -78,7 +78,7 @@ const SingleNoteView = () => {
         </div>
         <div className="col-lg-2 pl-lg-0">
           {note.source_links.length > 0 && (
-            <span className="text-white">backlinks</span>
+            <span className="text-body-emphasis">backlinks</span>
           )}
           <ul className="list-group">
             {note.source_links.map(link => (
