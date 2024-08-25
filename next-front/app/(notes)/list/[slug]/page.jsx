@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Form, FormCheck } from 'react-bootstrap';
+import { Form, FormCheck , Row, Col} from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
 import SearchBar from '../../../components/SearchBar';
@@ -108,53 +108,47 @@ export default function NoteListPage({ params }) {
   };
 
   return (
-    <div dir="ltr" >
-      <SearchBar onSearch={handleSearch} listSlug={slug} />
-
-      <div dir="ltr">
-        <PaginationComponent
-          currentPage={currentPage}
-          totalCount={totalCount}
-          perPage={perPage}
-          onPageChange={handlePageChange}
+<div dir="ltr">
+  <SearchBar onSearch={handleSearch} listSlug={slug} />
+  <div dir="ltr">
+    <PaginationComponent
+      currentPage={currentPage}
+      totalCount={totalCount}
+      perPage={perPage}
+      onPageChange={handlePageChange}
+    />
+    <Row className="m-0 p-0">
+      <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+        <FormCheck
+          type="checkbox"
+          id="show-hidden"
+          label="Show Hidden"
+          checked={showHidden}
+          onChange={(e) => setShowHidden(e.target.checked)}
+          className="mb-3 text-body-emphasis mt-2"
         />
-
-        <div className="d-flex row m-0 p-0">
-          <div className="col-lg-2 mx-0 mb-3 mb-lg-0">
-            <Form.Group>
-              <Form.Label >Show messages for</Form.Label>
-              <Form.Control
-                type="date"
-                value={date}
-                onChange={(e) => showMessagesForDate(e.target.value)}
-              />
-            </Form.Group>
-            <FormCheck
-              id="show-hidden"
-              label="Show Hidden"
-              checked={showHidden}
-              onChange={(e) => {
-                console.log("e.target.checked is " + e.target.checked);                                                 
-                setShowHidden(e.target.checked)
-              }}
-            />
-          </div>
-
-          <div className="col-lg-8 mx-0 px-3 px-lg-0" dir="ltr">
-            <NoteList
-              ref={noteListRef}
-              notes={notes}
-              isBusy={isBusy}
-              showHidden={showHidden}
-              refreshNotes={getRecords}
-            />
-          </div>
-
-          <div className="col-lg-2"></div>
-        </div>
-      </div>
-
-      <MessageInput onNoteSaved={addNewNote} listSlug={slug} />
-    </div>
+        <Form.Group>
+          <Form.Label className='text-body-secondary small'>Show messages for</Form.Label>
+          <Form.Control
+            type="date"
+            value={date}
+            onChange={(e) => showMessagesForDate(e.target.value)}
+          />
+        </Form.Group>
+      </Col>
+      <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
+        <NoteList
+          ref={noteListRef}
+          notes={notes}
+          isBusy={isBusy}
+          showHidden={showHidden}
+          refreshNotes={getRecords}
+        />
+      </Col>
+      <Col lg={2}></Col>
+    </Row>
+  </div>
+  <MessageInput onNoteSaved={addNewNote} listSlug={slug} />
+</div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FormCheck } from 'react-bootstrap';
+import { FormCheck, Row, Col } from 'react-bootstrap';
 import NoteList from './NoteList';
 import SearchBar from './SearchBar';
 import PaginationComponent from './PaginationComponent';
@@ -86,33 +86,43 @@ export default function ClientSideSearchWrapper() {
   };
 
   return (
-    <div dir="ltr" className="bg-dark">
-      <SearchBar
-        onSearch={handleSearch}
-        initialSearchText={searchText}
-        initialListSlug={listSlug}
-      />
-      <div className="container" dir="ltr">
-        <PaginationComponent
-          currentPage={currentPage}
-          totalCount={totalCount}
-          perPage={perPage}
-          onPageChange={handlePageChange}
-        />
+<div dir="ltr">
+  <SearchBar
+    onSearch={handleSearch}
+    initialSearchText={searchText}
+    initialListSlug={listSlug}
+  />
+  <div dir="ltr">
+    <PaginationComponent
+      currentPage={currentPage}
+      totalCount={totalCount}
+      perPage={perPage}
+      onPageChange={handlePageChange}
+    />
+    <Row className="m-0 p-0">
+      <Col lg={2} className="mx-0 mb-3 mb-lg-0">
         <FormCheck
-          id="checkbox-1"
+          type="checkbox"
+          id="show-hidden"
+          label="Show Hidden"
           checked={showHidden}
           onChange={(e) => setShowHidden(e.target.checked)}
-          label="Show Hidden"
-          className="text-light"
+          className="mb-3 text-body-emphasis mt-2"
         />
+        {/* You might want to add the date picker here as well, if needed */}
+      </Col>
+      <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
         <NoteList
           notes={notes}
           isBusy={isBusy}
           showHidden={showHidden}
           refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
         />
-      </div>
-    </div>
+      </Col>
+      <Col lg={2}></Col>
+    </Row>
+  </div>
+  {/* You might want to add the MessageInput component here if needed */}
+</div>
   );
 }
