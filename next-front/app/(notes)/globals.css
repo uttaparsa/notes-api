@@ -1,4 +1,16 @@
 a {
     color: #a4c7fc;
-    
+}
+
+@font-face {
+	font-family: 'Vazir';
+	/* src: url( 'Yekan.eot' ); */
+	src: url( 'Vazirmatn-Light.woff2' ) format( 'woff2' ),
+		url( 'Vazirmatn-Light.ttf' ) format( 'truetype' );
+	font-weight: normal;
+	font-style: normal;
+}
+
+p {
+    font-family: "Vazir";
 }
