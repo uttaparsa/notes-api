@@ -19,7 +19,7 @@ const SingleNoteView = () => {
 
   const getCurrentNote = async () => {
     try {
-      const response = await fetchWithAuth(`/api/note/message/${params.slug}`);
+      const response = await fetchWithAuth(`/api/note/message/${params.slug}/`);
       if (!response.ok) {
         throw new Error('Failed to fetch note');
       }
@@ -34,8 +34,9 @@ const SingleNoteView = () => {
   };
 
   const editNote = async (targetNoteId, newText) => {
+    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
     try {
-      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}`, {
+      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
