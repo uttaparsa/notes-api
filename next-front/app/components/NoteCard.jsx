@@ -120,7 +120,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
 
   const copyNoteLink = () => {
-    const noteLink = `(/message/${note.id})`;
+    const noteLink = `[related](/message/${note.id})`;
     copyTextToClipboard(noteLink);
     showToast("Success", "Note link copied to clipboard", 3000, "success");
   };
