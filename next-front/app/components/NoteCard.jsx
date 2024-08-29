@@ -64,6 +64,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const noteLists = useContext(NoteListContext);
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
@@ -127,6 +128,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const editNote = () => {
     onEditNote(note.id, editText);
     setShowEditModal(false);
+    setShouldLoadLinks(true);  // Re-enable link loading after editing
   };
 
   const processNoteText = (note) => {
@@ -198,6 +200,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const showEditModalHandler = () => {
     setEditText(note.text);
     setShowEditModal(true);
+    setShouldLoadLinks(false);  // Disable link loading when editing
     setTimeout(() => {
       if (editMessageTextAreaRef.current) {
         updateTextAreaHeight(editMessageTextAreaRef.current);
@@ -206,6 +209,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       }
     }, 100);
   };
+
 
   const toggleEditorRtl = () => {
     if (editMessageTextAreaRef.current) {
@@ -249,13 +253,15 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   
   const YouTubeLink = ({ url }) => {
     const [metadata, setMetadata] = useState(null);
-  
+
     useEffect(() => {
-      getMetadata(url).then(data => setMetadata(data));
-    }, [url]);
-  
-    if (!metadata) return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
-  
+      if (shouldLoadLinks) {
+        getMetadata(url).then(data => setMetadata(data));
+      }
+    }, [url, shouldLoadLinks]);
+
+    if (!shouldLoadLinks || !metadata) return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
+
     return (
       <span className={styles.youtubeLink}>
         <a href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeUrl}>
@@ -317,12 +323,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         </code>
       );
     },
-    // a: ({ href, children }) => {
-    //   if (href.includes('youtube.com') || href.includes('youtu.be')) {
-    //     return <YouTubeLink url={href} />;
-    //   }
-    //   return <a href={href} rel="noopener noreferrer">{children}</a>;
-    // },
+    a: ({ href, children }) => {
+      if (href.includes('youtube.com') || href.includes('youtu.be')) {
+        return <YouTubeLink url={href} />;
+      }
+      return <a href={href} rel="noopener noreferrer">{children}</a>;
+    },
     img: (props) => <ResponsiveImage {...props} />
   };
 
