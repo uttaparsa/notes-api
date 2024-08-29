@@ -127,11 +127,16 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const editNote = async () => {
     try {
-      await onEditNote(note.id, editText);
+      const result = await onEditNote(note.id, editText);
       // If onEditNote completes successfully (doesn't throw an error),
       // then we can close the modal and re-enable link loading
-      setShowEditModal(false);
-      setShouldLoadLinks(true);
+      console.log("result is", result);
+      
+      if (result) {
+        setShowEditModal();
+        setShouldLoadLinks(true);
+      }
+      
     } catch (error) {
       // If an error is thrown, we don't close the modal or re-enable link loading
       console.error('Failed to edit note:', error);
