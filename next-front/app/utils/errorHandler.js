@@ -64,8 +64,8 @@ export function handleApiError(error) {
     console.error("Error", error.message);
     window.dispatchEvent(new CustomEvent('showToast', { 
       detail: { 
-        title: "Error",
-        body: "Unknown Error",
+        title: "Unknown Error",
+        body:  error.message,
         delay: 3000,
         variant: "danger",
       } 
