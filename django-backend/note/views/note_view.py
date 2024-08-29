@@ -127,6 +127,9 @@ class NoteView(GenericAPIView, ListModelMixin):
 
         if serializer.is_valid():
             resp = serializer.save(list=lst)
-            insert_links(resp)
+            try:
+                insert_links(resp)
+            except Exception as e:
+                print(e)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
