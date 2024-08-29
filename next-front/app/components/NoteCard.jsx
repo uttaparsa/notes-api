@@ -12,7 +12,7 @@ import NoteCardBottomBar from "./NoteCardBottomBar";
 import FileUploadComponent from "./FileUploadComponent";
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
-
+import Link from 'next/link';
 
 
 const ResponsiveImage = ({ src, alt, title }) => {
@@ -327,7 +327,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
         return <YouTubeLink url={href} />;
       }
-      return <a href={href} rel="noopener noreferrer">{children}</a>;
+      return <Link href={href} rel="noopener noreferrer">{children}</Link>;
     },
     img: (props) => <ResponsiveImage {...props} />
   };
