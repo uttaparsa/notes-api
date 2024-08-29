@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Spinner } from 'react-bootstrap';
-import NoteCard from './NoteCard';
+import NoteCard from './notecard/NoteCard';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
