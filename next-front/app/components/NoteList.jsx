@@ -60,24 +60,32 @@ export default function NoteList({ notes: initialNotes, isBusy, hideEdits, showH
         },
         body: JSON.stringify({ text: newText }),
       });
+      
       if (!response.ok) throw new Error('Failed to edit note');
-      setNotes(prevNotes => prevNotes.map(note => 
+      
+      setNotes(prevNotes => prevNotes.map(note =>
         note.id === targetNoteId ? { ...note, text: newText } : note
       ));
-      noteRefs.current[targetNoteId].hideEditModal();
+      
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
-          title: "Success", 
-          body: `Note Saved`, 
+          title: "Success",
+          body: `Note Saved`,
           delay: 5000,
           status: "success",
         }
       }));
+      
+      // Return true to indicate success
+      return true;
     } catch (err) {
       console.error('Error editing note:', err);
       handleApiError(err);
+      // Return false to indicate failure
+      return false;
+    } finally {
+      window.dispatchEvent(new CustomEvent('hideWaitingModal'));
     }
-    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
 
