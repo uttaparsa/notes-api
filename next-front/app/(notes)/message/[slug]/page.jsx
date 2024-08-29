@@ -1,11 +1,11 @@
 'use client'
-
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/NoteCard';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
+import { Spinner } from 'react-bootstrap';
 
 const SingleNoteView = () => {
   const [busy, setBusy] = useState(true);
@@ -43,62 +43,61 @@ const SingleNoteView = () => {
         },
         body: JSON.stringify({ text: newText }),
       });
-
       if (!response.ok) {
         throw new Error('Failed to edit note');
       }
-
       setNote(prevNote => ({ ...prevNote, text: newText }));
       noteComponentRef.current?.hideEditModal();
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
-          title: "Success", 
-          body: `Note Saved`, 
+          title: "Success",
+          body: `Note Saved`,
           delay: 5000,
           status: "success",
         }
       }));
     } catch (err) {
       console.error(`Error editing note: ${err}`);
-      // Handle error (e.g., show error message to user)
       handleApiError(err);
     }
     window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
-
-
-  if (busy) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="container-fluid py-5" dir="ltr">
       <div className="row">
         <div className="col-lg-2"></div>
         <div className="col-lg-8">
-          <NoteCard 
-            ref={noteComponentRef}
-            note={note} 
-            onEditNote={editNote} 
-            singleView={true}
-          />
+          {busy ? (
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+          ) : (
+            <NoteCard
+              ref={noteComponentRef}
+              note={note}
+              onEditNote={editNote}
+              singleView={true}
+            />
+          )}
         </div>
         <div className="col-lg-2 pl-lg-0">
-          {note.source_links.length > 0 && (
-            <span className="text-body-emphasis">backlinks</span>
+          {note && note.source_links.length > 0 && (
+            <>
+              <span className="text-body-emphasis">backlinks</span>
+              <ul className="list-group">
+                {note.source_links.map(link => (
+                  <Link href={`/message/${link.source_message.id}`} key={link.id}>
+                    <li className="list-group-item list-group-item-secondary">
+                      {link.source_message.text}
+                    </li>
+                  </Link>
+                ))}
+              </ul>
+            </>
           )}
-          <ul className="list-group">
-            {note.source_links.map(link => (
-              <Link href={`/message/${link.source_message.id}`} key={link.id}>
-                <li className="list-group-item list-group-item-secondary">
-                  {link.source_message.text}
-                </li>
-              </Link>
-            ))}
-          </ul>
         </div>
       </div>
-
     </div>
   );
 };
