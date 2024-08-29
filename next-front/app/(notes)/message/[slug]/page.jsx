@@ -3,13 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import NoteCard from '../../../components/notecard/NoteCard';
+import NoteCard from '../../../components/NoteCard';
+import { Toast } from 'react-bootstrap';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 
 const SingleNoteView = () => {
   const [busy, setBusy] = useState(true);
   const [note, setNote] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const noteComponentRef = useRef(null);
   const params = useParams();
 
@@ -35,7 +38,7 @@ const SingleNoteView = () => {
 
   const editNote = async (targetNoteId, newText) => {
     try {
-      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}`, {
+      const response = await fetchWithAuth(`/api/note/message/${note.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -49,22 +52,13 @@ const SingleNoteView = () => {
 
       setNote(prevNote => ({ ...prevNote, text: newText }));
       noteComponentRef.current?.hideEditModal();
-      window.dispatchEvent(new CustomEvent('showToast', {
-        detail: {
-          title: "Success", 
-          body: `Note Saved`, 
-          delay: 5000,
-          status: "success",
-        }
-      }));
+      setToastMessage('Note edited successfully');
+      setShowToast(true);
     } catch (err) {
       console.error(`Error editing note: ${err}`);
       // Handle error (e.g., show error message to user)
-      handleApiError(err);
     }
-    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
-
 
   if (busy) {
     return <div>Loading...</div>;
@@ -98,6 +92,22 @@ const SingleNoteView = () => {
         </div>
       </div>
 
+      <Toast 
+        show={showToast} 
+        onClose={() => setShowToast(false)} 
+        delay={2000} 
+        autohide
+        style={{
+          position: 'absolute',
+          top: 20,
+          left: 20,
+        }}
+      >
+        <Toast.Header>
+          <strong className="mr-auto">Success</strong>
+        </Toast.Header>
+        <Toast.Body>{toastMessage}</Toast.Body>
+      </Toast>
     </div>
   );
 };
