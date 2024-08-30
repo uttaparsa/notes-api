@@ -13,6 +13,7 @@ import FileUploadComponent from "./FileUploadComponent";
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import Link from 'next/link';
+import YouTubeLink from './YouTubeLink';
 
 
 const ResponsiveImage = ({ src, alt, title }) => {
@@ -234,48 +235,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setEditText(prevText => prevText);
   };
 
-  const getMetadata = async (url) => {
-    const videoUrl = encodeURIComponent(url);
-    const requestUrl = `https://youtube.com/oembed?url=${videoUrl}&format=json`;
-    
-    try {
-      const response = await fetch(requestUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error fetching YouTube metadata:", error);
-      return null;
-    }
-  };
-  
-  const YouTubeLink = ({ url }) => {
-    const [metadata, setMetadata] = useState(null);
-
-    useEffect(() => {
-      if (shouldLoadLinks) {
-        getMetadata(url).then(data => setMetadata(data));
-      }
-    }, [url, shouldLoadLinks]);
-
-    if (!shouldLoadLinks || !metadata) return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
-
-    return (
-      <span className={styles.youtubeLink}>
-        <a href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeUrl}>
-          {url}
-        </a>
-        <span className={styles.youtubeTitleWrapper}>
-          <span className={styles.youtubeIcon}>▶</span>
-          <span className={styles.youtubeTitle} title={metadata.title}>
-            {metadata.title}
-          </span>
-        </span>
-      </span>
-    );
-  };
 
   const renderCategoryButtons = (categories, isArchived = false) => {
     return categories.map(lst => (
@@ -325,7 +284,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     },
     a: ({ href, children }) => {
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
-        return <YouTubeLink url={href} />;
+        return <YouTubeLink url={href} shouldLoadLinks={shouldLoadLinks} />;
       }
       return <Link href={href} rel="noopener noreferrer">{children}</Link>;
     },
