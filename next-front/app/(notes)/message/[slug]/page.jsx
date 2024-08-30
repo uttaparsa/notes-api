@@ -32,7 +32,6 @@ const SingleNoteView = () => {
       handleApiError(error);
     }
   };
-
   const editNote = async (targetNoteId, newText) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
     try {
@@ -47,7 +46,6 @@ const SingleNoteView = () => {
         throw new Error('Failed to edit note');
       }
       setNote(prevNote => ({ ...prevNote, text: newText }));
-      noteComponentRef.current?.hideEditModal();
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
           title: "Success",
@@ -56,11 +54,18 @@ const SingleNoteView = () => {
           status: "success",
         }
       }));
+      // Return true to indicate success
+      return true;
     } catch (err) {
       console.error(`Error editing note: ${err}`);
       handleApiError(err);
+      // Return false or throw an error to indicate failure
+      return false;
+      // Alternatively, you could re-throw the error:
+      // throw err;
+    } finally {
+      window.dispatchEvent(new CustomEvent('hideWaitingModal'));
     }
-    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
   return (

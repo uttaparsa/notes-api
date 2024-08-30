@@ -121,16 +121,30 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
 
   const copyNoteLink = () => {
-    const noteLink = `(/message/${note.id})`;
+    const noteLink = `[related](/message/${note.id})`;
     copyTextToClipboard(noteLink);
     showToast("Success", "Note link copied to clipboard", 3000, "success");
   };
 
-  const editNote = () => {
-    onEditNote(note.id, editText);
-    setShowEditModal(false);
-    setShouldLoadLinks(true);  // Re-enable link loading after editing
+  const editNote = async () => {
+    try {
+      const result = await onEditNote(note.id, editText);
+      // If onEditNote completes successfully (doesn't throw an error),
+      // then we can close the modal and re-enable link loading
+      console.log("result is", result);
+      
+      if (result) {
+        setShowEditModal();
+        setShouldLoadLinks(true);
+      }
+      
+    } catch (error) {
+      // If an error is thrown, we don't close the modal or re-enable link loading
+      console.error('Failed to edit note:', error);
+      // Optionally, you can show an error message to the user here
+    }
   };
+  
 
   const processNoteText = (note) => {
     return singleView || note.text.length < 1000 || isExpanded
