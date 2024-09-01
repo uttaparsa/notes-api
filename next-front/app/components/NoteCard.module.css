@@ -1,3 +1,7 @@
+.reactMarkDown * {
+  font-family: "Vazir";
+}
+
 .codeBlock {
   background-color: #1e1e1e;
   border-radius: 4px;
