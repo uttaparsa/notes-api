@@ -85,9 +85,8 @@
   font-weight: 500;
   font-size: 0.9em;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 20px); /* Adjust based on icon width */
+  max-width: 100%;
 }
 
 @media (max-width: 600px) {

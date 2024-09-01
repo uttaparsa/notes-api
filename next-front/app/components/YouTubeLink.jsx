@@ -18,6 +18,13 @@ const getMetadata = async (url) => {
   }
 };
 
+const truncateTitle = (title, maxLength = 50) => {
+  if (title.length <= maxLength) {
+    return title;
+  }
+  return `${title.slice(0, maxLength)}...`;
+};
+
 const YouTubeLink = ({ url, shouldLoadLinks }) => {
   const [metadata, setMetadata] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,17 +32,14 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
 
   useEffect(() => {
     let isMounted = true;
-
     const fetchMetadata = async () => {
       if (!shouldLoadLinks) return;
-
       // Check if the title is already in local storage
       const storedTitle = localStorage.getItem(url);
       if (storedTitle) {
         setMetadata({ title: storedTitle });
         return;
       }
-
       try {
         setLoading(true);
         const data = await getMetadata(url);
@@ -54,9 +58,7 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
         }
       }
     };
-
     fetchMetadata();
-
     return () => {
       isMounted = false;
     };
@@ -70,6 +72,8 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
     return <Spinner animation="border" size="sm" />;
   }
 
+  const truncatedTitle = truncateTitle(metadata.title);
+
   return (
     <span className={styles.youtubeLink}>
       <a href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeUrl}>
@@ -78,7 +82,7 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
       <span className={styles.youtubeTitleWrapper}>
         <span className={styles.youtubeIcon}>▶</span>
         <span className={styles.youtubeTitle} title={metadata.title}>
-          {metadata.title}
+          {truncatedTitle}
         </span>
       </span>
     </span>
