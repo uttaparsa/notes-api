@@ -330,9 +330,13 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
               className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
               dir={isRTL(note.text) ? "rtl" : "ltr"}
             >
-              <ReactMarkdown components={customRenderers} remarkPlugins={[remarkGfm]} className={styles.reactMarkDown}>
-                {processNoteText(note)}
-              </ReactMarkdown>
+<ReactMarkdown 
+  components={customRenderers} 
+  remarkPlugins={[remarkGfm]} 
+  className={` ${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
+>
+  {processNoteText(note)}
+</ReactMarkdown>
               {!singleView && note.text.length > 1000 && !isExpanded && (
                 <span onClick={() => expandNote()} className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap">
                   <b>...</b>
