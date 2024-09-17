@@ -12,7 +12,7 @@
 
 .codeBlock code {
   font-family: 'Courier New', Courier, monospace;
-  font-size: 0.9em;
+  /* font-size: 0.9em; */
   line-height: 1.6;
   display: block;
   width: 100%;
