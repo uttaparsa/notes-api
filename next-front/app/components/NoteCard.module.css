@@ -3,7 +3,6 @@
 }
 
 .codeBlock {
-  background-color: #1e1e1e;
   border-radius: 4px;
   padding: 1em;
   margin: 0.5em 0;
@@ -12,7 +11,6 @@
 }
 
 .codeBlock code {
-  color: #d4d4d4;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.9em;
   line-height: 1.6;

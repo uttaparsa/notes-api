@@ -67,6 +67,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
 
+
+
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
@@ -278,8 +280,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
         return (
           <div className={styles.codeBlockWrapper}>
-            <pre className={styles.codeBlock}>
-              <code className={className} {...props}>
+            <pre className={styles.codeBlock + " bg-body border"}>
+              <code className={className } {...props}>
                 {children}
               </code>
             </pre>
