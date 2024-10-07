@@ -14,8 +14,47 @@ const SingleNoteView = () => {
   const params = useParams();
 
   useEffect(() => {
-    getCurrentNote();
-  }, []);
+    const updateTitle = async () => {
+      try {
+        const currentNote = await getCurrentNote();
+        setNote(currentNote);
+        setBusy(false);
+        
+        if (currentNote?.text) {
+          document.title = extractMarkdownTitleFromText(currentNote.text);
+        }
+      } catch (error) {
+        console.error('Error fetching note:', error);
+        document.title = 'Note - Error';
+      }
+    };
+
+    updateTitle();
+
+
+  }, []); // Empty dependency array means this runs once on mount
+
+
+ 
+  const extractMarkdownTitleFromText = (text) => {
+    let title = "Note";
+    
+    if (text) {
+      // Split by newlines and get first non-empty line
+      const lines = text.split("\n").filter(line => line.trim());
+      const firstLine = lines[0] || "";
+      
+      // Check for any level of header (#, ##, ###, etc.)
+      const headerMatch = firstLine.match(/^#{1,6}\s+(.+)$/);
+      if (headerMatch) {
+        title = headerMatch[1].trim();
+      }
+    }
+    
+    return title;
+  };
+
+
 
   const getCurrentNote = async () => {
     try {
@@ -24,9 +63,9 @@ const SingleNoteView = () => {
         throw new Error('Failed to fetch note');
       }
       const data = await response.json();
-      setNote(data);
+
       console.log("current note is", data);
-      setBusy(false);
+      return data;
     } catch (error) {
       console.error("Error fetching note:", error);
       handleApiError(error);
