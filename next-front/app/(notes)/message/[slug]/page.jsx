@@ -21,7 +21,7 @@ const SingleNoteView = () => {
         setBusy(false);
         
         if (currentNote?.text) {
-          document.title = extractMarkdownTitleFromText(currentNote.text);
+          document.title = extractMarkdownTitleFromText(currentNote.text) + " - Note";
         }
       } catch (error) {
         console.error('Error fetching note:', error);
