@@ -21,7 +21,7 @@ const SingleNoteView = () => {
         setBusy(false);
         
         if (currentNote?.text) {
-          document.title = extractMarkdownTitleFromText(currentNote.text) + " - Note";
+          document.title = extractMarkdownTitleFromText(currentNote.text);
         }
       } catch (error) {
         console.error('Error fetching note:', error);
@@ -48,6 +48,7 @@ const SingleNoteView = () => {
       const headerMatch = firstLine.match(/^#{1,6}\s+(.+)$/);
       if (headerMatch) {
         title = headerMatch[1].trim();
+        title += " - Note";
       }
     }
     
