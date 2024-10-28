@@ -46,6 +46,7 @@ from django.contrib.auth import logout
 from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -66,17 +67,21 @@ class LoginView(APIView):
 
             device_name = request.data.get('device_name', 'Unknown Device')
 
+            
+
             # Store the session
             UserSession.objects.create(
                 user=user,
-                session_key=request.session.session_key,
+                session=Session.objects.get(session_key=request.session.session_key),
                 device_name=device_name,
                 user_agent=user_agent,
-                ip_address=ip_address
+                ip_address=ip_address,
+                last_activity=timezone.now(),
             )
 
             # Send login notification email
-            self.send_login_notification(user, device_name, ip_address)
+            if not settings.DEBUG:
+                self.send_login_notification(user, device_name, ip_address)
 
             return JsonResponse({'message': 'Login successful'})
         else:
@@ -117,11 +122,12 @@ def list_user_sessions(request):
     sessions = UserSession.objects.filter(user=request.user)
     session_data = [
         {
-            'session_key': session.session_key,
+            'session_key': session.session.session_key,
             'device_name': session.device_name,
             'user_agent': session.user_agent,
             'ip_address': session.ip_address,
             'created_at': session.created_at,
+            'last_activity': session.last_activity,
         }
         for session in sessions
     ]
@@ -131,12 +137,9 @@ def list_user_sessions(request):
 @permission_classes([IsAuthenticated])
 def delete_user_session(request, session_key):
     try:
-        session = UserSession.objects.get(user=request.user, session_key=session_key)
-        session.delete()
         # also delete from db
         Session.objects.get(session_key=session_key).delete()
         
-
         return JsonResponse({'message': 'Session deleted successfully'})
     except UserSession.DoesNotExist:
         return JsonResponse({'error': 'Session not found'}, status=404)

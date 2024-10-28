@@ -69,7 +69,8 @@ const SessionsPage = () => {
                 <strong>Device:</strong> {session.device_name} <br />
                 <strong>IP:</strong> {session.ip_address} <br />
                 <strong>User Agent:</strong> {session.user_agent} <br />
-                <strong>Created At:</strong> {new Date(session.created_at).toLocaleString()}
+                <strong>Created At:</strong> {new Date(session.created_at).toLocaleString()} <br />
+                <strong>Last Activity:</strong> {new Date(session.last_activity).toLocaleString()}
               </Col>
               <Col md={4} className="text-end">
                 <Button
