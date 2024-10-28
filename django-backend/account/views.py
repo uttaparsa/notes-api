@@ -60,7 +60,10 @@ class LoginView(APIView):
 
             # Capture device information
             user_agent = request.META.get('HTTP_USER_AGENT', '')
-            ip_address = request.META.get('REMOTE_ADDR')
+            # get ip behind proxy
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+
             device_name = request.data.get('device_name', 'Unknown Device')
 
             # Store the session
