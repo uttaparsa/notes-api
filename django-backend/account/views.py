@@ -95,7 +95,7 @@ class LoginView(APIView):
             message,
             settings.EMAIL_USERNAME,  # Replace with your email
             [recipient_email],
-            fail_silently=False,
+            fail_silently=True,
         )
         
 
