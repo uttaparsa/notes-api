@@ -50,6 +50,15 @@ MINIO_USE_SSL = False
 EMAIL_USERNAME = os.environ.get("EMAIL_USERNAME", "")
 EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD", "")
 
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = EMAIL_USERNAME
+EMAIL_HOST_PASSWORD = EMAIL_PASSWORD
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 # Application definition
 
 INSTALLED_APPS = [

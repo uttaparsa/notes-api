@@ -11,39 +11,41 @@ from django.utils.translation import gettext_lazy as _
 from . import serializers
 
 
-class SignUpUser(APIView):
-    permission_classes = [AllowAny, ]
-    serializer_class = serializers.UserSignUpRequestSerializer
+# class SignUpUser(APIView):
+#     permission_classes = [AllowAny, ]
+#     serializer_class = serializers.UserSignUpRequestSerializer
 
-    def post(self, request):
-        """
-            This API requests singing up as a user in identity
+#     def post(self, request):
+#         """
+#             This API requests singing up as a user in identity
 
-            workflow:
-                1. validate request data
-                2. check if this email is throttled
-                3. create a new object and send the token
-                4. return response
-        """
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
+#             workflow:
+#                 1. validate request data
+#                 2. check if this email is throttled
+#                 3. create a new object and send the token
+#                 4. return response
+#         """
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         validated_data = serializer.validated_data
 
-        User.objects.create(
-            email=validated_data['email'],
-            password=make_password(validated_data['password'])
-        )
+#         User.objects.create(
+#             email=validated_data['email'],
+#             password=make_password(validated_data['password'])
+#         )
 
-        return Response({
-            **validated_data,
-            'message': _('signup_successful')
-        }, status=status.HTTP_200_OK)
+#         return Response({
+#             **validated_data,
+#             'message': _('signup_successful')
+#         }, status=status.HTTP_200_OK)
     
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout
 from rest_framework.permissions import IsAuthenticated
+from django.core.mail import send_mail
+from django.conf import settings
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
@@ -70,9 +72,33 @@ class LoginView(APIView):
                 ip_address=ip_address
             )
 
+            # Send login notification email
+            self.send_login_notification(user, device_name, ip_address)
+
             return JsonResponse({'message': 'Login successful'})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=400)
+
+    def send_login_notification(self, user, device_name, ip_address):
+        subject = "New Login Notification"
+        message = (
+            f"Hello {user.username},\n\n"
+            f"A new login to your account was detected:\n"
+            f"Device: {device_name}\n"
+            f"IP Address: {ip_address}\n\n"
+            f"If this was not you, please take immediate action to secure your account."
+        )
+        recipient_email = user.email
+
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_USERNAME,  # Replace with your email
+            [recipient_email],
+            fail_silently=False,
+        )
+        
+
 
 from django.contrib.auth.decorators import login_required
 
