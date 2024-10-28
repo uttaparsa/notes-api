@@ -1,4 +1,3 @@
-
 services:
   minio:
     image: minio/minio
@@ -67,20 +66,14 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:9090:80"
+      - "127.0.0.1:9091:443"
     networks:
       - app-network
     volumes:
-      - /etc/letsencrypt/ssl/fullchain.pem:/etc/nginx/ssl/fullchain.pem
-      - /etc/letsencrypt/ssl/privkey.pem:/etc/nginx/ssl/privkey.pem
-      - /etc/letsencrypt/live/notes-old.joumend.ir/fullchain.pem:/etc/letsencrypt/live/notes-old.joumend.ir/fullchain.pem
-      - /etc/letsencrypt/live/notes-old.joumend.ir/privkey.pem:/etc/letsencrypt/live/notes-old.joumend.ir/privkey.pem
       - ./django-backend/data/media:/opt/data/media
 
 
-networks:
+networks:	
   app-network:
     driver: bridge
-
-

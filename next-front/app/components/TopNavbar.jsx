@@ -37,6 +37,11 @@ export default function NavbarComponent({ isLoggedIn, onLogout }) {
               </Link>
             </Nav.Item>
             <Nav.Item>
+              <Link href="/sessions" passHref legacyBehavior>
+                <Nav.Link>Sessions</Nav.Link>
+              </Link>
+            </Nav.Item>
+            <Nav.Item>
               <Nav.Link onClick={onLogout}>Logout</Nav.Link>
             </Nav.Item>
           </Nav>

@@ -1,53 +1,41 @@
 export async function login(username, password) {
-    const response = await fetch('/api/token/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
-  
-    if (!response.ok) {
-      throw new Error('Login failed');
-    }
-  
-    const data = await response.json();
-    return data;
-  }
-  
-  export async function refreshToken(refreshToken) {
-    const response = await fetch('/api/token/refresh/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-  
-    if (!response.ok) {
-      throw new Error('Token refresh failed');
-    }
-  
-    const data = await response.json();
-    return data;
+  const response = await fetch('/api/account/login/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+    credentials: 'include', // Ensure cookies are sent with the request
+  });
+
+  if (!response.ok) {
+    throw new Error('Login failed');
   }
 
-  export function logout() {
-    // Clear tokens from storage
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    
-    // If you're using cookies, you'd clear them here
-    // document.cookie = 'accessToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    // document.cookie = 'refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-  
-    // Optionally, make a call to the backend to invalidate the token
-    // This depends on your backend implementation
-    // await fetch('http://localhost:8000/api/logout/', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-    //   }
-    // });
-  }
-  
+  return response;
+}
+
+export function logout() {
+  // Make a call to the backend to logout and clear the session
+  fetch('/api/account/logout/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  }).then(() => {
+    // Redirect to login page after logout
+    window.location.href = '/login';
+  });
+}
+
+// Note: The refresh token functionality is no longer needed for session-based auth
+
+// TODO: this is duplicated in api.js
+// Helper function to get the CSRF token from cookies
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}

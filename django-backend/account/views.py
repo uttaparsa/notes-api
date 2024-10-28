@@ -38,6 +38,95 @@ class SignUpUser(APIView):
             **validated_data,
             'message': _('signup_successful')
         }, status=status.HTTP_200_OK)
+    
+from django.contrib.auth import authenticate, login
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import logout
+from rest_framework.permissions import IsAuthenticated
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    @csrf_exempt
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+
+            # Capture device information
+            user_agent = request.META.get('HTTP_USER_AGENT', '')
+            ip_address = request.META.get('REMOTE_ADDR')
+            device_name = request.data.get('device_name', 'Unknown Device')
+
+            # Store the session
+            UserSession.objects.create(
+                user=user,
+                session_key=request.session.session_key,
+                device_name=device_name,
+                user_agent=user_agent,
+                ip_address=ip_address
+            )
+
+            return JsonResponse({'message': 'Login successful'})
+        else:
+            return JsonResponse({'error': 'Invalid credentials'}, status=400)
+
+from django.contrib.auth.decorators import login_required
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import UserSession
+
+from django.contrib.sessions.models import Session
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_user_sessions(request):
+    sessions = UserSession.objects.filter(user=request.user)
+    session_data = [
+        {
+            'session_key': session.session_key,
+            'device_name': session.device_name,
+            'user_agent': session.user_agent,
+            'ip_address': session.ip_address,
+            'created_at': session.created_at,
+        }
+        for session in sessions
+    ]
+    return JsonResponse({'sessions': session_data}, safe=False)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_user_session(request, session_key):
+    try:
+        session = UserSession.objects.get(user=request.user, session_key=session_key)
+        session.delete()
+        # also delete from db
+        Session.objects.get(session_key=session_key).delete()
+        
+
+        return JsonResponse({'message': 'Session deleted successfully'})
+    except UserSession.DoesNotExist:
+        return JsonResponse({'error': 'Session not found'}, status=404)
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def check_auth(request):
+    return JsonResponse({'authenticated': True})
+
+
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logout(request)
+        return JsonResponse({'message': 'Logged out successfully'})
+
 
 
 class Profile(APIView):
@@ -62,9 +151,11 @@ class Profile(APIView):
             status=status.HTTP_200_OK)
 
 
-from rest_framework_simplejwt.views import TokenViewBase
-from .serializers import CustomObtainTokenSerializer
+# from rest_framework_simplejwt.views import TokenViewBase
+# from .serializers import CustomObtainTokenSerializer
 
 
-class CustomTokenObtainPairView(TokenViewBase):
-    serializer_class = CustomObtainTokenSerializer
+# class CustomTokenObtainPairView(TokenViewBase):
+#     serializer_class = CustomObtainTokenSerializer
+
+

@@ -1,36 +1,27 @@
 import { refreshToken } from './auth';
 
 export async function fetchWithAuth(url, options = {}) {
-    const accessToken = localStorage.getItem('accessToken');
-    
-    const headers = {
-      ...options.headers,
-      'Authorization': `Bearer ${accessToken}`,
-    };
-  
-    const response = await fetch(url, { ...options, headers });
-  
-    if (response.status === 401) {
-      
-      // Token has expired, try to refresh it
-      const rt = localStorage.getItem('refreshToken');
-      try {
-        const newTokens = await refreshToken(rt);
-        localStorage.setItem('accessToken', newTokens.access);
-        
-        // Retry the original request with the new token
-        headers['Authorization'] = `Bearer ${newTokens.access}`;
-        return fetch(url, { ...options, headers });
+  const csrfToken = getCookie('csrftoken'); // Helper function to retrieve the CSRF token from cookies
 
-      } catch (error) {
-        // Refresh token has expired, redirect to login
-        
-        window.location.href = '/login';
-        throw new Error('Session expired');
-      }
-    }
+  const headers = {
+    ...options.headers,
+    'X-CSRFToken': csrfToken,
+  };
 
+  const response = await fetch(url, { ...options, headers, credentials: 'include' });
 
-  
-    return response;
+  // Redirect to login if session is expired or unauthorized
+  if (response.status === 403) {
+    window.location.href = '/login';
+    throw new Error('Session expired');
   }
+
+  return response;
+}
+
+// Helper function to get the CSRF token from cookies
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
