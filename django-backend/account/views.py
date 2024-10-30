@@ -119,7 +119,8 @@ from django.contrib.sessions.models import Session
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_user_sessions(request):
-    sessions = UserSession.objects.filter(user=request.user)
+    sessions = UserSession.objects.filter(user=request.user).order_by('-last_activity')
+
     session_data = [
         {
             'session_key': session.session.session_key,
