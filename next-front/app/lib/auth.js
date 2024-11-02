@@ -30,7 +30,6 @@ export function logout() {
   });
 }
 
-// Note: The refresh token functionality is no longer needed for session-based auth
 
 // TODO: this is duplicated in api.js
 // Helper function to get the CSRF token from cookies

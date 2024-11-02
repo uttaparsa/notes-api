@@ -29,6 +29,8 @@ services:
     env_file:
      - django-backend/.env
     # restart: always
+    dns:
+      - 8.8.8.8
     networks:
       - app-network
     

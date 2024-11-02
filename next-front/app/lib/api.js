@@ -1,4 +1,3 @@
-import { refreshToken } from './auth';
 
 export async function fetchWithAuth(url, options = {}) {
   const csrfToken = getCookie('csrftoken'); // Helper function to retrieve the CSRF token from cookies
