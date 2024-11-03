@@ -2,6 +2,7 @@ export async function login(username, password) {
   const response = await fetch('/api/account/login/', {
     method: 'POST',
     headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ username, password }),

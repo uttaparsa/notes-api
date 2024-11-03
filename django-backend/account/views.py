@@ -42,7 +42,6 @@ from . import serializers
     
 from django.contrib.auth import authenticate, login
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import logout
 from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
@@ -59,6 +58,15 @@ from .models import UserSession
 
 from django.contrib.sessions.models import Session
 
+
+from django.middleware.csrf import get_token
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def serve_csrf_cookie(request):
+    response = JsonResponse({'details': 'CSRF cookie set'})
+    response["X-CSRFToken"] = get_token(request)
+    return response
 
 
 def send_login_notification(self, user, device_name, ip_address):
@@ -81,7 +89,6 @@ def send_login_notification(self, user, device_name, ip_address):
     )
 
 
-@csrf_exempt
 @authentication_classes([BasicAuthentication]) 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -101,21 +108,23 @@ def login_view(request):
             device_name = request.data.get('device_name', 'Unknown Device')
 
             # get current session object
-            related_session = request.session
+            related_session_key = request.session.session_key
 
-            # Store the session
-            UserSession.objects.create(
-                user=user,
-                session=related_session,
-                device_name=device_name,
-                user_agent=user_agent,
-                ip_address=ip_address,
-                last_activity=timezone.now(),
-            )
+            if related_session_key:
+
+                # Store the session
+                UserSession.objects.create(
+                    user=user,
+                    session_id=related_session_key,
+                    device_name=device_name,
+                    user_agent=user_agent,
+                    ip_address=ip_address,
+                    last_activity=timezone.now(),
+                )
 
             # Send login notification email
             if not settings.DEBUG:
-                self.send_login_notification(user, device_name, ip_address)
+                send_login_notification(user, device_name, ip_address)
 
             return JsonResponse({'message': 'Login successful'})
         else:

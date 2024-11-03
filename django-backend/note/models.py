@@ -4,7 +4,7 @@ import random
 from django.db import models
 from django.template.defaultfilters import slugify
 
-from django_resized import ResizedImageField
+# from django_resized import ResizedImageField
 
 
 # Create your models here.
@@ -32,8 +32,8 @@ class LocalMessage(models.Model):
     text = models.TextField(blank=True)
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
     pinned = models.BooleanField(default=False)
-    image = ResizedImageField(upload_to=get_image_upload_path, size=[1024, 1024], blank=True, null=True)
-    file = models.FileField(upload_to=get_file_upload_path, blank=True, null=True)
+    # image = ResizedImageField(upload_to=get_image_upload_path, size=[1024, 1024], blank=True, null=True)
+    # file = models.FileField(upload_to=get_file_upload_path, blank=True, null=True)
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

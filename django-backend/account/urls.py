@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import Profile, login_view, LogoutView, list_user_sessions, delete_user_session
+from .views import login_view, LogoutView, list_user_sessions, delete_user_session, serve_csrf_cookie
 
 
 
@@ -8,6 +8,7 @@ from .views import Profile, login_view, LogoutView, list_user_sessions, delete_u
 
 urlpatterns = [
     # path('profile/', Profile.as_view()),
+    path('csrf/', serve_csrf_cookie, name='csrf'),
     path('login/', login_view, name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('sessions/', list_user_sessions, name='list_user_sessions'),
