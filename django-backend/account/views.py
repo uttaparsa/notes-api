@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from django.utils.translation import gettext_lazy as _
@@ -48,11 +49,43 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
 
-class LoginView(APIView):
-    permission_classes = [AllowAny]
 
-    @csrf_exempt
-    def post(self, request):
+
+from django.contrib.auth.decorators import login_required
+
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import IsAuthenticated
+from .models import UserSession
+
+from django.contrib.sessions.models import Session
+
+
+
+def send_login_notification(self, user, device_name, ip_address):
+    subject = "New Login Notification"
+    message = (
+        f"Hello {user.username},\n\n"
+        f"A new login to your account was detected:\n"
+        f"Device: {device_name}\n"
+        f"IP Address: {ip_address}\n\n"
+        f"If this was not you, please take immediate action to secure your account."
+    )
+    recipient_email = user.email
+
+    send_mail(
+        subject,
+        message,
+        settings.EMAIL_USERNAME,  # Replace with your email
+        [recipient_email],
+        fail_silently=True,
+    )
+
+
+@csrf_exempt
+@authentication_classes([BasicAuthentication]) 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
         username = request.data.get('username')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
@@ -67,12 +100,13 @@ class LoginView(APIView):
 
             device_name = request.data.get('device_name', 'Unknown Device')
 
-            
+            # get current session object
+            related_session = request.session
 
             # Store the session
             UserSession.objects.create(
                 user=user,
-                session=Session.objects.get(session_key=request.session.session_key),
+                session=related_session,
                 device_name=device_name,
                 user_agent=user_agent,
                 ip_address=ip_address,
@@ -87,34 +121,10 @@ class LoginView(APIView):
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=400)
 
-    def send_login_notification(self, user, device_name, ip_address):
-        subject = "New Login Notification"
-        message = (
-            f"Hello {user.username},\n\n"
-            f"A new login to your account was detected:\n"
-            f"Device: {device_name}\n"
-            f"IP Address: {ip_address}\n\n"
-            f"If this was not you, please take immediate action to secure your account."
-        )
-        recipient_email = user.email
 
-        send_mail(
-            subject,
-            message,
-            settings.EMAIL_USERNAME,  # Replace with your email
-            [recipient_email],
-            fail_silently=True,
-        )
         
 
 
-from django.contrib.auth.decorators import login_required
-
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from .models import UserSession
-
-from django.contrib.sessions.models import Session
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

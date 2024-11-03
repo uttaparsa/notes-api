@@ -36,7 +36,10 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
-CSRF_TRUSTED_ORIGINS =  ALLOWED_HOSTS
+# append https to allowed hosts
+# CSRF_TRUSTED_ORIGINS =   [f"https://{host}" for host in ALLOWED_HOSTS] + [f"http://{host}" for host in ALLOWED_HOSTS]
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:3001"]
 
 # minio settings
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
@@ -73,8 +76,8 @@ INSTALLED_APPS = [
     'note',
 
     'rest_framework',
-    'drf_spectacular',
-    'rest_framework_simplejwt',
+    # 'drf_spectacular',
+    # 'rest_framework_simplejwt',
 
 
 ]
@@ -179,11 +182,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
 }
 
