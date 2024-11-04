@@ -13,16 +13,16 @@ class SingleNoteView(APIView):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, **kwargs):
+    async def get(self, request, **kwargs):
         serialized = self.serializer_class(LocalMessage.objects.prefetch_related("source_links").get(pk=self.kwargs['note_id']))
         return Response(serialized.data, status.HTTP_200_OK)
 
-    def delete(self, request, **kwargs):
+    async def delete(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
         item.delete()
         return Response("1", status=status.HTTP_200_OK)
 
-    def put(self, request, **kwargs):
+    async def put(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
         item.text = request.data.get("text")
         item.save()
