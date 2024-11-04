@@ -37,9 +37,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # append https to allowed hosts
-# CSRF_TRUSTED_ORIGINS =   [f"https://{host}" for host in ALLOWED_HOSTS] + [f"http://{host}" for host in ALLOWED_HOSTS]
+CSRF_TRUSTED_ORIGINS =   [f"https://{host}" for host in ALLOWED_HOSTS] + [f"http://{host}" for host in ALLOWED_HOSTS]
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:3001"]
+# CSRF_TRUSTED_ORIGINS = ["http://localhost:3001"]
 
 # minio settings
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "localhost:9000")

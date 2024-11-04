@@ -113,7 +113,7 @@ def login_view(request):
             if related_session_key:
 
                 # Store the session
-                UserSession.objects.create(
+                UserSession.objects.get_or_create(
                     user=user,
                     session_id=related_session_key,
                     device_name=device_name,

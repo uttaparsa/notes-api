@@ -7,14 +7,14 @@ class UpdateLastAccessMiddleware:
 
     def __call__(self, request):
         # Only update if the user has a session
-        # session_key = request.session.session_key
-        # print(f"session_key is {session_key}")
-        # if session_key:
-        #     # Update the last accessed time if the session is exists
-        #     user_session = UserSession.objects.filter(session_id=session_key).first()
-        #     if user_session:
-        #         user_session.last_accessed = timezone.now()
-        #         user_session.save()
+        session_key = request.session.session_key
+        if session_key:
+            # Update the last accessed time if the session is exists
+            user_session = UserSession.objects.filter(session_id=session_key).first()
+            if user_session:
+                print(f"Updating last access time for {user_session.user}")
+                user_session.last_accessed = timezone.now()
+                user_session.save()
 
 
 
