@@ -47,12 +47,12 @@ services:
       - NODE_ENV=production
 
 
-  frontend-old:
-    build:
-      context: ./nuxt-front
-      dockerfile: Dockerfile
-    networks:
-      - app-network
+  # frontend-old:
+  #   build:
+  #     context: ./nuxt-front
+  #     dockerfile: Dockerfile
+  #   networks:
+  #     - app-network
 
 
   webserver:
@@ -60,7 +60,7 @@ services:
       - minio
       - backend
       - frontend
-      - frontend-old
+      # - frontend-old
     build:
       context: ./nginx
       dockerfile: Dockerfile
