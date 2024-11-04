@@ -22,14 +22,14 @@ class UpdateLastAccessMiddleware:
         # Non-blocking database update
         if session_key:
 
-            # add to event loop
-            asyncio.create_task(self.update_last_access(session_key))
+            self.update_last_access(session_key)
             
 
         response =  await self.get_response(request)
         return response
 
     async def update_last_access(self, session_key):
+        
         user_session = await UserSession.objects.filter(session_id=session_key).afirst()
         if user_session:
             # print(f"Updating last access time for {user_session.user}")
