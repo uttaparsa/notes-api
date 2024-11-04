@@ -9,19 +9,19 @@ class NoteListView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = NoteListSerializer
 
-    async def get(self, request, format=None):
+    def get(self, request, format=None):
         local_messages = [msg for msg in LocalMessageList.objects.all()]
         serializer = self.serializer_class(local_messages, many=True)
         return Response(serializer.data)
 
-    async def post(self, request):
+    def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    async def patch(self, request, pk):
+    def patch(self, request, pk):
         try:
             note_list = LocalMessageList.objects.get(pk=pk)
         except LocalMessageList.DoesNotExist:
@@ -36,7 +36,7 @@ class NoteListView(APIView):
 class ArchiveMessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    async def get(self, request, pk):
+    def get(self, request, pk):
         try:
             item = LocalMessageList.objects.get(pk=pk)
             item.archived = True
@@ -48,7 +48,7 @@ class ArchiveMessageListView(APIView):
 class UnArchiveMessageListView(APIView):
     permission_classes = [IsAuthenticated]
 
-    async def get(self, request, pk):
+    def get(self, request, pk):
         try:
             item = LocalMessageList.objects.get(pk=pk)
             item.archived = False
