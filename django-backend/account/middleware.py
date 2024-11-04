@@ -22,7 +22,7 @@ class UpdateLastAccessMiddleware:
 
         if session_key:
             # non blocking update on a separate thread
-            asyncio.create_task(self.update_last_access(session_key))
+            await self.update_last_access(session_key)
             
 
         return await self.get_response(request)
