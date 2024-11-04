@@ -4,6 +4,7 @@ import asyncio
 
 from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 
+
 class UpdateLastAccessMiddleware:
 
     async_capable = True
@@ -19,14 +20,12 @@ class UpdateLastAccessMiddleware:
     async def __call__(self, request):
         session_key = request.session.session_key
 
-        # Non-blocking database update
         if session_key:
-
-            self.update_last_access(session_key)
+            # non blocking update on a separate thread
+            asyncio.create_task(self.update_last_access(session_key))
             
 
-        response =  await self.get_response(request)
-        return response
+        return await self.get_response(request)
 
     async def update_last_access(self, session_key):
         
