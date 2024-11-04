@@ -2,7 +2,7 @@
   font-family: "Vazir";
 }
 
-.codeBlock {
+pre.codeBlock {
   border-radius: 4px;
   padding: 1em;
   margin: 0.5em 0;
@@ -10,9 +10,8 @@
   padding-right: 40px; /* Make space for the copy button */
 }
 
-.codeBlock code {
+pre.codeBlock code {
   font-family: 'Courier New', Courier, monospace;
-  /* font-size: 0.9em; */
   line-height: 1.6;
   display: block;
   width: 100%;
@@ -29,6 +28,13 @@
   cursor: pointer;
 }
 
+/* .card-text code:not(:has(pre > code)) {
+  background-color: #f0f0f0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: bold;
+  
+} */
 .markdownImage {
   position: relative;
   width: 100%;

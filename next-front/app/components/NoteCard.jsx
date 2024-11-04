@@ -266,11 +266,17 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   };
 
   const customRenderers = {
-    code: ({ node, inline, className, children, ...props }) => {
-      const match = /language-(\w+)/.exec(className || '');
-      const lang = match ? match[1] : '';
-      
-      if (!inline) {
+    pre: ({ node, className, children, ...props }) => {
+      // const match = /language-(\w+)/.exec(className || '');
+      // const lang = match ? match[1] : '';
+
+      // console.log("props are "+ JSON.stringify(props));
+      // console.log("className "+ className);
+      // console.log(node);
+      // check if node parent of type pre
+
+        // console.log("children", children);
+        
         const codeString = String(children).replace(/\n$/, '');
         
         const copyCode = () => {
@@ -281,22 +287,15 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         return (
           <div className={styles.codeBlockWrapper}>
             <pre className={styles.codeBlock + " bg-body border"}>
-              <code className={className } {...props}>
                 {children}
-              </code>
             </pre>
+
             <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
               Copy
             </Button>
           </div>
         );
-      }
-      
-      return (
-        <code className={className} {...props}>
-          {children}
-        </code>
-      );
+    
     },
     a: ({ href, children }) => {
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
