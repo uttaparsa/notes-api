@@ -5,7 +5,14 @@ import time
 import os
 from datetime import datetime
 from note.models import LocalMessage, LocalMessageList
+from django.conf import settings
 
+
+# print cwd to check if we are in the right directory
+print(os.getcwd())
+
+# file is stored under BASE_DIR/data/last_processed_id.txt
+LAST_PROCESSED_FILE = os.path.join(settings.BASE_DIR, "data", "last_processed_id.txt")
 
 def connect_to_gmail(username, password):
     imap = imaplib.IMAP4_SSL("imap.gmail.com")
@@ -18,13 +25,13 @@ def get_latest_email_id(imap):
     return int(message_numbers[0].split()[-1])
 
 def get_last_processed_id():
-    if os.path.exists("last_processed_id.txt"):
-        with open("last_processed_id.txt", "r") as f:
+    if os.path.exists(LAST_PROCESSED_FILE):
+        with open(LAST_PROCESSED_FILE, "r") as f:
             return int(f.read().strip())
     return 0
 
 def save_last_processed_id(email_id):
-    with open("last_processed_id.txt", "w") as f:
+    with open(LAST_PROCESSED_FILE, "w") as f:
         f.write(str(email_id))
 
 def process_email(email_message):

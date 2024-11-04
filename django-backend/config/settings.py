@@ -28,6 +28,8 @@ DEBUG = int(os.environ.get("DEBUG", default=1))
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+
+
 # CORS_ORIGIN_WHITELIST = (
 #     'https://localhost:3000'
 #     'http://localhost:3000'
@@ -130,6 +132,21 @@ DATABASES = {
     }
 }
 
+LOGGING = {                                                                                                                 
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'logfile': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'data/django.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['logfile'],
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

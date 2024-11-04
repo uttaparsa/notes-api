@@ -69,7 +69,7 @@ def serve_csrf_cookie(request):
     return response
 
 
-def send_login_notification(self, user, device_name, ip_address):
+def send_login_notification(user, device_name, ip_address):
     subject = "New Login Notification"
     message = (
         f"Hello {user.username},\n\n"
