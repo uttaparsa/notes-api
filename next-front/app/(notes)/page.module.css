@@ -34,10 +34,7 @@
   border-radius: var(--border-radius);
 }
 
-.code {
-  font-weight: 700;
-  font-family: var(--font-mono);
-}
+
 
 .grid {
   display: grid;
@@ -227,3 +224,5 @@
     transform: rotate(0deg);
   }
 }
+
+

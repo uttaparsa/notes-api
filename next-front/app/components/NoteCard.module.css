@@ -2,39 +2,9 @@
   font-family: "Vazir";
 }
 
-pre.codeBlock {
-  border-radius: 4px;
-  padding: 1em;
-  margin: 0.5em 0;
-  overflow-x: auto;
-  padding-right: 40px; /* Make space for the copy button */
-}
 
-pre.codeBlock code {
-  font-family: 'Courier New', Courier, monospace;
-  line-height: 1.6;
-  display: block;
-  width: 100%;
-}
-.codeBlockWrapper {
-  position: relative;
-}
 
-.copyButton {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-}
 
-/* .card-text code:not(:has(pre > code)) {
-  background-color: #f0f0f0;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: bold;
-  
-} */
 .markdownImage {
   position: relative;
   width: 100%;
@@ -104,3 +74,37 @@ pre.codeBlock code {
     width: 100%;
   }
 }
+
+.codeBlockWrapper {
+  position: relative;
+}
+
+
+
+pre.codeBlock {
+  border-radius: 4px;
+  padding: 1em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+  padding-right: 40px; /* Make space for the copy button */
+}
+
+pre.codeBlock code {
+  /* font-family: 'Courier New', Courier, monospace; */
+  line-height: 1.6;
+  display: block;
+  width: 100%;
+}
+
+.copyButton {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+:not(pre) > .codeSnippet {
+  
+}
+

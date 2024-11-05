@@ -266,34 +266,42 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   };
 
   const customRenderers = {
-    pre: ({ node, className, children, ...props }) => {
-      // const match = /language-(\w+)/.exec(className || '');
-      // const lang = match ? match[1] : '';
+    pre: ({ node, inline,className, children, ...props }) => {
 
-      // console.log("props are "+ JSON.stringify(props));
-      // console.log("className "+ className);
-      // console.log(node);
-      // check if node parent of type pre
+      const codeString = String(children.props.children).replace(/\n$/, '');
+      const copyCode = () => {
+        copyTextToClipboard(codeString);
+        showToast("Success", "Code copied to clipboard", 3000, "success");
+      };
+      return (
+        <div className={styles.codeBlockWrapper}>
+          <pre  className={styles.codeBlock + " bg-body border"}>
+          {children}
 
-        // console.log("children", children);
-        
-        const codeString = String(children).replace(/\n$/, '');
-        
-        const copyCode = () => {
-          copyTextToClipboard(codeString);
-          showToast("Success", "Code copied to clipboard", 3000, "success");
-        };
-
-        return (
-          <div className={styles.codeBlockWrapper}>
-            <pre className={styles.codeBlock + " bg-body border"}>
-                {children}
-            </pre>
-
-            <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
+         </pre>
+             
+         <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
               Copy
-            </Button>
-          </div>
+          </Button>
+        </div>
+
+      )
+    },
+    code: ({ node, ...props }) => {
+        const codeString = String(props.children).replace(/\n$/, '');
+        const copyCode = (element) => {
+          // check if parent element is not pre
+          if (element.target.parentElement.tagName !== 'PRE') {
+            copyTextToClipboard(codeString);
+            showToast("Success", "Code copied to clipboard", 3000, "success");
+          }
+
+        };
+        return (
+            <code onClick={copyCode} className={styles.codeSnippet} >
+              {props.children}
+            </code>
+
         );
     
     },

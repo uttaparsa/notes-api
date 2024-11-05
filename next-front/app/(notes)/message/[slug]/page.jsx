@@ -7,6 +7,7 @@ import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
 
+
 const SingleNoteView = () => {
   const [busy, setBusy] = useState(true);
   const [note, setNote] = useState(null);
@@ -65,7 +66,7 @@ const SingleNoteView = () => {
       }
       const data = await response.json();
 
-      console.log("current note is", data);
+      // console.log("current note is", data);
       return data;
     } catch (error) {
       console.error("Error fetching note:", error);
