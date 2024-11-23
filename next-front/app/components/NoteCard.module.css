@@ -3,7 +3,11 @@
 }
 
 
-
+.monospace {
+  font-family: monospace, "Lucida Console", Courier;
+  white-space: "pre";
+  max-height: "60vh";
+}
 
 .markdownImage {
   position: relative;

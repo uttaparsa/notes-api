@@ -475,11 +475,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             value={editText}
             onChange={handleChange}
             onKeyDown={handleEnter}
-            className="w-100"
-            style={{
-              whiteSpace: "pre-line",
-              maxHeight: "60vh",
-            }}
+            className={styles.monospace + " w-100"}
+            styles
           />
         </Modal.Body>
         <Modal.Footer>
