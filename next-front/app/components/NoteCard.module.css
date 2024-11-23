@@ -4,7 +4,7 @@
 
 
 .monospace {
-  font-family: monospace, "Lucida Console", Courier;
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
   white-space: "pre";
   max-height: "60vh";
 }
