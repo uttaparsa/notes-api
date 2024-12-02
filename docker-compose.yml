@@ -47,20 +47,12 @@ services:
       - NODE_ENV=production
 
 
-  # frontend-old:
-  #   build:
-  #     context: ./nuxt-front
-  #     dockerfile: Dockerfile
-  #   networks:
-  #     - app-network
-
 
   webserver:
     depends_on:
       - minio
       - backend
       - frontend
-      # - frontend-old
     build:
       context: ./nginx
       dockerfile: Dockerfile
@@ -75,7 +67,7 @@ services:
     volumes:
       - ./django-backend/data/media:/opt/data/media
     environment:
-      SERVER_NAME: example.com # replace with your website addreses
+      SERVER_NAME: ${DOMAIN_NAME} # replace with your website addreses
 
 
 
