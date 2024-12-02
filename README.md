@@ -1,6 +1,16 @@
-# Notes API
+# Notes
 
 ![Architecture](./note-1.png)
+
+## Features
+
+- SQLite database for efficient data storage
+- Full Markdown support for rich text editing
+- Dark theme for comfortable viewing
+- File and image upload capabilities
+- Category organization system
+- Bi-directional linking with backlinks
+- Secure session-based access control
 
 ## Quick Start Guide
 
