@@ -15,6 +15,8 @@ import styles from "./NoteCard.module.css";
 import Link from 'next/link';
 import YouTubeLink from './YouTubeLink';
 
+
+
 const ResponsiveImage = ({ src, alt, title }) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -35,60 +37,36 @@ const ResponsiveImage = ({ src, alt, title }) => {
     }
   }, []);
 
-  // Handle ESC key to close fullscreen
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setIsFullscreen(false);
-      }
-    };
-
-    if (isFullscreen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isFullscreen]);
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
 
   return (
     <>
       <span 
         ref={containerRef} 
-        className={styles.markdownImage}
-        onClick={() => setIsFullscreen(true)}
-        style={{ cursor: 'pointer' }}
+        className={`${styles.markdownImage} ${isFullscreen ? styles.fullscreenContainer : ''}`}
+        onClick={toggleFullscreen}
       >
         <img
           src={src}
           alt={alt || ''}
           title={title || ''}
-          className={styles.responsiveImage}
+          className={`${styles.responsiveImage} ${isFullscreen ? styles.fullscreenImage : ''}`}
         />
       </span>
 
       {isFullscreen && (
-        <div className={styles.fullscreenOverlay}>
-          <div className={styles.fullscreenContent}>
-            <button
-              className={styles.closeButton}
-              onClick={() => setIsFullscreen(false)}
-              aria-label="Close fullscreen image"
-            >
-              ×
-            </button>
-            <img
-              src={src}
-              alt={alt || ''}
-              className={styles.fullscreenImage}
-            />
-          </div>
-        </div>
+        <div 
+          className={styles.overlay}
+          onClick={toggleFullscreen}
+        />
       )}
     </>
   );
 };
+
+
 
 
   
