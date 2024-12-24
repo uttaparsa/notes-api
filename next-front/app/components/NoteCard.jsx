@@ -15,31 +15,51 @@ import styles from "./NoteCard.module.css";
 import Link from 'next/link';
 import YouTubeLink from './YouTubeLink';
 
-
 const ResponsiveImage = ({ src, alt, title }) => {
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-    const containerRef = useRef(null);
-    
-  
-    useEffect(() => {
-      if (containerRef.current) {
-        const resizeObserver = new ResizeObserver(entries => {
-          for (let entry of entries) {
-            const { width, height } = entry.contentRect;
-            setDimensions({ width, height });
-          }
-        });
-  
-        resizeObserver.observe(containerRef.current);
-  
-        return () => {
-          resizeObserver.disconnect();
-        };
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect;
+          setDimensions({ width, height });
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, []);
+
+  // Handle ESC key to close fullscreen
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsFullscreen(false);
       }
-    }, []);
-  
-    return (
-      <span ref={containerRef} className={styles.markdownImage}>
+    };
+
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isFullscreen]);
+
+  return (
+    <>
+      <span 
+        ref={containerRef} 
+        className={styles.markdownImage}
+        onClick={() => setIsFullscreen(true)}
+        style={{ cursor: 'pointer' }}
+      >
         <img
           src={src}
           alt={alt || ''}
@@ -47,8 +67,29 @@ const ResponsiveImage = ({ src, alt, title }) => {
           className={styles.responsiveImage}
         />
       </span>
-    );
-  };
+
+      {isFullscreen && (
+        <div className={styles.fullscreenOverlay}>
+          <div className={styles.fullscreenContent}>
+            <button
+              className={styles.closeButton}
+              onClick={() => setIsFullscreen(false)}
+              aria-label="Close fullscreen image"
+            >
+              ×
+            </button>
+            <img
+              src={src}
+              alt={alt || ''}
+              className={styles.fullscreenImage}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 
   
 

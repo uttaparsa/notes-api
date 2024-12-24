@@ -9,21 +9,8 @@
   max-height: "60vh";
 }
 
-.markdownImage {
-  position: relative;
-  width: 100%;
-  max-height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
 
-.responsiveImage {
-  max-width: 600px;
-  max-height: 600px;
-  object-fit: contain;
-}
+
 
 
 .youtubeLink {
@@ -112,3 +99,93 @@ pre.codeBlock code {
   
 }
 
+
+
+
+
+
+.markdownImage {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.responsiveImage {
+  max-width: 100%;
+  height: auto;
+}
+
+.fullscreenOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.fullscreenContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  padding-top: 40px; /* Add padding to accommodate the close button */
+}
+
+.fullscreenImage {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+.closeButton {
+  position: absolute;
+  top: 0;          /* Changed from -40px */
+  right: 0;        /* Changed from -40px */
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  padding: 0;
+  line-height: 1;
+  z-index: 1001;   /* Ensure button stays above image */
+}
+
+/* Optional hover effect for the close button */
+.closeButton:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.1);
+  transition: all 0.2s ease;
+}
+
+/* Add smooth transition for the overlay */
+.fullscreenOverlay {
+  opacity: 0;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Media query for small screens */
+@media screen and (max-width: 768px) {
+  .fullscreenContent {
+    max-width: 95vw;    /* Allow image to use more screen space on mobile */
+    padding-top: 35px;  /* Slightly reduced padding for mobile */
+  }
+}
