@@ -129,7 +129,11 @@ export default function ClientSideSearchWrapper() {
               notes={notes}
               isBusy={isBusy}
               showHidden={showHidden}
-              refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
+              refreshNotes={() => {
+                // getRecords(searchText, listSlug, currentPage)
+                console.log('refreshNotes called, doing nothing');
+                
+              }}
             />
           </Col>
           <Col lg={2}></Col>

@@ -97,19 +97,15 @@ export default function NotesPage() {
 
   const handleSearch = useCallback((newSearchText, newListSlugs) => {
     console.log('handleSearch', newSearchText, newListSlugs);
+  
     
-    if (newSearchText !== searchText || newListSlugs !== listSlug) {
-      setSearchText(newSearchText);
-      setListSlug(newListSlugs);
-      setCurrentPage(1);
-      
-      let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
-      if (newListSlugs && newListSlugs !== 'All') {
-        url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
-      }
+    let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
+    if (newListSlugs && newListSlugs !== 'All') {
+      url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
       router.push(url);
     }
-  }, [searchText, listSlug, router]);
+  }, [  router]);
+
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
