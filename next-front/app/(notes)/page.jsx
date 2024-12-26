@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Form, FormCheck, Row, Col } from 'react-bootstrap';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NoteList from "../components/NoteList";
