@@ -92,12 +92,17 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     hideEditModal: () => setShowEditModal(false),
   }));
 
+  
+
 
 
   const updateTextAreaHeight = (textarea) => {
     if (textarea) {
-      textarea.style.height = "1px";
-      textarea.style.height = 25 + textarea.scrollHeight + "px";
+      textarea.style.height = "50px";
+      // max height 70vh
+      const max_height = 0.75 * window.innerHeight;
+      const new_height = Math.min(50 + textarea.scrollHeight, max_height);
+      textarea.style.height = new_height + "px";
     }
   };
 
