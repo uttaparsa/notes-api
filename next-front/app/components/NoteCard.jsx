@@ -92,11 +92,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     hideEditModal: () => setShowEditModal(false),
   }));
 
-  useEffect(() => {
-    if (editMessageTextAreaRef.current) {
-      updateTextAreaHeight(editMessageTextAreaRef.current);
-    }
-  }, [editText]);
+
 
   const updateTextAreaHeight = (textarea) => {
     if (textarea) {
@@ -105,9 +101,10 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     }
   };
 
+
   const handleChange = (e) => {
     setEditText(e.target.value);
-    updateTextAreaHeight(e.target);
+    // updateTextAreaHeight(e.target);
   };
 
   const expandNote = () => {
@@ -240,7 +237,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setTimeout(() => {
       if (editMessageTextAreaRef.current) {
         updateTextAreaHeight(editMessageTextAreaRef.current);
-        editMessageTextAreaRef.current.focus();
+        // editMessageTextAreaRef.current.focus();
         editMessageTextAreaRef.current.dir = isRTL(note.text) ? "rtl" : "ltr";
       }
     }, 100);
@@ -494,8 +491,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             value={editText}
             onChange={handleChange}
             onKeyDown={handleEnter}
-            className={styles.monospace + " w-100"}
-            styles
+            className={styles.monospace+ " "+ styles.editTextArea + " w-100"}
+            
           />
         </Modal.Body>
         <Modal.Footer>

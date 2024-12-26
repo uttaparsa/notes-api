@@ -166,3 +166,11 @@ pre.codeBlock code {
 .markdownImage:hover .responsiveImage {
   filter: brightness(0.9);
 }
+
+.editTextArea {
+  height: 70vh;  /* Make it 70% of the viewport height */
+  resize: vertical;  /* Allow user to resize vertically if needed */
+  overflow-y: auto;
+  padding: 1rem;
+  line-height: 1.5;
+}
