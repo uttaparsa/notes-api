@@ -93,6 +93,30 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   }));
 
   
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    
+    if (!viewport) return; // For browsers that don't support visualViewport
+    
+    const handleResize = () => {
+      if (editMessageTextAreaRef.current) {
+        // Calculate new height based on viewport
+        const newHeight = viewport.height * 0.6; // 70% of visible area
+        editMessageTextAreaRef.current.style.height = `${newHeight}px`;
+      }
+    };
+  
+    viewport.addEventListener('resize', handleResize);
+    viewport.addEventListener('scroll', handleResize);
+  
+    // Initial resize
+    handleResize();
+  
+    return () => {
+      viewport.removeEventListener('resize', handleResize);
+      viewport.removeEventListener('scroll', handleResize);
+    };
+  }, []);
 
 
 
