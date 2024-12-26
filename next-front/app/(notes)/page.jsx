@@ -94,9 +94,22 @@ export default function NotesPage() {
     }));
   };
 
-  const handleSearch = (searchText) => {
-    router.push(`/search/?q=${encodeURIComponent(searchText)}`);
-  };
+
+  const handleSearch = useCallback((newSearchText, newListSlugs) => {
+    console.log('handleSearch', newSearchText, newListSlugs);
+    
+    if (newSearchText !== searchText || newListSlugs !== listSlug) {
+      setSearchText(newSearchText);
+      setListSlug(newListSlugs);
+      setCurrentPage(1);
+      
+      let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
+      if (newListSlugs && newListSlugs !== 'All') {
+        url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
+      }
+      router.push(url);
+    }
+  }, [searchText, listSlug, router]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -118,7 +131,7 @@ export default function NotesPage() {
 
   return (
     <div dir="ltr" >
-      <SearchBar onSearch={handleSearch} listSlug={'All'} />
+      <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
         <PaginationComponent
           currentPage={currentPage}

@@ -35,6 +35,7 @@ export default function ClientSideSearchWrapper() {
       }
       
       url += `&page=${page}`;
+      console.log('url', url);
       const response = await fetchWithAuth(url);
       if (!response.ok) throw new Error('Failed to fetch search results');
       const data = await response.json();
