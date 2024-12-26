@@ -83,7 +83,7 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange })
   return (
     <>
       <Button
-        variant="outline-dark"
+        variant="outline-secondary"
         className="h-80 px-1 shadow-none ml-2"
         onClick={() => setShowModal(true)}
       >
@@ -91,7 +91,9 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange })
           xmlns="http://www.w3.org/2000/svg"
           width="32"
           height="32"
-          fill="currentColor"
+          style={{ 
+                fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
+              }}
           className="bi bi-paperclip"
           viewBox="0 0 16 16"
         >

@@ -435,55 +435,71 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="xl">
         <Modal.Body>
           <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
-          <div>
-              {!singleView && (
-                <>
-                  {!note.pinned ? (
-                    <Button variant="outline-primary" className="mr-2" onClick={pinMessage}>Pin</Button>
-                  ) : (
-                    <Button variant="outline-primary" className="mr-2" onClick={unPinMessage}>Unpin</Button>
-                  )}
-                  {!note.archived ? (
-                    <Button variant="outline-secondary" onClick={hideMessage}>Hide</Button>
-                  ) : (
-                    <Button variant="outline-secondary" onClick={unHideMessage}>Unhide</Button>
-                  )}
-                </>
-              )}
-            </div>
+            <div>
+            {!singleView && (
+              <>
+                {!note.pinned ? (
+                  <Button variant="outline-primary" className="mr-2" onClick={pinMessage}>
+                    Pin
+                  </Button>
+                ) : (
+                  <Button variant="outline-primary" className="mr-2" onClick={unPinMessage}>
+                    Unpin
+                  </Button>
+                )}
+              </>
+            )}
+
+            {!note.archived ? (
+              <Button variant="outline-secondary" onClick={hideMessage}>
+                Hide
+              </Button>
+            ) : (
+              <Button variant="outline-secondary" onClick={unHideMessage}>
+                Unhide
+              </Button>
+            )}
+          </div>
+
             <div>
               <FileUploadComponent
                 onFileUploaded={handleFileUpload}
                 initialText={editText}
                 onTextChange={setEditText}
               />
-              <Button variant="outline-dark" size="sm" className="ml-2" onClick={toggleEditorRtl}>
-                <span>
-                  <svg
-                    ref={rtlIcon}
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="24px"
-                    viewBox="0 0 24 24"
-                    width="24px"
-                    fill="#000000"
-                  >
-                    <path d="M0 0h24v24H0z" fill="none" />
-                    <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
-                  </svg>
-                  <svg
-                    ref={ltrIcon}
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="24px"
-                    style={{ display: "none" }}
-                    viewBox="0 0 24 24"
-                    width="24px"
-                    fill="#000000"
-                  >
-                    <path d="M0 0h24v24H0z" fill="none" />
-                    <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
-                  </svg>
-                </span>
-              </Button>
+
+        <Button variant="outline-secondary" size="sm" className="ml-2" onClick={toggleEditorRtl}>
+          <span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 0 24 24"
+              width="24px"
+              className="rtl-icon"
+              style={{ 
+                display: isRTL ? 'none' : 'block',
+                fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
+              }}
+            >
+              <path d="M0 0h24v24H0z" fill="none" />
+              <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              height="24px"
+              viewBox="0 0 24 24"
+              width="24px"
+              className="ltr-icon"
+              style={{ 
+                display: isRTL ? 'block' : 'none',
+                fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
+              }}
+            >
+              <path d="M0 0h24v24H0z" fill="none" />
+              <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
+            </svg>
+          </span>
+        </Button>
             </div>
           </div>
           <textarea
