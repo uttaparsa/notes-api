@@ -15,36 +15,44 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
 
     def get_queryset(self):
         query = self.request.GET.get("q", "")
-        
-        # Handle list_slug parameter - can be single slug or comma-separated slugs
         list_slugs = self.request.GET.get("list_slug", "")
 
         print(f"list_slugs {list_slugs} query is {query}")
         
-        if list_slugs and list_slugs.lower() != 'all':
-            # Split the slugs and handle both single and multiple slugs
-            slug_list = [slug.strip() for slug in list_slugs.split(',')]
+        queryset = LocalMessage.objects.all()
+        
+        if query:
+            # Handle both 'and' and 'or' conditions
+            if ' and ' in query:
+                search_terms = query.split(' and ')
+                text_filter = Q()
+                for term in search_terms:
+                    text_filter &= Q(text__icontains=term.strip())
+            elif ' or ' in query:
+                search_terms = query.split(' or ')
+                text_filter = Q()
+                for term in search_terms:
+                    text_filter |= Q(text__icontains=term.strip())
+            else:
+                # Single term search
+                text_filter = Q(text__icontains=query.strip())
             
-            # Get all matching lists
+            queryset = queryset.filter(text_filter)
+        
+        if list_slugs and list_slugs.lower() != 'all':
+            slug_list = [slug.strip() for slug in list_slugs.split(',')]
             lists = LocalMessageList.objects.filter(slug__in=slug_list)
             
             if not lists.exists():
                 return LocalMessage.objects.none()
             
-            # Create a Q object for combining list filters
             list_filter = Q()
             for lst in lists:
                 list_filter |= Q(list=lst.id)
             
-            # Combine with text search
-            return LocalMessage.objects.filter(
-                Q(text__icontains=query) & list_filter
-            ).order_by('-created_at')
+            queryset = queryset.filter(list_filter)
         
-        # If no list_slug provided or if it's 'All', search across all lists
-        return LocalMessage.objects.filter(
-            Q(text__icontains=query)
-        ).order_by('-created_at')
+        return queryset.order_by('-created_at')
 
     @extend_schema(
         parameters=[SearchSerializer],
@@ -52,7 +60,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         Search messages across multiple lists.
         
         Parameters:
-        - q: Search query string
+        - q: Search query string (supports 'and'/'or' operators, e.g., 'term1 and term2' or 'term1 or term2')
         - list_slug: Single list slug or comma-separated list of slugs (e.g., 'list1,list2,list3')
                     Use 'All' or omit to search all lists
         """
