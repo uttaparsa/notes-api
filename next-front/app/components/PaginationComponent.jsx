@@ -27,7 +27,7 @@ const PaginationComponent = ({ currentPage, totalCount, perPage, onPageChange })
 
   for (let number = startPage; number <= endPage; number++) {
     items.push(
-      <Pagination.Item key={number} active={number === currentPage} onClick={() => onPageChange(number)}>
+      <Pagination.Item className="z-0" key={number} active={number === currentPage} onClick={() => onPageChange(number)}>
         {number}
       </Pagination.Item>
     );

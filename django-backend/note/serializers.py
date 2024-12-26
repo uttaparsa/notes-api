@@ -34,9 +34,35 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
     
+
 class SearchSerializer(serializers.Serializer):
-    q = serializers.CharField()
-    list_slug = serializers.CharField(required=False)
+    q = serializers.CharField(required=True, help_text="Search query string")
+    list_slug = serializers.CharField(
+        required=False, 
+        help_text="Single list slug or comma-separated list of slugs (e.g., 'list1,list2,list3')"
+    )
+    page = serializers.IntegerField(required=False, help_text="Page number for pagination")
+
+    def validate_list_slug(self, value):
+        if not value:
+            return value
+            
+        if value.lower() == 'all':
+            return value
+            
+        # Validate that all provided slugs exist
+        slug_list = [slug.strip() for slug in value.split(',')]
+        existing_slugs = LocalMessageList.objects.filter(
+            slug__in=slug_list
+        ).values_list('slug', flat=True)
+        
+        invalid_slugs = set(slug_list) - set(existing_slugs)
+        if invalid_slugs:
+            raise serializers.ValidationError(
+                f"Invalid list slugs: {', '.join(invalid_slugs)}"
+            )
+            
+        return value
 
 class MoveMessageSerializer(serializers.Serializer):
     list_id = serializers.IntegerField()

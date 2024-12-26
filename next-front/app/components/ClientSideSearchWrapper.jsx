@@ -25,15 +25,15 @@ export default function ClientSideSearchWrapper() {
     return page ? parseInt(page) : 1;
   });
 
-  const getRecords = useCallback(async (query, slug, page) => {
-    if (!query) return;
-    console.log("getting records for " + query);
+  const getRecords = useCallback(async (query, slugs, page) => {
     setIsBusy(true);
     try {
-      let url = `/api/note/search/?q=${encodeURIComponent(query)}`;
-      if (slug && slug !== 'All') {
-        url += `&list_slug=${encodeURIComponent(slug)}`;
+      let url = `/api/note/search/?q=${encodeURIComponent(query || '')}`;
+      
+      if (slugs && slugs !== 'All') {
+        url += `&list_slug=${encodeURIComponent(slugs)}`;
       }
+      
       url += `&page=${page}`;
       const response = await fetchWithAuth(url);
       if (!response.ok) throw new Error('Failed to fetch search results');
@@ -47,82 +47,93 @@ export default function ClientSideSearchWrapper() {
       setIsBusy(false);
     }
   }, []);
+  
 
   useEffect(() => {
     const query = searchParams.get('q');
     const slug = searchParams.get('list_slug') || 'All';
     const page = searchParams.get('page');
-    if (query) {
+    if (query || slug !== 'All') {
       setSearchText(query);
       setListSlug(slug);
       if (page) {
         setCurrentPage(parseInt(page));
       }
-      getRecords(query, slug, page || currentPage);
+      // If slug contains commas, split it into an array
+      const slugsToSearch = slug.includes(',') ? slug.split(',') : slug;
+      console.log("slugsToSearch", slugsToSearch);
+      
+      getRecords(query, slugsToSearch, page || currentPage);
     }
   }, [searchParams, getRecords]);
 
-  const handleSearch = useCallback((newSearchText, newListSlug) => {
-    if (newSearchText !== searchText || newListSlug !== listSlug) {
+  const handleSearch = useCallback((newSearchText, newListSlugs) => {
+    console.log('handleSearch', newSearchText, newListSlugs);
+    
+    if (newSearchText !== searchText || newListSlugs !== listSlug) {
       setSearchText(newSearchText);
-      setListSlug(newListSlug);
+      setListSlug(newListSlugs);
       setCurrentPage(1);
-      let url = `/search/?q=${encodeURIComponent(newSearchText)}`;
-      if (newListSlug && newListSlug !== 'All') {
-        url += `&list_slug=${encodeURIComponent(newListSlug)}`;
+      
+      let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
+      if (newListSlugs && newListSlugs !== 'All') {
+        url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
       }
       router.push(url);
     }
   }, [searchText, listSlug, router]);
+  
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     let url = `/search/?q=${encodeURIComponent(searchText)}`;
     if (listSlug && listSlug !== 'All') {
-      url += `&list_slug=${encodeURIComponent(listSlug)}`;
+      if (Array.isArray(listSlug)) {
+        url += `&list_slug=${encodeURIComponent(listSlug.join(','))}`;
+      } else {
+        url += `&list_slug=${encodeURIComponent(listSlug)}`;
+      }
     }
     url += `&page=${newPage}`;
     router.push(url, undefined, { shallow: true });
   };
 
   return (
-<div dir="ltr">
-  <SearchBar
-    onSearch={handleSearch}
-    initialSearchText={searchText}
-    initialListSlug={listSlug}
-  />
-  <div dir="ltr">
-    <PaginationComponent
-      currentPage={currentPage}
-      totalCount={totalCount}
-      perPage={perPage}
-      onPageChange={handlePageChange}
-    />
-    <Row className="m-0 p-0">
-      <Col lg={2} className="mx-0 mb-3 mb-lg-0">
-        <FormCheck
-          type="checkbox"
-          id="show-hidden"
-          label="Show Hidden"
-          checked={showHidden}
-          onChange={(e) => setShowHidden(e.target.checked)}
-          className="mb-3 text-body-emphasis mt-2"
+    <div dir="ltr">
+      <SearchBar
+        onSearch={handleSearch}
+        initialSearchText={searchText}
+        initialListSlug={listSlug}
+      />
+      <div dir="ltr">
+        <PaginationComponent
+          currentPage={currentPage}
+          totalCount={totalCount}
+          perPage={perPage}
+          onPageChange={handlePageChange}
         />
-        {/* You might want to add the date picker here as well, if needed */}
-      </Col>
-      <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
-        <NoteList
-          notes={notes}
-          isBusy={isBusy}
-          showHidden={showHidden}
-          refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
-        />
-      </Col>
-      <Col lg={2}></Col>
-    </Row>
-  </div>
-  {/* You might want to add the MessageInput component here if needed */}
-</div>
+        <Row className="m-0 p-0">
+          <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+            <FormCheck
+              type="checkbox"
+              id="show-hidden"
+              label="Show Hidden"
+              checked={showHidden}
+              onChange={(e) => setShowHidden(e.target.checked)}
+              className="mb-3 text-body-emphasis mt-2"
+            />
+          </Col>
+          <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
+            <NoteList
+              notes={notes}
+              isBusy={isBusy}
+              showHidden={showHidden}
+              refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
+            />
+          </Col>
+          <Col lg={2}></Col>
+        </Row>
+      </div>
+    </div>
   );
 }
