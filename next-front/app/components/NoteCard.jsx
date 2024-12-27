@@ -171,7 +171,26 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     showToast("Success", "Note link copied to clipboard", 3000, "success");
   };
 
-  const editNote = async () => {
+  const saveNote = async () => {
+    try {
+      const result = await onEditNote(note.id, editText);
+      // If onEditNote completes successfully (doesn't throw an error),
+      // then we can close the modal and re-enable link loading
+      console.log("result is", result);
+      
+      if (result) {
+        setShouldLoadLinks(true);
+      }
+      
+    } catch (error) {
+      // If an error is thrown, we don't close the modal or re-enable link loading
+      console.error('Failed to edit note:', error);
+      // Optionally, you can show an error message to the user here
+    }
+  };
+
+
+  const saveAndCloseEditModal = async () => {
     try {
       const result = await onEditNote(note.id, editText);
       // If onEditNote completes successfully (doesn't throw an error),
@@ -286,7 +305,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === "Enter") {
-      editNote();
+      saveAndCloseEditModal();
+    }else if (e.shiftKey && e.key === "Enter") {
+      saveNote();
     }
   };
 
@@ -489,6 +510,22 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           </div>
 
             <div>
+
+              <Button variant="outline-secondary" size="sm" onClick={saveNote} >
+
+              <svg
+            xmlns="http://www.w3.org/2000/svg"
+            height="24px"
+            viewBox="0 0 24 24"
+            width="24px"
+            className="save-icon"
+            style={{ fill: 'var(--bs-body-color)' }}
+          >
+            <path d="M0 0h24v24H0z" fill="none" />
+            <path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm0 16H5V5h11.17L19 7.83V19zm-7-1h2v-6h-2v6zm-4-8h10V7H6v3z" />
+          </svg>
+
+              </Button>
               <FileUploadComponent
                 onFileUploaded={handleFileUpload}
                 initialText={editText}
@@ -497,6 +534,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
         <Button variant="outline-secondary" size="sm" className="ml-2" onClick={toggleEditorRtl}>
           <span>
+            
+    
+
             <svg
               xmlns="http://www.w3.org/2000/svg"
               height="24px"
@@ -542,7 +582,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           <Button variant="secondary" onClick={() => setShowEditModal(false)}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={editNote}>
+          
+          <Button variant="primary" onClick={saveAndCloseEditModal}>
             Save
           </Button>
         </Modal.Footer>
