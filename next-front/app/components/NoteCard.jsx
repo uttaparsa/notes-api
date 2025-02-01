@@ -395,23 +395,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     {!hideEdits && (
       <Dropdown.Item onClick={() => setShowRevisionModal(true)}>
         <span className="d-flex align-items-center">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="me-2"
-          >
-            <path d="M3 3v18h18" />
-            <path d="M18.4 9.6L8.7 19.3" />
-            <path d="m10.8 8.7 2.9 2.9" />
-            <path d="m14.7 12.6 2.9 2.9" />
-          </svg>
           Revision History
         </span>
       </Dropdown.Item>

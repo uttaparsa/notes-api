@@ -1,21 +1,32 @@
-
-export async function fetchWithAuth(url, options = {}) {
+export async function fetchWithAuth(url, options = {}, timeout = 5000) {
   const csrfToken = getCookie('csrftoken'); // Helper function to retrieve the CSRF token from cookies
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   const headers = {
     ...options.headers,
     'X-CSRFToken': csrfToken,
   };
 
-  const response = await fetch(url, { ...options, headers, credentials: 'include' });
+  try {
+    const response = await fetch(url, { 
+      ...options, 
+      headers, 
+      credentials: 'include',
+      signal: controller.signal 
+    });
 
-  // Redirect to login if session is expired or unauthorized
-  if (response.status === 403) {
-    window.location.href = '/login';
-    throw new Error('Session expired');
+    // Redirect to login if session is expired or unauthorized
+    if (response.status === 403) {
+      window.location.href = '/login';
+      throw new Error('Session expired');
+    }
+
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  return response;
 }
 
 // Helper function to get the CSRF token from cookies
