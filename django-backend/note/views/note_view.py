@@ -173,7 +173,7 @@ class NoteView(GenericAPIView, ListModelMixin):
 
 class NoteRevisionView(APIView):
     def get(self, request, note_id):
-        revisions = NoteRevision.objects.filter(note_id=note_id).order_by('created_at')
+        revisions = NoteRevision.objects.filter(note_id=note_id).order_by('-created_at')
         
         if not revisions:
             return Response([], status=status.HTTP_200_OK)
