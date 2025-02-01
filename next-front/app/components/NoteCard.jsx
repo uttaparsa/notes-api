@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import Link from 'next/link';
 import YouTubeLink from './YouTubeLink';
+import RevisionHistoryModal from './RevisionHistoryModal';
 
 
 
@@ -83,7 +84,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
-
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
 
 
   useImperativeHandle(ref, () => ({
@@ -386,15 +387,39 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             <Dropdown>
               <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic"></Dropdown.Toggle>
               <Dropdown.Menu>
-                {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
-                <Dropdown.Divider />
-                <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
-                <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
-                {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
-                {!singleView && !hideEdits && (
-                  <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
-                )}
-              </Dropdown.Menu>
+    {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
+    <Dropdown.Divider />
+    <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
+    <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
+    {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
+    {!hideEdits && (
+      <Dropdown.Item onClick={() => setShowRevisionModal(true)}>
+        <span className="d-flex align-items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="me-2"
+          >
+            <path d="M3 3v18h18" />
+            <path d="M18.4 9.6L8.7 19.3" />
+            <path d="m10.8 8.7 2.9 2.9" />
+            <path d="m14.7 12.6 2.9 2.9" />
+          </svg>
+          Revision History
+        </span>
+      </Dropdown.Item>
+    )}
+    {!singleView && !hideEdits && (
+      <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
+    )}
+  </Dropdown.Menu>
             </Dropdown>
           </div>
           <div className="col-sm-11 pl-md-1">
@@ -588,6 +613,13 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <RevisionHistoryModal 
+  show={showRevisionModal}
+  onHide={() => setShowRevisionModal(false)}
+  noteId={note.id}
+/>
+
     </div>
   );
 });

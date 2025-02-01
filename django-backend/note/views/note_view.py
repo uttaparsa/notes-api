@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link
-from ..serializers import MessageSerializer, MoveMessageSerializer
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision
+from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer
 import re 
 
 class SingleNoteView(APIView):
@@ -22,10 +22,46 @@ class SingleNoteView(APIView):
         item.delete()
         return Response("1", status=status.HTTP_200_OK)
 
+    def perform_update(self, instance, new_text):
+        # Get or create initial revision if it doesn't exist
+        initial_revision = NoteRevision.objects.filter(
+            note_id=instance.id,
+            previous_revision=None
+        ).first()
+        
+        if not initial_revision:
+            # Create initial revision with original text
+            initial_revision = NoteRevision.objects.create(
+                note_id=instance.id,
+                revision_text=instance.text,  # Original text
+                previous_revision=None,
+                diff_text=''  # No diff for initial revision
+            )
+
+        # Get the latest revision
+        latest_revision = NoteRevision.objects.filter(
+            note_id=instance.id
+        ).order_by('-created_at').first()
+
+        # Create new revision for the change
+        diff_text = NoteRevision.create_diff(latest_revision.revision_text, new_text)
+        
+        if diff_text.strip():  # Only create new revision if there are actual changes
+            NoteRevision.objects.create(
+                note_id=instance.id,
+                revision_text=new_text,
+                previous_revision=latest_revision,
+                diff_text=diff_text
+            )
+
+        # Update the note
+        instance.text = new_text
+        instance.save()
+
     def put(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.text = request.data.get("text")
-        item.save()
+        new_text = request.data.get("text")
+        self.perform_update(item, new_text)
         insert_links(item)
         return Response("1", status=status.HTTP_200_OK)
 
@@ -133,3 +169,38 @@ class NoteView(GenericAPIView, ListModelMixin):
                 print(e)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class NoteRevisionView(APIView):
+    def get(self, request, note_id):
+        revisions = NoteRevision.objects.filter(note_id=note_id).order_by('created_at')
+        
+        if not revisions:
+            return Response([], status=status.HTTP_200_OK)
+            
+        serializer = NoteRevisionSerializer(revisions, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, note_id):
+        old_text = request.data.get('old_text', '')
+        new_text = request.data.get('new_text', '')
+        
+        # Get the latest revision for this note
+        latest_revision = NoteRevision.objects.filter(
+            note_id=note_id
+        ).order_by('-created_at').first()
+        
+        # Create diff between old and new text
+        diff_text = NoteRevision.create_diff(old_text, new_text)
+        
+        # Create new revision
+        revision = NoteRevision.objects.create(
+            note_id=note_id,
+            revision_text=new_text,
+            previous_revision=latest_revision,
+            diff_text=diff_text
+        )
+        
+        serializer = NoteRevisionSerializer(revision)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+

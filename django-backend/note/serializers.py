@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList,Link
-
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
     def truncate_text(self, value):
@@ -73,3 +72,8 @@ class NoteListSerializer(serializers.ModelSerializer):
         model = LocalMessageList
         fields = '__all__'
         read_only_fields = ['slug']
+
+class NoteRevisionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NoteRevision
+        fields = ['id', 'revision_text', 'created_at', 'diff_text']

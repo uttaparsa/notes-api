@@ -129,8 +129,13 @@ DATABASES = {
         "PASSWORD": os.environ.get("SQL_PASSWORD", "password"),
         "HOST": os.environ.get("SQL_HOST", "localhost"),
         "PORT": os.environ.get("SQL_PORT", "5432"),
+    },
+    "revisions": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "data/revisions.sqlite3",
     }
 }
+DATABASE_ROUTERS = ['note.router.RevisionRouter']
 
 LOGGING = {                                                                                                                 
     'version': 1,
