@@ -190,43 +190,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   };
 
 
-  const saveNote = async () => {
-    try {
-      const result = await onEditNote(note.id, editText);
-      // If onEditNote completes successfully (doesn't throw an error),
-      // then we can close the modal and re-enable link loading
-      console.log("result is", result);
-      
-      if (result) {
-        setShouldLoadLinks(true);
-      }
-      
-    } catch (error) {
-      // If an error is thrown, we don't close the modal or re-enable link loading
-      console.error('Failed to edit note:', error);
-      // Optionally, you can show an error message to the user here
-    }
-  };
-
-
-  const saveAndCloseEditModal = async () => {
-    try {
-      const result = await onEditNote(note.id, editText);
-      // If onEditNote completes successfully (doesn't throw an error),
-      // then we can close the modal and re-enable link loading
-      console.log("result is", result);
-      
-      if (result) {
-        setShowEditModal();
-        setShouldLoadLinks(true);
-      }
-      
-    } catch (error) {
-      // If an error is thrown, we don't close the modal or re-enable link loading
-      console.error('Failed to edit note:', error);
-      // Optionally, you can show an error message to the user here
-    }
-  };
   
 
   const processNoteText = (note) => {
@@ -455,3 +418,4 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 NoteCard.displayName = "NoteCard";
 
 export default NoteCard;
+

@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
-import { Modal, Button } from 'react-bootstrap';
+import React, { useRef, useEffect, useState } from 'react';
+import { Modal, Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { isRTL } from "../utils/stringUtils";
 import FileUploadComponent from "./FileUploadComponent";
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
+import ReactMarkdown from 'react-markdown';
 
 const EditNoteModal = ({
   show,
@@ -18,11 +19,11 @@ const EditNoteModal = ({
   showToast,
   refreshNotes
 }) => {
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const editMessageTextAreaRef = useRef(null);
 
   useEffect(() => {
     const viewport = window.visualViewport;
-    
     if (!viewport) return;
     
     const handleResize = () => {
@@ -34,12 +35,22 @@ const EditNoteModal = ({
   
     viewport.addEventListener('resize', handleResize);
     viewport.addEventListener('scroll', handleResize);
-  
+    
+    // Add keyboard shortcut listener
+    const handleKeyPress = (e) => {
+      if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        setIsPreviewMode(prev => !prev);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyPress);
     handleResize();
   
     return () => {
       viewport.removeEventListener('resize', handleResize);
       viewport.removeEventListener('scroll', handleResize);
+      document.removeEventListener('keydown', handleKeyPress);
     };
   }, []);
 
@@ -187,7 +198,7 @@ const EditNoteModal = ({
               onTextChange={setEditText}
             />
 
-            <Button variant="outline-secondary" size="sm" className="ml-2" onClick={toggleEditorRtl}>
+            <Button variant="outline-secondary" size="sm" className="mx-2" onClick={toggleEditorRtl}>
               <span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -219,16 +230,46 @@ const EditNoteModal = ({
                 </svg>
               </span>
             </Button>
+
+            <OverlayTrigger
+              placement="bottom"
+              overlay={<Tooltip>Toggle Preview (Ctrl+P)</Tooltip>}
+            >
+              <Button 
+                variant={isPreviewMode ? "primary" : "outline-secondary"} 
+                size="sm" 
+                onClick={() => setIsPreviewMode(!isPreviewMode)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="24px"
+                  viewBox="0 0 24 24"
+                  width="24px"
+                  style={{ fill: 'var(--bs-body-color)' }}
+                >
+                  <path d="M0 0h24v24H0z" fill="none"/>
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              </Button>
+            </OverlayTrigger>
           </div>
         </div>
 
-        <textarea
-          ref={editMessageTextAreaRef}
-          value={editText}
-          onChange={handleChange}
-          onKeyDown={handleEnter}
-          className={`${styles.monospace} ${styles.editTextArea} w-100`}
-        />
+        <div className="position-relative">
+          {isPreviewMode ? (
+            <div className={`${styles.previewArea} p-3 border rounded `}>
+              <ReactMarkdown>{editText}</ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              ref={editMessageTextAreaRef}
+              value={editText}
+              onChange={handleChange}
+              onKeyDown={handleEnter}
+              className={`${styles.monospace} ${styles.editTextArea} w-100`}
+            />
+          )}
+        </div>
       </Modal.Body>
 
       <Modal.Footer>

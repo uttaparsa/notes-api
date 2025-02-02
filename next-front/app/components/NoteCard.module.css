@@ -175,3 +175,11 @@ pre.codeBlock code {
   overflow-y: auto;
   line-height: 1.5;
 }
+
+.previewArea {
+  min-height: 200px;
+  max-height: 75vh;
+  overflow-y: auto;
+  transition: background-color 0.2s ease;
+  color: var(--bs-body-color);
+}
