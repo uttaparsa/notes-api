@@ -8,62 +8,111 @@ from .pagination import DateBasedPagination
 from ..models import LocalMessage, LocalMessageList, Link, NoteRevision
 from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer
 import re 
+from django.utils import timezone
+from typing import Optional
+
+
+class RevisionService:
+    MIN_TIME_BETWEEN_REVISIONS = 60  # minimum seconds between revisions
+    MIN_DIFF_CHARS = 5  # minimum number of changed characters to create a revision
+    
+    @classmethod
+    def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
+        """Get the latest revision for a note"""
+        return NoteRevision.objects.filter(
+            note_id=note_id
+        ).order_by('-created_at').first()
+    
+    @classmethod
+    def get_latest_revision_text(cls, note_id: int) -> Optional[str]:
+        """Get the text from the latest revision"""
+        latest = cls.get_latest_revision(note_id)
+        return latest.revision_text if latest else None
+    
+    @classmethod
+    def _should_create_revision(cls, note_id: int, new_text: str) -> bool:
+        """Determine if a new revision should be created based on time and character diff thresholds"""
+        latest_revision = cls.get_latest_revision(note_id)
+        if not latest_revision:
+            return True  # Always create first revision
+            
+        # Check time threshold
+        time_since_last = timezone.now() - latest_revision.created_at
+        if time_since_last.total_seconds() < cls.MIN_TIME_BETWEEN_REVISIONS:
+            return False
+            
+        # Calculate diff against latest revision text
+        diff_text = NoteRevision.create_diff(latest_revision.revision_text, new_text)
+        char_changes = sum(len(line[2:]) for line in diff_text.split('\n') 
+                         if line.startswith('+ ') or line.startswith('- '))
+        
+        return char_changes >= cls.MIN_DIFF_CHARS
+    
+    @classmethod
+    def create_revision(cls, note_id: int, new_text: str) -> Optional[NoteRevision]:
+        """
+        Create a new revision if needed
+        Args:
+            note_id: ID of the note
+            new_text: New text content
+        Returns:
+            Created revision or None if revision was not needed
+        """
+        if not cls._should_create_revision(note_id, new_text):
+            return None
+            
+        latest_revision = cls.get_latest_revision(note_id)
+        base_text = latest_revision.revision_text if latest_revision else ""
+        
+        return NoteRevision.objects.create(
+            note_id=note_id,
+            revision_text=new_text,
+            previous_revision=latest_revision,
+            diff_text=NoteRevision.create_diff(base_text, new_text)
+        )
+    
+    @classmethod
+    def update_note_with_revision(cls, note: LocalMessage, new_text: str) -> None:
+        """Update note text and create revision if needed"""
+        cls.create_revision(note.id, new_text)
+        note.text = new_text
+        note.save()
+
 
 class SingleNoteView(APIView):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        serialized = self.serializer_class(LocalMessage.objects.prefetch_related("source_links").get(pk=self.kwargs['note_id']))
+        serialized = self.serializer_class(
+            LocalMessage.objects.prefetch_related("source_links").get(pk=self.kwargs['note_id'])
+        )
         return Response(serialized.data, status.HTTP_200_OK)
+
+    def put(self, request, **kwargs):
+        item = LocalMessage.objects.get(pk=kwargs['note_id'])
+        new_text = request.data.get("text")
+        RevisionService.update_note_with_revision(item, new_text)
+        insert_links(item)
+        return Response("1", status=status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
         item.delete()
         return Response("1", status=status.HTTP_200_OK)
 
-    def perform_update(self, instance, new_text):
-        # Get or create initial revision if it doesn't exist
-        initial_revision = NoteRevision.objects.filter(
-            note_id=instance.id,
-            previous_revision=None
-        ).first()
-        
-        if not initial_revision:
-            # Create initial revision with original text
-            initial_revision = NoteRevision.objects.create(
-                note_id=instance.id,
-                revision_text=instance.text,  # Original text
-                previous_revision=None,
-                diff_text=''  # No diff for initial revision
-            )
-
-        # Get the latest revision
-        latest_revision = NoteRevision.objects.filter(
-            note_id=instance.id
-        ).order_by('-created_at').first()
-
-        # Create new revision for the change
-        diff_text = NoteRevision.create_diff(latest_revision.revision_text, new_text)
-        
-        if diff_text.strip():  # Only create new revision if there are actual changes
-            NoteRevision.objects.create(
-                note_id=instance.id,
-                revision_text=new_text,
-                previous_revision=latest_revision,
-                diff_text=diff_text
-            )
-
-        # Update the note
-        instance.text = new_text
-        instance.save()
-
-    def put(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        new_text = request.data.get("text")
-        self.perform_update(item, new_text)
-        insert_links(item)
-        return Response("1", status=status.HTTP_200_OK)
+class NoteRevisionView(APIView):
+    """View for retrieving note revision history"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, note_id):
+        """Get revision history for a note"""
+        revisions = NoteRevision.objects.filter(note_id=note_id).order_by('-created_at')
+        if not revisions:
+            return Response([], status=status.HTTP_200_OK)
+        serializer = NoteRevisionSerializer(revisions, many=True)
+        return Response(serializer.data)
+    
 
 class MoveMessageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -131,76 +180,83 @@ def insert_links(note: LocalMessage):
             print(f"dest_note is {dest_note}")
             Link.objects.create(source_message=note, dest_message=dest_note)
 
+from django.shortcuts import get_object_or_404
 
 class NoteView(GenericAPIView, ListModelMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = DateBasedPagination
     serializer_class = MessageSerializer
 
+    def get_list(self, slug):
+        """Get list by slug or return default list"""
+        if not slug:
+            return get_object_or_404(LocalMessageList, id=1)
+        return get_object_or_404(LocalMessageList, slug=slug)
+
     def get_queryset(self):
-        if 'slug' in self.kwargs:
-            slug = self.kwargs['slug']
-            archived_lists = LocalMessageList.objects.filter(archived=True)
-            if slug == "All":
-                # exclude if list is archived
-                return LocalMessage.objects.exclude(list__in=archived_lists).order_by('-pinned', '-created_at')
-            else:
-                lst = LocalMessageList.objects.get(slug=slug)
-                return LocalMessage.objects.filter(list=lst.id).order_by('-pinned', '-created_at')
-        else:
+        """Get filtered queryset based on slug parameter"""
+        slug = self.kwargs.get('slug')
+        
+        # Base queryset with ordering
+        base_queryset = LocalMessage.objects.order_by('-pinned', '-created_at')
+        
+        if not slug:
             return LocalMessage.objects.none()
+            
+        # Handle "All" slug special case
+        if slug == "All":
+            archived_lists = LocalMessageList.objects.filter(archived=True)
+            return base_queryset.exclude(list__in=archived_lists)
+            
+        # Get notes for specific list
+        lst = self.get_list(slug)
+        return base_queryset.filter(list=lst.id)
 
     def get(self, request, **kwargs):
+        """List notes with pagination"""
         return self.list(request)
 
     def post(self, request, **kwargs):
+        """Create a new note with initial revision"""
         serializer = self.serializer_class(data=request.data)
-        lst = None
-        if 'slug' in kwargs:
-            lst = LocalMessageList.objects.get(slug=self.kwargs['slug'])
-        else:
-            lst = LocalMessageList.objects.get(id=1)
-
-        if serializer.is_valid():
-            resp = serializer.save(list=lst)
-            try:
-                insert_links(resp)
-            except Exception as e:
-                print(e)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            # Get appropriate list
+            lst = self.get_list(kwargs.get('slug'))
+            
+            # Save the note
+            note = serializer.save(list=lst)
+            
+            # Create initial revision using RevisionService
+            RevisionService.create_revision(note.id, note.text)
+            
+            # Handle links
+            insert_links(note)
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+            
+        except Exception as e:
+            # Log the error properly
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating note: {str(e)}", exc_info=True)
+            
+            return Response(
+                {"error": "Failed to create note"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class NoteRevisionView(APIView):
+    """View for retrieving note revision history"""
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request, note_id):
+        """Get revision history for a note"""
         revisions = NoteRevision.objects.filter(note_id=note_id).order_by('-created_at')
-        
         if not revisions:
             return Response([], status=status.HTTP_200_OK)
-            
         serializer = NoteRevisionSerializer(revisions, many=True)
         return Response(serializer.data)
-
-    def post(self, request, note_id):
-        old_text = request.data.get('old_text', '')
-        new_text = request.data.get('new_text', '')
-        
-        # Get the latest revision for this note
-        latest_revision = NoteRevision.objects.filter(
-            note_id=note_id
-        ).order_by('-created_at').first()
-        
-        # Create diff between old and new text
-        diff_text = NoteRevision.create_diff(old_text, new_text)
-        
-        # Create new revision
-        revision = NoteRevision.objects.create(
-            note_id=note_id,
-            revision_text=new_text,
-            previous_revision=latest_revision,
-            diff_text=diff_text
-        )
-        
-        serializer = NoteRevisionSerializer(revision)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
