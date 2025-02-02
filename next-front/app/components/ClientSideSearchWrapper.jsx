@@ -50,6 +50,20 @@ export default function ClientSideSearchWrapper() {
   }, []);
   
 
+  const updateNote = async (noteId, updates) => {
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === noteId ? { ...note, ...updates } : note
+      )
+    );
+  };
+
+  const deleteNote = async (noteId) => {
+    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+    getRecords(searchText, listSlug, currentPage);
+  };
+
+
   useEffect(() => {
     const query = searchParams.get('q');
     const slug = searchParams.get('list_slug') || 'All';
@@ -129,11 +143,9 @@ export default function ClientSideSearchWrapper() {
               notes={notes}
               isBusy={isBusy}
               showHidden={showHidden}
-              refreshNotes={() => {
-                // getRecords(searchText, listSlug, currentPage)
-                console.log('refreshNotes called, doing nothing');
-                
-              }}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
             />
           </Col>
           <Col lg={2}></Col>

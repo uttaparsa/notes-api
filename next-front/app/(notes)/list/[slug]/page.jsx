@@ -75,6 +75,21 @@ export default function NoteListPage({ params }) {
     }
   };
 
+
+  const updateNote = async (noteId, updates) => {
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === noteId ? { ...note, ...updates } : note
+      )
+    );
+  };
+
+  const deleteNote = async (noteId) => {
+    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+  };
+
+  
+
   const addNewNote = (note) => {
     setNotes(prevNotes => [note, ...prevNotes]);
     sortNotes();
@@ -148,13 +163,15 @@ export default function NoteListPage({ params }) {
         </Form.Group>
       </Col>
       <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
-        <NoteList
-          ref={noteListRef}
-          notes={notes}
-          isBusy={isBusy}
-          showHidden={showHidden}
-          refreshNotes={getRecords}
-        />
+      <NoteList
+        ref={noteListRef}
+        notes={notes}
+        isBusy={isBusy}
+        showHidden={showHidden}
+        onUpdateNote={updateNote}
+        onDeleteNote={deleteNote}
+        refreshNotes={getRecords}
+      />
       </Col>
       <Col lg={2}></Col>
     </Row>

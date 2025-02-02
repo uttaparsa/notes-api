@@ -34,13 +34,11 @@ export default function NotesPage() {
   }, [currentPage, showHidden]);
 
   const showMessagesForDate = (selectedDate) => {
-    console.log("showing messages for date " + selectedDate);
     setDate(selectedDate);
     getRecords(selectedDate);
   };
 
   const getRecords = async (selectedDate = null) => {
-    console.log("getting records!");
     setIsBusy(true);
     try {
       let url = `/api/note/${listSlug}/`;
@@ -69,21 +67,32 @@ export default function NotesPage() {
           setCurrentPage(parseInt(prevPage) + 1);
         }
       }
-
-      setIsBusy(false);
     } catch (err) {
       console.error(`Error: ${err}`);
       handleApiError(err);
+    } finally {
+      setIsBusy(false);
     }
   };
 
-  const addNewNote = (note) => {
-    setNotes(prevNotes => [note, ...prevNotes]);
-    sortNotes();
+  const updateNote = async (noteId, updates) => {
+    setNotes(prevNotes => 
+      prevNotes.map(note => 
+        note.id === noteId ? { ...note, ...updates } : note
+      )
+    );
   };
 
-  const sortNotes = () => {
-    setNotes(prevNotes => [...prevNotes].sort((a, b) => {
+  const deleteNote = async (noteId) => {
+    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+  };
+
+  const addNewNote = (note) => {
+    setNotes(prevNotes => sortNotesList([note, ...prevNotes]));
+  };
+
+  const sortNotesList = (notesList) => {
+    return [...notesList].sort((a, b) => {
       if (a.pinned === b.pinned) {
         if (a.archived === b.archived) {
           return new Date(b.created_at) - new Date(a.created_at);
@@ -91,42 +100,24 @@ export default function NotesPage() {
         return a.archived > b.archived ? 1 : -1;
       }
       return a.pinned < b.pinned ? 1 : -1;
-    }));
+    });
   };
 
-
   const handleSearch = useCallback((newSearchText, newListSlugs) => {
-    console.log('handleSearch', newSearchText, newListSlugs);
-  
-    
     let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
     if (newListSlugs && newListSlugs !== 'All') {
       url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
       router.push(url);
     }
-  }, [  router]);
-
+  }, [router]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     router.push(`?page=${newPage}`, undefined, { shallow: true });
   };
 
-  // Add this function to handle initial page load
-  const handleInitialPageLoad = () => {
-    const page = searchParams.get('page');
-    if (page) {
-      setCurrentPage(parseInt(page));
-    }
-  };
-
-  // Use this effect to handle initial page load
-  useEffect(() => {
-    handleInitialPageLoad();
-  }, []);
-
   return (
-    <div dir="ltr" >
+    <div dir="ltr">
       <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
         <PaginationComponent
@@ -138,15 +129,14 @@ export default function NotesPage() {
 
         <Row className="m-0 p-0">
           <Col lg={2} className="mx-0 mb-3 mb-lg-0">
-          <FormCheck
-          type="checkbox"
-          id="show-hidden"
-          label="Show Hidden"
-          
-          checked={showHidden}
-          onChange={(e) => setShowHidden(!showHidden)}
-          className="mb-3 text-body-emphasis mt-2"
-        />
+            <FormCheck
+              type="checkbox"
+              id="show-hidden"
+              label="Show Hidden"
+              checked={showHidden}
+              onChange={(e) => setShowHidden(!showHidden)}
+              className="mb-3 text-body-emphasis mt-2"
+            />
             <Form.Group>
               <Form.Label className='text-body-secondary small'>Show messages for</Form.Label>
               <Form.Control
@@ -161,7 +151,8 @@ export default function NotesPage() {
               notes={notes}
               isBusy={isBusy}
               showHidden={showHidden}
-              setShowHidden={setShowHidden}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
               refreshNotes={getRecords}
             />
           </Col>
