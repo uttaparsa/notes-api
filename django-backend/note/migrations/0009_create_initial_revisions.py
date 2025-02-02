@@ -1,3 +1,4 @@
+# note/migrations/XXXX_create_initial_revisions.py
 from django.db import migrations
 
 def create_initial_revisions(apps, schema_editor):
@@ -5,13 +6,15 @@ def create_initial_revisions(apps, schema_editor):
     NoteRevision = apps.get_model('note', 'NoteRevision')
     
     for note in LocalMessage.objects.all():
-        # Create initial revision with original text
-        NoteRevision.objects.create(
-            note_id=note.id,
-            revision_text=note.text,  # Original text
-            previous_revision=None,   # No previous revision for initial state
-            diff_text=''             # No diff for initial revision
-        )
+        # Check if this note already has any revisions
+        if not NoteRevision.objects.filter(note_id=note.id).exists():
+            # Create initial revision only if none exists
+            NoteRevision.objects.create(
+                note_id=note.id,
+                revision_text=note.text,  # Original text
+                previous_revision=None,   # No previous revision for initial state
+                diff_text=''             # No diff for initial revision
+            )
 
 def reverse_initial_revisions(apps, schema_editor):
     NoteRevision = apps.get_model('note', 'NoteRevision')
