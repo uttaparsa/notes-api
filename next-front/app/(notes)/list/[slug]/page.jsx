@@ -116,7 +116,11 @@ export default function NoteListPage({ params }) {
 
   return (
 <div dir="ltr">
-   <SearchBar onSearch={handleSearch} />
+  <SearchBar 
+    onSearch={handleSearch} 
+    initialListSlug={slug || 'All'} 
+  />
+
   <div dir="ltr">
     <PaginationComponent
       currentPage={currentPage}

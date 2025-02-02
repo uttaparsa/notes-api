@@ -6,10 +6,9 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
   const [searchText, setSearchText] = useState(initialSearchText);
   const [showFilters, setShowFilters] = useState(false);
   const noteLists = useContext(NoteListContext);
-  
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   
-  // Initialize categories based on initialListSlug
+  // Update selected categories when initialListSlug changes
   useEffect(() => {
     if (noteLists) {
       if (initialListSlug === 'All') {
@@ -17,6 +16,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
       } else if (initialListSlug.includes(',')) {
         setSelectedCategories(new Set(initialListSlug.split(',')));
       } else {
+        // When viewing a specific category, only select that category
         setSelectedCategories(new Set([initialListSlug]));
       }
     }
@@ -29,7 +29,13 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
   const handleSubmit = (e) => {
     e.preventDefault();
     const selectedSlugs = Array.from(selectedCategories);
-    onSearch(searchText, selectedSlugs.length === 0 ? 'All' : selectedSlugs.join(','));
+    // If we're in a specific category view and no categories are selected,
+    // default to the current category
+    const searchSlugs = selectedSlugs.length === 0 && initialListSlug !== 'All' 
+      ? initialListSlug 
+      : (selectedSlugs.length === 0 ? 'All' : selectedSlugs.join(','));
+    
+    onSearch(searchText, searchSlugs);
     setShowFilters(false);
   };
 
@@ -51,6 +57,15 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
     setSelectedCategories(new Set());
   };
 
+  // Get the display text for the search placeholder
+  const getPlaceholderText = () => {
+    if (initialListSlug !== 'All' && selectedCategories.size === 1 && selectedCategories.has(initialListSlug)) {
+      const currentCategory = noteLists?.find(list => list.slug === initialListSlug)?.name;
+      return `Search in ${currentCategory || initialListSlug}`;
+    }
+    return `Search in ${selectedCategories.size === noteLists?.length ? 'All' : `${selectedCategories.size} categories`}`;
+  };
+
   return (
     <Form onSubmit={handleSubmit}>
       <nav className="navbar navbar-dark bg-info py-1">
@@ -61,7 +76,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
                 <Form.Control
                   dir="auto"
                   className="rounded"
-                  placeholder={`Search in ${Array.from(selectedCategories).length === noteLists?.length ? 'All' : `${selectedCategories.size} categories`}`}
+                  placeholder={getPlaceholderText()}
                   type="text"
                   value={searchText}
                   onChange={(e) => setSearchText(e.target.value)}
