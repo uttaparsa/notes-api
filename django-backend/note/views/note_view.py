@@ -42,17 +42,18 @@ class RevisionService:
     @classmethod
     def create_revision(cls, note_id: int, new_text: str) -> Optional[NoteRevision]:
         """
-        Create a new revision or update the latest one
+        Create or update revision based on time threshold
         Args:
             note_id: ID of the note
             new_text: New text content
         Returns:
-            Created/updated revision
+            Created/updated revision or None if no changes needed
         """
         latest_revision = cls.get_latest_revision(note_id)
-        base_text = latest_revision.revision_text if latest_revision else ""
         
         if cls._should_create_new_revision(note_id):
+            # Create new revision using previous revision's text for diff
+            base_text = latest_revision.revision_text if latest_revision else ""
             return NoteRevision.objects.create(
                 note_id=note_id,
                 revision_text=new_text,
@@ -60,11 +61,14 @@ class RevisionService:
                 diff_text=NoteRevision.create_diff(base_text, new_text)
             )
         else:
-            # Update the latest revision instead of creating new one
-            latest_revision.revision_text = new_text
-            latest_revision.diff_text = NoteRevision.create_diff(base_text, new_text)
-            latest_revision.save()
-            return latest_revision
+            # Update existing revision
+            if latest_revision:
+                base_text = latest_revision.previous_revision.revision_text if latest_revision.previous_revision else ""
+                latest_revision.revision_text = new_text
+                latest_revision.diff_text = NoteRevision.create_diff(base_text, new_text)
+                latest_revision.save()
+                return latest_revision
+            return None
     
     @classmethod
     def update_note_with_revision(cls, note: LocalMessage, new_text: str) -> None:
