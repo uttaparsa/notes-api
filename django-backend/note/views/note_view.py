@@ -14,7 +14,6 @@ from typing import Optional
 
 class RevisionService:
     MIN_TIME_BETWEEN_REVISIONS = 60  # minimum seconds between revisions
-    MIN_DIFF_CHARS = 5  # minimum number of changed characters to create a revision
     
     @classmethod
     def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
@@ -30,54 +29,49 @@ class RevisionService:
         return latest.revision_text if latest else None
     
     @classmethod
-    def _should_create_revision(cls, note_id: int, new_text: str) -> bool:
-        """Determine if a new revision should be created based on time and character diff thresholds"""
+    def _should_create_new_revision(cls, note_id: int) -> bool:
+        """Determine if a new revision should be created based on time threshold"""
         latest_revision = cls.get_latest_revision(note_id)
         if not latest_revision:
             return True  # Always create first revision
             
         # Check time threshold
         time_since_last = timezone.now() - latest_revision.created_at
-        if time_since_last.total_seconds() < cls.MIN_TIME_BETWEEN_REVISIONS:
-            return False
-            
-        # Calculate diff against latest revision text
-        diff_text = NoteRevision.create_diff(latest_revision.revision_text, new_text)
-        char_changes = sum(len(line[2:]) for line in diff_text.split('\n') 
-                         if line.startswith('+ ') or line.startswith('- '))
-        
-        return char_changes >= cls.MIN_DIFF_CHARS
+        return time_since_last.total_seconds() >= cls.MIN_TIME_BETWEEN_REVISIONS
     
     @classmethod
     def create_revision(cls, note_id: int, new_text: str) -> Optional[NoteRevision]:
         """
-        Create a new revision if needed
+        Create a new revision or update the latest one
         Args:
             note_id: ID of the note
             new_text: New text content
         Returns:
-            Created revision or None if revision was not needed
+            Created/updated revision
         """
-        if not cls._should_create_revision(note_id, new_text):
-            return None
-            
         latest_revision = cls.get_latest_revision(note_id)
         base_text = latest_revision.revision_text if latest_revision else ""
         
-        return NoteRevision.objects.create(
-            note_id=note_id,
-            revision_text=new_text,
-            previous_revision=latest_revision,
-            diff_text=NoteRevision.create_diff(base_text, new_text)
-        )
+        if cls._should_create_new_revision(note_id):
+            return NoteRevision.objects.create(
+                note_id=note_id,
+                revision_text=new_text,
+                previous_revision=latest_revision,
+                diff_text=NoteRevision.create_diff(base_text, new_text)
+            )
+        else:
+            # Update the latest revision instead of creating new one
+            latest_revision.revision_text = new_text
+            latest_revision.diff_text = NoteRevision.create_diff(base_text, new_text)
+            latest_revision.save()
+            return latest_revision
     
     @classmethod
     def update_note_with_revision(cls, note: LocalMessage, new_text: str) -> None:
-        """Update note text and create revision if needed"""
+        """Update note text and create/update revision"""
         cls.create_revision(note.id, new_text)
         note.text = new_text
         note.save()
-
 
 class SingleNoteView(APIView):
     serializer_class = MessageSerializer
