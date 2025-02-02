@@ -224,7 +224,7 @@ class NoteView(GenericAPIView, ListModelMixin):
             note = serializer.save(list=lst)
             
             # Create initial revision using RevisionService
-            RevisionService.create_revision(note.id, note.text)
+            RevisionService.update_or_create_revision(note.id, note.text)
             
             # Handle links
             insert_links(note)
