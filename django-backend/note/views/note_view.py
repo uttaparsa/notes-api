@@ -17,63 +17,58 @@ class RevisionService:
     
     @classmethod
     def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
-        """Get the latest revision for a note"""
         return NoteRevision.objects.filter(
             note_id=note_id
         ).order_by('-created_at').first()
     
     @classmethod
-    def get_latest_revision_text(cls, note_id: int) -> Optional[str]:
-        """Get the text from the latest revision"""
-        latest = cls.get_latest_revision(note_id)
-        return latest.revision_text if latest else None
+    def get_second_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
+        return NoteRevision.objects.filter(
+            note_id=note_id
+        ).order_by('-created_at')[1:2].first()
     
     @classmethod
-    def _should_create_new_revision(cls, note_id: int) -> bool:
-        """Determine if a new revision should be created based on time threshold"""
+    def _should_create_revision(cls, note_id: int) -> bool:
         latest_revision = cls.get_latest_revision(note_id)
         if not latest_revision:
-            return True  # Always create first revision
+            return True
             
-        # Check time threshold
         time_since_last = timezone.now() - latest_revision.created_at
         return time_since_last.total_seconds() >= cls.MIN_TIME_BETWEEN_REVISIONS
     
     @classmethod
-    def create_revision(cls, note_id: int, new_text: str) -> Optional[NoteRevision]:
-        """
-        Create or update revision based on time threshold
-        Args:
-            note_id: ID of the note
-            new_text: New text content
-        Returns:
-            Created/updated revision or None if no changes needed
-        """
-        latest_revision = cls.get_latest_revision(note_id)
-        
-        if cls._should_create_new_revision(note_id):
-            # Create new revision using previous revision's text for diff
+    def update_or_create_revision(cls, note_id: int, new_text: str) -> None:
+        """Update existing revision or create new one based on time threshold"""
+        if cls._should_create_revision(note_id):
+            # Create new revision
+            latest_revision = cls.get_latest_revision(note_id)
             base_text = latest_revision.revision_text if latest_revision else ""
-            return NoteRevision.objects.create(
+            
+            NoteRevision.objects.create(
                 note_id=note_id,
                 revision_text=new_text,
                 previous_revision=latest_revision,
                 diff_text=NoteRevision.create_diff(base_text, new_text)
             )
         else:
-            # Update existing revision
-            if latest_revision:
-                base_text = latest_revision.previous_revision.revision_text if latest_revision.previous_revision else ""
-                latest_revision.revision_text = new_text
-                latest_revision.diff_text = NoteRevision.create_diff(base_text, new_text)
-                latest_revision.save()
-                return latest_revision
-            return None
+            # Update latest revision
+            latest = cls.get_latest_revision(note_id)
+            second_latest = cls.get_second_latest_revision(note_id)
+            
+            if second_latest:
+                # Update diff against second latest revision
+                latest.diff_text = NoteRevision.create_diff(second_latest.revision_text, new_text)
+            else:
+                # If no second latest, diff against empty string
+                latest.diff_text = NoteRevision.create_diff("", new_text)
+                
+            latest.revision_text = new_text
+            latest.save()
     
     @classmethod
     def update_note_with_revision(cls, note: LocalMessage, new_text: str) -> None:
-        """Update note text and create/update revision"""
-        cls.create_revision(note.id, new_text)
+        """Update note text and handle revision"""
+        cls.update_or_create_revision(note.id, new_text)
         note.text = new_text
         note.save()
 
