@@ -12,38 +12,59 @@ from django.utils import timezone
 from typing import Optional
 
 
+from typing import Optional
+from django.utils import timezone
+from .models import NoteRevision, LocalMessage
+
 class RevisionService:
-    MIN_TIME_BETWEEN_REVISIONS = 300 # minimum seconds between revisions
-    
+    MIN_TIME_BETWEEN_REVISIONS = 300  # minimum seconds between revisions
+
     @classmethod
     def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
         return NoteRevision.objects.filter(
             note_id=note_id
         ).order_by('-created_at').first()
-    
+
     @classmethod
     def get_second_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
         return NoteRevision.objects.filter(
             note_id=note_id
         ).order_by('-created_at')[1:2].first()
-    
+
     @classmethod
-    def _should_create_revision(cls, note_id: int) -> bool:
+    def _has_changes(cls, note_id: int, new_text: str) -> bool:
+        """Check if there are actual changes compared to the latest revision"""
+        latest_revision = cls.get_latest_revision(note_id)
+        if not latest_revision:
+            return bool(new_text.strip())  # True if new_text is not empty
+        return latest_revision.revision_text != new_text
+
+    @classmethod
+    def _should_create_revision(cls, note_id: int, new_text: str) -> bool:
+
         latest_revision = cls.get_latest_revision(note_id)
         if not latest_revision:
             return True
+    
+        # First check if there are any actual changes
+        if not cls._has_changes(note_id, new_text):
+            return False
+
             
         time_since_last = timezone.now() - latest_revision.created_at
         return time_since_last.total_seconds() >= cls.MIN_TIME_BETWEEN_REVISIONS
-    
+
     @classmethod
     def update_or_create_revision(cls, note_id: int, new_text: str) -> None:
-        """Update existing revision or create new one based on time threshold"""
-        if cls._should_create_revision(note_id):
+        """Update existing revision or create new one based on time threshold and content changes"""
+        # Don't create or update revision if there are no changes
+        if not cls._has_changes(note_id, new_text):
+            return
+
+        if cls._should_create_revision(note_id, new_text):
             # Create new revision
             latest_revision = cls.get_latest_revision(note_id)
             base_text = latest_revision.revision_text if latest_revision else ""
-            
             NoteRevision.objects.create(
                 note_id=note_id,
                 revision_text=new_text,
@@ -54,23 +75,25 @@ class RevisionService:
             # Update latest revision
             latest = cls.get_latest_revision(note_id)
             second_latest = cls.get_second_latest_revision(note_id)
-            
             if second_latest:
                 # Update diff against second latest revision
                 latest.diff_text = NoteRevision.create_diff(second_latest.revision_text, new_text)
             else:
                 # If no second latest, diff against empty string
                 latest.diff_text = NoteRevision.create_diff("", new_text)
-                
             latest.revision_text = new_text
+            # Update timestamp
+            latest.created_at = timezone.now()
             latest.save()
-    
+
     @classmethod
     def update_note_with_revision(cls, note: LocalMessage, new_text: str) -> None:
         """Update note text and handle revision"""
-        cls.update_or_create_revision(note.id, new_text)
-        note.text = new_text
-        note.save()
+        # Only update if there are actual changes
+        if cls._has_changes(note.id, new_text):
+            cls.update_or_create_revision(note.id, new_text)
+            note.text = new_text
+            note.save()
 
 class SingleNoteView(APIView):
     serializer_class = MessageSerializer
