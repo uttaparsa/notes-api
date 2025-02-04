@@ -12,9 +12,6 @@ from django.utils import timezone
 from typing import Optional
 
 
-from typing import Optional
-from django.utils import timezone
-from .models import NoteRevision, LocalMessage
 
 class RevisionService:
     MIN_TIME_BETWEEN_REVISIONS = 300  # minimum seconds between revisions
@@ -49,7 +46,6 @@ class RevisionService:
         # First check if there are any actual changes
         if not cls._has_changes(note_id, new_text):
             return False
-
             
         time_since_last = timezone.now() - latest_revision.created_at
         return time_since_last.total_seconds() >= cls.MIN_TIME_BETWEEN_REVISIONS
