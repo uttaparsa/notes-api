@@ -80,7 +80,7 @@ const RevisionHistoryModal = ({ show, onHide, noteId }) => {
             );
           })}
           {sectionIndex < revision.changed_text.length - 1 && (
-            <div className={styles.unchangedLine}>...</div>
+            <div className={styles.thingsBetween}>...</div>
           )}
         </div>
       );

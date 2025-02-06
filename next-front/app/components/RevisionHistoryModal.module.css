@@ -55,8 +55,8 @@
   }
   
 
-  .unchangedLine {
-    /* set background color  to muted */
-    background: var(--bs-muted)
+  .thingsBetween {
+    /* set background color to gray rgba with 0.1 */
+    background-color:  rgba(0, 0, 0, 0.2);
     
   }
