@@ -49,6 +49,7 @@ class LocalMessageList(models.Model):
     name = models.CharField(max_length=255, default="", unique=True)
     slug = models.SlugField(default="n")
     archived = models.BooleanField(default=False, null=False)
+    show_in_feed = models.BooleanField(default=True, null=False)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)

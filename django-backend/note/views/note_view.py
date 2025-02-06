@@ -217,8 +217,8 @@ class NoteView(GenericAPIView, ListModelMixin):
             
         # Handle "All" slug special case
         if slug == "All":
-            archived_lists = LocalMessageList.objects.filter(archived=True)
-            return base_queryset.exclude(list__in=archived_lists)
+            shown_lin = LocalMessageList.objects.filter(show_in_feed=True).values_list('id', flat=True)
+            return base_queryset.filter(list__in=shown_lin)
             
         # Get notes for specific list
         lst = self.get_list(slug)

@@ -33,6 +33,16 @@ export default function CategoryList() {
     }
   };
 
+  const toggleShowInFeed = (list) => handleApiCall(
+    () => fetchWithAuth(`/api/note/list/${list.id}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ show_in_feed: !list.show_in_feed }),
+    }),
+    null,
+    'Failed to update show in feed setting'
+  );
+
   const archiveTopic = (topicId) => handleApiCall(
     () => fetchWithAuth(`/api/note/list/${topicId}/archive/`, { method: 'GET' }),
     null,
@@ -85,31 +95,39 @@ export default function CategoryList() {
             {lst_idx > 0 && lst_idx < (noteLists.length - 1) && lst.archived !== noteLists[lst_idx - 1].archived && (
               <hr className="my-3" />
             )}
-            <ListGroup.Item 
-              className="d-flex justify-content-between align-items-center mb-2"
-              variant="secondary"
-            >
-              <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
-                {lst.name}
-              </Link>
-              <div>
-                <Button
-                  variant={lst.archived ? "outline-success" : "outline-warning"}
-                  size="sm"
-                  onClick={() => lst.archived ? unArchiveTopic(lst.id) : archiveTopic(lst.id)}
-                  className="me-2"
-                >
-                  {lst.archived ? "Unarchive" : "Archive"}
-                </Button>
-                <Button
-                  variant="outline-primary"
-                  size="sm"
-                  onClick={() => openRenameModal(lst)}
-                >
-                  Rename
-                </Button>
-              </div>
-            </ListGroup.Item>
+<ListGroup.Item 
+  className="d-flex justify-content-between align-items-center mb-2"
+  variant="secondary"
+>
+  <div className="d-flex align-items-center gap-3">
+    <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
+      {lst.name}
+    </Link>
+    <Form.Check
+      type="checkbox"
+      checked={lst.show_in_feed}
+      onChange={() => toggleShowInFeed(lst)}
+      label="Show in feed"
+      className="mb-0"
+    />
+  </div>
+  <div className="d-flex gap-2">
+    <Button
+      variant={lst.archived ? "outline-success" : "outline-warning"}
+      size="sm"
+      onClick={() => lst.archived ? unArchiveTopic(lst.id) : archiveTopic(lst.id)}
+    >
+      {lst.archived ? "Unarchive" : "Archive"}
+    </Button>
+    <Button
+      variant="outline-primary"
+      size="sm"
+      onClick={() => openRenameModal(lst)}
+    >
+      Rename
+    </Button>
+  </div>
+</ListGroup.Item>
           </React.Fragment>
         ))}
       </ListGroup>
