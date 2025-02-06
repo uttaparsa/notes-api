@@ -14,7 +14,7 @@ from typing import Optional
 
 
 class RevisionService:
-    MIN_TIME_BETWEEN_REVISIONS = 300  # minimum seconds between revisions
+    MIN_TIME_BETWEEN_REVISIONS = 600  # minimum seconds between revisions
 
     @classmethod
     def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:

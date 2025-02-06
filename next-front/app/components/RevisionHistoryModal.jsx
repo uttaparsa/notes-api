@@ -54,25 +54,34 @@ const RevisionHistoryModal = ({ show, onHide, noteId }) => {
   };
 
   const renderDiff = (revision) => {
-    if (!revision.diff_text) {
-      return renderRevisionText(revision);
+    if (!revision.changed_text) {
+      return <div className={styles.unchangedLine}>No changes in this revision</div>;
     }
-
-    return revision.diff_text.split('\n').map((line, i) => {
-      let className = '';
-      if (line.startsWith('+ ')) {
-        className = styles.addedLine;
-        line = line.substring(2);
-      } else if (line.startsWith('- ')) {
-        className = styles.removedLine;
-        line = line.substring(2);
-      } else if (line.startsWith('  ')) {
-        className = styles.unchangedLine;
-        line = line.substring(2);
-      }
+  
+    return revision.changed_text.map((changeSection, sectionIndex) => {
       return (
-        <div key={i} className={className}>
-          {line || '\u00A0'}
+        <div key={sectionIndex} className={styles.changeSection}>
+          {changeSection.split('\n').map((line, i) => {
+            let className = '';
+            if (line.startsWith('+ ')) {
+              className = styles.addedLine;
+              line = line.substring(2);
+            } else if (line.startsWith('- ')) {
+              className = styles.removedLine;
+              line = line.substring(2);
+            } else if (line.startsWith('  ')) {
+              className = styles.unchangedLine;
+              line = line.substring(2);
+            }
+            return (
+              <div key={`${sectionIndex}-${i}`} className={className}>
+                {line || '\u00A0'}
+              </div>
+            );
+          })}
+          {sectionIndex < revision.changed_text.length - 1 && (
+            <div className={styles.unchangedLine}>...</div>
+          )}
         </div>
       );
     });

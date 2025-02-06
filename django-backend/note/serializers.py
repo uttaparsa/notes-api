@@ -73,7 +73,46 @@ class NoteListSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['slug']
 
+
 class NoteRevisionSerializer(serializers.ModelSerializer):
+    changed_text = serializers.SerializerMethodField()
+    
+    def get_changed_text(self, obj):
+        """
+        Extract only the changed portions of the text based on diff.
+        Returns a dict with 'before' and 'after' sections around the changes.
+        """
+        if not obj.diff_text:
+            return None
+            
+        # Parse the diff to find changed sections
+        changes = []
+        current_change = []
+        context_lines = 3  # Number of unchanged lines to show before and after changes
+        
+        diff_lines = obj.diff_text.splitlines()
+        for i, line in enumerate(diff_lines):
+            if line.startswith('+ ') or line.startswith('- '):
+                # Include previous context lines if this is a new change section
+                if not current_change:
+                    start_idx = max(0, i - context_lines)
+                    current_change.extend(diff_lines[start_idx:i])
+                current_change.append(line)
+            elif line.startswith('  '):
+                if current_change:
+                    # Add some context lines after the change
+                    current_change.append(line)
+                    if len(current_change) > context_lines:
+                        changes.append('\n'.join(current_change))
+                        current_change = []
+        
+        # Add any remaining changes
+        if current_change:
+            changes.append('\n'.join(current_change))
+        
+        return changes
+
     class Meta:
         model = NoteRevision
-        fields = ['id', 'revision_text', 'created_at', 'diff_text']
+        fields = ['id', 'created_at', 'changed_text', "revision_text"]
+        # Note: removed revision_text and diff_text to reduce payload size
