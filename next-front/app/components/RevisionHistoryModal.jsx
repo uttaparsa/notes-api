@@ -101,7 +101,7 @@ const RevisionHistoryModal = ({ show, onHide, noteId }) => {
                   </span>
                 </div>
                 <div className={styles.contentContainer}>
-                  <Tabs defaultActiveKey="text" className="mb-3">
+                  <Tabs defaultActiveKey="changes" className="mb-3">
 
                    <Tab eventKey="changes" title="Changes">
                       <div className={styles.diffContent}>
