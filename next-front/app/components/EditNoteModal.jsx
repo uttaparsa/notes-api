@@ -20,7 +20,39 @@ const EditNoteModal = ({
   refreshNotes
 }) => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [lastSavedText, setLastSavedText] = useState(editText);
   const editMessageTextAreaRef = useRef(null);
+
+  // Reset lastSavedText when modal is opened with new content
+  useEffect(() => {
+    if (show) {
+      setLastSavedText(editText);
+    }
+  }, [show]);
+
+  const handleSave = async () => {
+    await onSave();
+    setLastSavedText(editText);
+  };
+
+  const handleSaveAndClose = async () => {
+    await onSaveAndClose();
+    setLastSavedText(editText);
+  };
+
+  const handleChange = (e) => {
+    setEditText(e.target.value);
+  };
+
+  const handleEnter = (e) => {
+    if (e.ctrlKey && e.key === "Enter") {
+      handleSaveAndClose();
+    } else if (e.shiftKey && e.key === "Enter") {
+      handleSave();
+    }
+  };
+
+  const hasUnsavedChanges = editText !== lastSavedText;
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -63,9 +95,6 @@ const EditNoteModal = ({
     }
   };
 
-  const handleChange = (e) => {
-    setEditText(e.target.value);
-  };
 
   const toggleEditorRtl = () => {
     if (editMessageTextAreaRef.current) {
@@ -73,18 +102,13 @@ const EditNoteModal = ({
         editMessageTextAreaRef.current.dir === "rtl" ? "ltr" : "rtl";
     }
   };
-
-  const handleEnter = (e) => {
-    if (e.ctrlKey && e.key === "Enter") {
-      onSaveAndClose();
-    } else if (e.shiftKey && e.key === "Enter") {
-      onSave();
-    }
-  };
-
+  
   const handleFileUpload = (url) => {
-    setEditText(prevText => prevText);
+    const fileName = url.split('/').pop(); // Get filename from URL
+    const markdownLink = `[${fileName}](${url})`;
+    setEditText(prevText => prevText + (prevText ? '\n' : '') + markdownLink);
   };
+  
 
   const pinMessage = async () => {
     try {
@@ -178,14 +202,20 @@ const EditNoteModal = ({
           </div>
 
           <div>
-            <Button variant="outline-secondary" size="sm" onClick={onSave}>
+            <Button 
+              variant={hasUnsavedChanges ? "outline-warning" : "outline-success"}
+              size="sm" 
+              onClick={handleSave}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 height="24px"
                 viewBox="0 0 24 24"
                 width="24px"
                 className="save-icon"
-                style={{ fill: 'var(--bs-body-color)' }}
+                style={{ 
+                  fill: hasUnsavedChanges ? 'var(--bs-warning)' : 'var(--bs-success)'
+                }}
               >
                 <path d="M0 0h24v24H0z" fill="none" />
                 <path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm0 16H5V5h11.17L19 7.83V19zm-7-1h2v-6h-2v6zm-4-8h10V7H6v3z" />
@@ -198,7 +228,7 @@ const EditNoteModal = ({
               onTextChange={setEditText}
             />
 
-            <Button variant="outline-secondary" size="sm" className="mx-2" onClick={toggleEditorRtl}>
+<Button variant="outline-secondary" size="sm" className="mx-2" onClick={toggleEditorRtl}>
               <span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -231,6 +261,7 @@ const EditNoteModal = ({
               </span>
             </Button>
 
+            {/* Preview toggle button */}
             <OverlayTrigger
               placement="bottom"
               overlay={<Tooltip>Toggle Preview (Ctrl+P)</Tooltip>}
@@ -257,7 +288,7 @@ const EditNoteModal = ({
 
         <div className="position-relative">
           {isPreviewMode ? (
-            <div className={`${styles.previewArea} p-3 border rounded `}>
+            <div className={`${styles.previewArea} p-3 border rounded`}>
               <ReactMarkdown>{editText}</ReactMarkdown>
             </div>
           ) : (
@@ -276,7 +307,10 @@ const EditNoteModal = ({
         <Button variant="secondary" onClick={onHide}>
           Cancel
         </Button>
-        <Button variant="primary" onClick={onSaveAndClose}>
+        <Button 
+          variant="primary" 
+          onClick={handleSaveAndClose}
+        >
           Save
         </Button>
       </Modal.Footer>
