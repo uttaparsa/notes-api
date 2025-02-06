@@ -224,22 +224,28 @@ const EditNoteModal = ({
                                 )}
                             </>
                         )}
-
-                        {!note.archived ? (
-                            <Button
-                                variant="outline-secondary"
-                                onClick={hideMessage}
-                            >
-                                Hide
-                            </Button>
-                        ) : (
-                            <Button
-                                variant="outline-secondary"
-                                onClick={unHideMessage}
-                            >
-                                Unhide
-                            </Button>
+                        {/* show hide/unhide button only if note refreshNotes is not none */}
+                        {refreshNotes && (
+                            <>
+                                {!note.archived ? (
+                                    <Button
+                                        variant="outline-secondary"
+                                        onClick={hideMessage}
+                                    >
+                                        Hide
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline-secondary"
+                                        onClick={unHideMessage}
+                                    >
+                                        Unhide
+                                    </Button>
+                                )}
+                        
+                            </>
                         )}
+                        
                     </div>
 
                     <div>

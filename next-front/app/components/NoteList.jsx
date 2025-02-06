@@ -121,6 +121,7 @@ export default function NoteList({
                     onUnarchived={() => handleArchiveUpdate(note, false)}
                     onDeleteNote={handleDelete}
                     onEditNote={handleEdit}
+                    refreshNotes={refreshNotes}
                   />
                 )}
               </div>

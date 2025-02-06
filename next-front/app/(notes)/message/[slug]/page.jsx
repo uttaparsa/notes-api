@@ -124,6 +124,7 @@ const SingleNoteView = () => {
               note={note}
               onEditNote={editNote}
               singleView={true}
+              
             />
           )}
         </div>
