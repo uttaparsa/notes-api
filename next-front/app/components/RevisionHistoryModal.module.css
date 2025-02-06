@@ -54,6 +54,9 @@
     color: var(--bs-danger);
   }
   
+
   .unchangedLine {
-    color: var(--bs-body-color);
+    /* set background color  to muted */
+    background: var(--bs-muted)
+    
   }

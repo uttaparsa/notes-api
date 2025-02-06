@@ -184,8 +184,3 @@ pre.codeBlock code {
   color: var(--bs-body-color);
 }
 
-.unchangedLine {
-  /* set background color  to muted */
-  background: rgba(var(--bs-muted-rgb), 0.5);
-  
-}
