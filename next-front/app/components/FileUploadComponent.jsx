@@ -5,7 +5,7 @@ import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
-const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange }) => {
+const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, size }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -84,13 +84,14 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange })
     <>
       <Button
         variant="outline-secondary"
-        className="h-80 px-1 shadow-none ml-2"
+        className="shadow-none"
         onClick={() => setShowModal(true)}
+        size={size}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="32"
-          height="32"
+          width="24px"
+          height="24px"
           style={{ 
                 fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
               }}

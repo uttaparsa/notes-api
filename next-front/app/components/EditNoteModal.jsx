@@ -29,7 +29,7 @@ const EditNoteModal = ({
             setLastSavedText(editText);
             // Set initial text direction and height
             if (editMessageTextAreaRef.current) {
-                updateTextAreaHeight(editMessageTextAreaRef.current);
+                // updateTextAreaHeight(editMessageTextAreaRef.current);
                 console.log("isRTL(note.text):", isRTL(note.text));
 
                 editMessageTextAreaRef.current.dir = isRTL(note.text)
@@ -40,6 +40,14 @@ const EditNoteModal = ({
             }
         }
     }, [show]);
+
+    // // update textarea height when text changes
+    // useEffect(() => {
+    //     if (editMessageTextAreaRef.current) {
+    //         updateTextAreaHeight(editMessageTextAreaRef.current);
+    //     }
+    // }, [editText]);
+
 
     const handleSave = async () => {
         await onSave();
@@ -236,6 +244,7 @@ const EditNoteModal = ({
 
                     <div>
                         <Button
+                            className="me-2"
                             variant={
                                 hasUnsavedChanges
                                     ? "outline-warning"
@@ -265,6 +274,7 @@ const EditNoteModal = ({
                             onFileUploaded={handleFileUpload}
                             initialText={editText}
                             onTextChange={setEditText}
+                            size="sm"
                         />
 
                         <Button
