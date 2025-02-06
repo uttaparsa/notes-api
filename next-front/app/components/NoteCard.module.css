@@ -183,3 +183,9 @@ pre.codeBlock code {
   transition: background-color 0.2s ease;
   color: var(--bs-body-color);
 }
+
+.unchangedLine {
+  /* set background color  to muted */
+  background-color: var(--bs-muted-color);
+  
+}
