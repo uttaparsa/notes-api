@@ -22,6 +22,7 @@ const EditNoteModal = ({
     const [isPreviewMode, setIsPreviewMode] = useState(false);
     const [lastSavedText, setLastSavedText] = useState(editText);
     const editMessageTextAreaRef = useRef(null);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     // Reset lastSavedText when modal is opened with new content
     useEffect(() => {
@@ -63,6 +64,24 @@ const EditNoteModal = ({
         } else if (e.shiftKey && e.key === "Enter") {
             handleSave();
         }
+    };
+
+    
+    const handleClose = () => {
+        if (hasUnsavedChanges) {
+            setShowConfirmDialog(true);
+        } else {
+            onHide();
+        }
+    };
+
+    const handleConfirmClose = () => {
+        setShowConfirmDialog(false);
+        onHide();
+    };
+    
+    const handleCancelClose = () => {
+        setShowConfirmDialog(false);
     };
 
     const hasUnsavedChanges = editText !== lastSavedText;
@@ -185,7 +204,10 @@ const EditNoteModal = ({
     };
 
     return (
-        <Modal show={show} onHide={onHide} size="xl">
+        <>
+        
+        
+        <Modal show={show} onHide={handleClose} size="xl">
             <Modal.Body>
                 <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
                     <div>
@@ -364,6 +386,31 @@ const EditNoteModal = ({
                 </Button>
             </Modal.Footer>
         </Modal>
+
+        <Modal
+    show={showConfirmDialog}
+    onHide={handleCancelClose}
+    size="sm"
+    centered
+>
+    <Modal.Header>
+        <Modal.Title>Unsaved Changes</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        Are you sure you want to close? Your unsaved changes will be lost.
+    </Modal.Body>
+    <Modal.Footer>
+        <Button variant="secondary" onClick={handleCancelClose}>
+            Cancel
+        </Button>
+        <Button variant="danger" onClick={handleConfirmClose}>
+            Close Without Saving
+        </Button>
+    </Modal.Footer>
+</Modal>
+</>
+
+        
     );
 };
 
