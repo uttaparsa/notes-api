@@ -41,12 +41,6 @@ const EditNoteModal = ({
         }
     }, [show]);
 
-    // // update textarea height when text changes
-    // useEffect(() => {
-    //     if (editMessageTextAreaRef.current) {
-    //         updateTextAreaHeight(editMessageTextAreaRef.current);
-    //     }
-    // }, [editText]);
 
 
     const handleSave = async () => {
@@ -105,14 +99,6 @@ const EditNoteModal = ({
         };
     }, []);
 
-    const updateTextAreaHeight = (textarea) => {
-        if (textarea) {
-            textarea.style.height = "50px";
-            const max_height = 0.75 * window.innerHeight;
-            const new_height = Math.min(50 + textarea.scrollHeight, max_height);
-            textarea.style.height = new_height + "px";
-        }
-    };
 
     const toggleEditorRtl = () => {
         if (editMessageTextAreaRef.current) {
