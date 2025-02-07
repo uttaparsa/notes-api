@@ -24,17 +24,32 @@ class LinkSerializer(serializers.ModelSerializer):
         model = Link
         fields = '__all__'
 
+
+
 class MessageSerializer(serializers.ModelSerializer):
     source_links = LinkSerializer(many=True, read_only=True)
     text_with_links = serializers.SerializerMethodField()
 
     def get_text_with_links(self, obj):
-        def replace_hashtag(match):
-            tag = match.group(0)
-            encoded_tag = tag.replace('#', '%23')
-            return f'[{tag}](/search?q={encoded_tag}&list_slug=All)'
-            
-        return re.sub(r'#\w+', replace_hashtag, obj.text)
+        # Split text into code blocks and non-code blocks
+        # Assuming code blocks are marked with triple backticks
+        parts = re.split(r'(```.*?```)', obj.text, flags=re.DOTALL)
+        
+        result = []
+        for i, part in enumerate(parts):
+            # Even indices are non-code blocks, odd indices are code blocks
+            if i % 2 == 0:  # Non-code block
+                # Replace hashtags with markdown links
+                processed_part = re.sub(
+                    r'#\w+',
+                    lambda m: f'[{m.group(0)}](/search?q={m.group(0).replace("#", "%23")}&list_slug=All)',
+                    part
+                )
+                result.append(processed_part)
+            else:  # Code block
+                result.append(part)  # Keep code blocks unchanged
+                
+        return ''.join(result)
 
     class Meta:
         model = LocalMessage
