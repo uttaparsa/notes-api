@@ -190,15 +190,27 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   };
 
 
-  
-
   const processNoteText = (note) => {
-    return singleView || note.text.length < 1000 || isExpanded
-      ? note.text_with_links
-      : note.text_with_links.substring(0, 1000);
+    let text = singleView || note.text.length < 1000 || isExpanded
+      ? note.text
+      : note.text.substring(0, 1000);
+  
+    // Split by code blocks and process only non-code parts
+    const parts = text.split(/(```[\s\S]*?```)/);
+    const processed = parts.map((part, index) => {
+      // Even indices are non-code blocks
+      if (index % 2 === 0) {
+        return part.replace(
+          /#(\w+)/g,
+          (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
+        );
+      }
+      // Odd indices are code blocks - leave unchanged
+      return part;
+    });
+  
+    return processed.join('');
   };
-
-
   const showEditModalHandler = () => {
     setEditText(note.text);
     setShowEditModal(true);
@@ -280,7 +292,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       }
       return <Link href={href} rel="noopener noreferrer">{children}</Link>;
     },
-    img: (props) => <ResponsiveImage {...props} />
+    img: (props) => <ResponsiveImage {...props} />, 
+
   };
 
   return (
