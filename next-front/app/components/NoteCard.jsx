@@ -200,8 +200,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     const processed = parts.map((part, index) => {
       // Even indices are non-code blocks
       if (index % 2 === 0) {
+        // Use negative lookbehind to avoid matching hashtags in URLs
         return part.replace(
-          /#(\w+)/g,
+          /(?<!https?:\/\/[^\s]*)#(\w+)/g,
           (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
         );
       }
@@ -211,6 +212,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   
     return processed.join('');
   };
+  
   const showEditModalHandler = () => {
     setEditText(note.text);
     setShowEditModal(true);
