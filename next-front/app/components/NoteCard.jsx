@@ -194,8 +194,8 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const processNoteText = (note) => {
     return singleView || note.text.length < 1000 || isExpanded
-      ? note.text
-      : note.text.substring(0, 1000);
+      ? note.text_with_links
+      : note.text_with_links.substring(0, 1000);
   };
 
 
