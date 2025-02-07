@@ -78,7 +78,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [showEditModal, setShowEditModal] = useState(false);
   const [textInsideDeleteModal, setTextInsideDeleteModal] = useState("");
   const [editText, setEditText] = useState(note.text);
-  const editMessageTextAreaRef = useRef(null);
   const noteLists = useContext(NoteListContext);
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -89,45 +88,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
-
-  
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    
-    if (!viewport) return; // For browsers that don't support visualViewport
-    
-    const handleResize = () => {
-      if (editMessageTextAreaRef.current) {
-        // Calculate new height based on viewport
-        const newHeight = viewport.height * 0.6; // 70% of visible area
-        editMessageTextAreaRef.current.style.height = `${newHeight}px`;
-      }
-    };
-  
-    viewport.addEventListener('resize', handleResize);
-    viewport.addEventListener('scroll', handleResize);
-  
-    // Initial resize
-    handleResize();
-  
-    return () => {
-      viewport.removeEventListener('resize', handleResize);
-      viewport.removeEventListener('scroll', handleResize);
-    };
-  }, []);
-
-
-
-  const updateTextAreaHeight = (textarea) => {
-    if (textarea) {
-      textarea.style.height = "50px";
-      // max height 70vh
-      const max_height = 0.75 * window.innerHeight;
-      const new_height = Math.min(50 + textarea.scrollHeight, max_height);
-      textarea.style.height = new_height + "px";
-    }
-  };
-
 
 
   const expandNote = () => {
@@ -217,13 +177,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setEditText(note.text);
     setShowEditModal(true);
     setShouldLoadLinks(false);  // Disable link loading when editing
-    setTimeout(() => {
-      if (editMessageTextAreaRef.current) {
-        updateTextAreaHeight(editMessageTextAreaRef.current);
-        // editMessageTextAreaRef.current.focus();
-        editMessageTextAreaRef.current.dir = isRTL(note.text) ? "rtl" : "ltr";
-      }
-    }, 100);
+
   };
 
 
