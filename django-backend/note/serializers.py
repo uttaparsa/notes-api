@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import LocalMessage, LocalMessageList, Link, NoteRevision
+import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
     def truncate_text(self, value):
@@ -24,7 +25,16 @@ class LinkSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MessageSerializer(serializers.ModelSerializer):
-    source_links =  LinkSerializer(many=True, read_only=True)
+    source_links = LinkSerializer(many=True, read_only=True)
+    text_with_links = serializers.SerializerMethodField()
+
+    def get_text_with_links(self, obj):
+        def replace_hashtag(match):
+            tag = match.group(0)
+            encoded_tag = tag.replace('#', '%23')
+            return f'[{tag}](/search?q={encoded_tag}&list_slug=All)'
+            
+        return re.sub(r'#\w+', replace_hashtag, obj.text)
 
     class Meta:
         model = LocalMessage
