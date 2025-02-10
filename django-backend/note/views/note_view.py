@@ -5,11 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link, NoteRevision
-from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteEmbedding
+from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer, SimilarNoteSerializer
 import re 
 from django.utils import timezone
 from typing import Optional
+
 
 
 
@@ -271,4 +272,31 @@ class NoteRevisionView(APIView):
         if not revisions:
             return Response([], status=status.HTTP_200_OK)
         serializer = NoteRevisionSerializer(revisions, many=True)
+        return Response(serializer.data)
+
+
+class SimilarNotesView(APIView):
+    def get(self, request, note_id):
+        note = get_object_or_404(LocalMessage, id=note_id)
+        
+        # Ensure embedding exists for this note
+        embedding, created = NoteEmbedding.objects.get_or_create(note=note)
+        
+        # Get similar notes
+        similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=3)
+        
+        # Fetch the actual notes with their similarity scores
+        notes_with_scores = []
+        for result in similar_notes:
+            try:
+                note = LocalMessage.objects.get(id=result['note_id'])
+                notes_with_scores.append({
+                    'id': note.id,
+                    'text': note.text,
+                    'similarity_score': result['distance']
+                })
+            except LocalMessage.DoesNotExist:
+                continue
+        
+        serializer = SimilarNoteSerializer(notes_with_scores, many=True)
         return Response(serializer.data)

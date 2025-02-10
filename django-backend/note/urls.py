@@ -3,7 +3,7 @@ from django.urls import path
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView
 from .views.search_view import SearchResultsView
-from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, SimilarNotesView
 from .views.public_note_view import PublicNoteView
 
 
@@ -26,5 +26,6 @@ urlpatterns = [
     path('<slug>/', NoteView.as_view()),
     # In note/urls.py, add:
     path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
+    path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
 
 ]

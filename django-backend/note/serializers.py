@@ -120,3 +120,19 @@ class NoteRevisionSerializer(serializers.ModelSerializer):
         model = NoteRevision
         fields = ['id', 'created_at', 'changed_text', "revision_text"]
         # Note: removed revision_text and diff_text to reduce payload size
+
+
+class SimilarNoteSerializer(serializers.ModelSerializer):
+    similarity_score = serializers.FloatField()
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Convert distance to a similarity score between 0 and 1
+        # Lower distance means higher similarity
+        max_distance = 4.0  # This might need adjustment based on your embeddings
+        representation['similarity_score'] = max(0, 1 - (representation['similarity_score'] / max_distance))
+        return representation
+
+    class Meta:
+        model = LocalMessage
+        fields = ['id', 'text', 'similarity_score']

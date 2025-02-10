@@ -79,3 +79,128 @@ class Link(models.Model):
     dest_message = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='source_links')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+from django.db import models, connection
+import requests
+import re
+import sqlite3
+import sqlite_vec
+
+class NoteEmbedding(models.Model):
+    note = models.OneToOneField('LocalMessage', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @staticmethod
+    def setup_vector_table():
+        # Get the database path from Django's connection
+        db_settings = connection.settings_dict
+        db_path = db_settings['NAME']
+
+        # Create a new connection to enable extensions
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        
+        # Create the vector table (assumes 384-dimensional vectors from nomic-embed-text)
+        db.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
+            USING vec0(embedding float[384])
+        """)
+        
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def has_non_ascii(text):
+        """Check if text contains any non-ASCII characters"""
+        return any(ord(char) > 127 for char in text)
+
+    @staticmethod
+    def get_embedding(text):
+        response = requests.post(
+            'http://192.168.0.23:11434/api/embed',
+            json={
+                "model": "nomic-embed-text",
+                "input": text
+            }
+        )
+        if response.status_code == 200:
+            # Ollama returns embeddings as a list with a single embedding
+            return response.json()['embeddings'][0]
+        raise Exception(f"Failed to get embedding: {response.text}")
+
+    def save(self, *args, **kwargs):
+        # Check if note contains non-ASCII characters
+        if self.has_non_ascii(self.note.text):
+            # Skip saving if note contains non-ASCII characters
+            return
+            
+        super().save(*args, **kwargs)
+        
+        # Get embedding from ollama
+        embedding = self.get_embedding(self.note.text)
+        
+        # Get database path and create new connection
+        db_settings = connection.settings_dict
+        db_path = db_settings['NAME']
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        
+        # Store in vector table
+        db.execute(
+            """
+            INSERT OR REPLACE INTO note_embeddings_vec(rowid, embedding) 
+            VALUES (?, ?)
+            """,
+            [self.note.id, str(embedding)]
+        )
+        
+        db.commit()
+        db.close()
+
+    @staticmethod
+    def find_similar_notes(note_id, limit=5):
+        # Get database path and create new connection
+        db_settings = connection.settings_dict
+        db_path = db_settings['NAME']
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        
+        # First get the embedding for the target note
+        cursor = db.cursor()
+        cursor.execute(
+            """
+            SELECT embedding 
+            FROM note_embeddings_vec 
+            WHERE rowid = ?
+            """,
+            [note_id]
+        )
+        result = cursor.fetchone()
+        if not result:
+            db.close()
+            return []
+        
+        target_embedding = result[0]
+        
+        cursor.execute(
+            """
+            SELECT 
+                rowid,
+                distance
+            FROM note_embeddings_vec
+            WHERE embedding MATCH ? 
+                AND rowid != ?
+                AND k = ?
+            """,
+            [target_embedding, note_id, limit]
+        )
+        
+        results = [{'note_id': row[0], 'distance': row[1]} 
+                  for row in cursor.fetchall()]
+        
+        db.close()
+        return results
