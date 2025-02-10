@@ -280,7 +280,7 @@ class SimilarNotesView(APIView):
         note = get_object_or_404(LocalMessage, id=note_id)
         
         # Ensure embedding exists for this note
-        embedding, created = NoteEmbedding.objects.get_or_create(note=note)
+        embedding, created = NoteEmbedding.objects.get_or_create(note_id=note.id)
         
         # Get similar notes
         similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=3)
