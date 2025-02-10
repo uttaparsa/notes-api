@@ -125,12 +125,19 @@ class NoteRevisionSerializer(serializers.ModelSerializer):
 class SimilarNoteSerializer(serializers.ModelSerializer):
     similarity_score = serializers.FloatField()
     
+    def truncate_text(self, value):
+        max_length = 25  # Replace this with your desired length
+        if len(value) > max_length:
+            return value[:max_length] + '...'  # Truncate and add ellipsis
+        return value
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         # Convert distance to a similarity score between 0 and 1
         # Lower distance means higher similarity
         max_distance = 4.0  # This might need adjustment based on your embeddings
         representation['similarity_score'] = max(0, 1 - (representation['similarity_score'] / max_distance))
+        representation['text'] = self.truncate_text(representation['text'])
         return representation
 
     class Meta:
