@@ -105,7 +105,7 @@ class NoteEmbedding(models.Model):
         # Create the vector table (assumes 384-dimensional vectors from nomic-embed-text)
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
-            USING vec0(embedding float[384])
+            USING vec0(embedding float[768])
         """)
         
         db.commit()
