@@ -133,9 +133,16 @@ DATABASES = {
     "revisions": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "data/revisions.sqlite3",
+    },
+    "embeddings": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "data/embeddings.sqlite3",
     }
 }
-DATABASE_ROUTERS = ['note.router.RevisionRouter']
+DATABASE_ROUTERS = [
+    'note.router.RevisionRouter',
+    'note.router.EmbeddingRouter'
+                    ]
 
 LOGGING = {                                                                                                                 
     'version': 1,

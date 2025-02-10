@@ -1,8 +1,6 @@
 from django.core.management.base import BaseCommand
 from note.models import LocalMessage, NoteEmbedding
-
 import traceback
-
 
 class Command(BaseCommand):
     help = 'Generate embeddings for notes that have no embeddings and contain only ASCII characters'
@@ -25,7 +23,7 @@ class Command(BaseCommand):
         for i, note in enumerate(all_notes, 1):
             try:
                 # Check if embedding already exists
-                if NoteEmbedding.objects.filter(note=note).exists():
+                if NoteEmbedding.objects.filter(note_id=note.id).exists():
                     skipped_existing += 1
                     continue
 
@@ -34,14 +32,22 @@ class Command(BaseCommand):
                     skipped_non_ascii += 1
                     continue
                     
-                NoteEmbedding.objects.create(note=note)
-                processed += 1
-                self.stdout.write(f"Processed {i}/{total}: Note {note.id}")
+                # Create embedding using the class method
+                embedding = NoteEmbedding.create_for_note(note)
+                if embedding:
+                    processed += 1
+                    self.stdout.write(f"Processed {i}/{total}: Note {note.id}")
+                else:
+                    skipped_non_ascii += 1
+                    self.stdout.write(f"Skipping note {note.id}: Unable to create embedding")
+                
             except Exception as e:
                 failed += 1
                 self.stdout.write(self.style.ERROR(
-                    f"Failed to process note {note.id}: {str(e)}"
+                    f"Failed to process note {note.id}: {str(e)}\n"
+                    f"Traceback: {traceback.format_exc()}"
                 ))
+                break
         
         self.stdout.write(self.style.SUCCESS(
             f"\nFinished processing notes:\n"

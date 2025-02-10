@@ -5,19 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('note', '0010_localmessagelist_show_in_feed'),
     ]
-
+    
     operations = [
         migrations.CreateModel(
             name='NoteEmbedding',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('note_id', models.IntegerField()),  # Changed from ForeignKey to IntegerField
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('note', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='note.localmessage')),
             ],
+            options={
+                'db_table': 'note_embeddings',
+            },
         ),
     ]

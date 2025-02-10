@@ -24,15 +24,16 @@ def create_or_update_embedding_async(note_id):
         # Check if note contains non-ASCII characters
         if NoteEmbedding.has_non_ascii(note.text):
             # If there's an existing embedding, delete it since the note now has non-ASCII
-            NoteEmbedding.objects.filter(note=note).delete()
+            NoteEmbedding.objects.filter(note_id=note.id).delete()
             return
             
-        # Get or create the embedding
-        embedding, created = NoteEmbedding.objects.get_or_create(note=note)
+        # Create or update the embedding
+        existing = NoteEmbedding.objects.filter(note_id=note.id).first()
+        if existing:
+            # If embedding exists, delete and recreate to update the vector
+            existing.delete()
         
-        if not created:
-            # If embedding exists, force a save to update the vector
-            embedding.save()
+        NoteEmbedding.create_for_note(note)
             
     except Exception as e:
         print(f"Failed to process embedding for note {note_id}: {str(e)}")

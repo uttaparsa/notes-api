@@ -80,29 +80,43 @@ class Link(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-from django.db import models, connection
+
+from django.db import models
+import requests
+import re
+import sqlite3
+import sqlite_vec
+
+from django.db import models
 import requests
 import re
 import sqlite3
 import sqlite_vec
 
 class NoteEmbedding(models.Model):
-    note = models.OneToOneField('LocalMessage', on_delete=models.CASCADE)
+    note_id = models.IntegerField()  # Changed from ForeignKey to IntegerField
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        db_table = 'note_embeddings'
+
+    @staticmethod
+    def get_embedding_db_path():
+        """Get the path to the embeddings database"""
+        from django.conf import settings
+        db_settings = settings.DATABASES['embeddings']
+        return db_settings['NAME']
+
     @staticmethod
     def setup_vector_table():
-        # Get the database path from Django's connection
-        db_settings = connection.settings_dict
-        db_path = db_settings['NAME']
-
-        # Create a new connection to enable extensions
+        """Setup the vector table in the embeddings database"""
+        db_path = NoteEmbedding.get_embedding_db_path()
         db = sqlite3.connect(db_path)
         db.enable_load_extension(True)
         sqlite_vec.load(db)
         
-        # Create the vector table (assumes 384-dimensional vectors from nomic-embed-text)
+        # Create the vector table (assumes 768-dimensional vectors from nomic-embed-text)
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
             USING vec0(embedding float[768])
@@ -126,24 +140,24 @@ class NoteEmbedding(models.Model):
             }
         )
         if response.status_code == 200:
-            # Ollama returns embeddings as a list with a single embedding
             return response.json()['embeddings'][0]
         raise Exception(f"Failed to get embedding: {response.text}")
 
-    def save(self, *args, **kwargs):
+    @classmethod
+    def create_for_note(cls, note):
+        """Class method to create embedding for a note"""
         # Check if note contains non-ASCII characters
-        if self.has_non_ascii(self.note.text):
-            # Skip saving if note contains non-ASCII characters
-            return
+        if cls.has_non_ascii(note.text):
+            return None
             
-        super().save(*args, **kwargs)
+        # Create the embedding record
+        embedding = cls.objects.create(note_id=note.id)
         
-        # Get embedding from ollama
-        embedding = self.get_embedding(self.note.text)
+        # Get embedding vector from ollama
+        vector = cls.get_embedding(note.text)
         
         # Get database path and create new connection
-        db_settings = connection.settings_dict
-        db_path = db_settings['NAME']
+        db_path = cls.get_embedding_db_path()
         db = sqlite3.connect(db_path)
         db.enable_load_extension(True)
         sqlite_vec.load(db)
@@ -154,17 +168,18 @@ class NoteEmbedding(models.Model):
             INSERT OR REPLACE INTO note_embeddings_vec(rowid, embedding) 
             VALUES (?, ?)
             """,
-            [self.note.id, str(embedding)]
+            [note.id, str(vector)]
         )
         
         db.commit()
         db.close()
+        
+        return embedding
 
     @staticmethod
-    def find_similar_notes(note_id, limit=5):
+    def find_similar_notes(note_id, limit=3):
         # Get database path and create new connection
-        db_settings = connection.settings_dict
-        db_path = db_settings['NAME']
+        db_path = NoteEmbedding.get_embedding_db_path()
         db = sqlite3.connect(db_path)
         db.enable_load_extension(True)
         sqlite_vec.load(db)
@@ -186,6 +201,7 @@ class NoteEmbedding(models.Model):
         
         target_embedding = result[0]
         
+        # Find similar notes
         cursor.execute(
             """
             SELECT 
