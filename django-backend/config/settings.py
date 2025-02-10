@@ -229,3 +229,5 @@ REST_FRAMEWORK = {
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30 # 1 month
+
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")

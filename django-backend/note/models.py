@@ -81,11 +81,7 @@ class Link(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
-from django.db import models
-import requests
-import re
-import sqlite3
-import sqlite_vec
+from django.conf import settings
 
 from django.db import models
 import requests
@@ -133,10 +129,10 @@ class NoteEmbedding(models.Model):
     @staticmethod
     def get_embedding(text):
         response = requests.post(
-            'http://192.168.0.23:11434/api/embed',
+            f'{settings.OLLAMA_URL}/api/embed',
             json={
-                "model": "nomic-embed-text",
-                "input": text
+            "model": "nomic-embed-text",
+            "input": text
             }
         )
         if response.status_code == 200:
