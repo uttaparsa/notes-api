@@ -193,7 +193,7 @@ class NoteEmbedding(models.Model):
             raise
 
     @staticmethod
-    def find_similar_notes(note_id):
+    def find_similar_notes(note_id, limit=3):
         # Get database path and create new connection
         db_path = NoteEmbedding.get_embedding_db_path()
         db = sqlite3.connect(db_path)
@@ -226,9 +226,9 @@ class NoteEmbedding(models.Model):
             FROM note_embeddings_vec
             WHERE embedding MATCH ? 
                 AND rowid != ?
-                AND k = 3
+                AND k = ?
             """,
-            [target_embedding, note_id]
+            [target_embedding, note_id, limit]
         )
         
         results = [{'note_id': row[0], 'distance': row[1]} 
