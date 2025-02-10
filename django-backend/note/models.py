@@ -85,12 +85,12 @@ from django.conf import settings
 
 from django.db import models
 import requests
-import re
 import sqlite3
 import sqlite_vec
+import json
 
 class NoteEmbedding(models.Model):
-    note_id = models.IntegerField()  # Changed from ForeignKey to IntegerField
+    note_id = models.IntegerField(unique=True)  # Add unique constraint
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -112,10 +112,12 @@ class NoteEmbedding(models.Model):
         db.enable_load_extension(True)
         sqlite_vec.load(db)
         
-        # Create the vector table (assumes 768-dimensional vectors from nomic-embed-text)
+        # Create the vector table with explicit rowid primary key
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
-            USING vec0(embedding float[768])
+            USING vec0(
+                embedding float[768]
+            );
         """)
         
         db.commit()
@@ -131,8 +133,8 @@ class NoteEmbedding(models.Model):
         response = requests.post(
             f'{settings.OLLAMA_URL}/api/embed',
             json={
-            "model": "nomic-embed-text",    
-            "input": text
+                "model": "nomic-embed-text",    
+                "input": text
             }
         )
         if response.status_code == 200:
@@ -142,77 +144,104 @@ class NoteEmbedding(models.Model):
     @classmethod
     def create_for_note(cls, note):
         """Class method to create embedding for a note"""
-        # Check if note contains non-ASCII characters
-        if cls.has_non_ascii(note.text):
-            return None
+        try:
+            # Check if note contains non-ASCII characters
+            if cls.has_non_ascii(note.text):
+                return None
+                
+            # First delete any existing embedding for this note
+            cls.objects.filter(note_id=note.id).delete()
             
-        # Create the embedding record
-        embedding = cls.objects.create(note_id=note.id)
-        
-        # Get embedding vector from ollama
-        vector = cls.get_embedding(note.text)
-        
-        # Get database path and create new connection
-        db_path = cls.get_embedding_db_path()
-        db = sqlite3.connect(db_path)
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        
-        # Store in vector table
-        db.execute(
-            """
-            INSERT OR REPLACE INTO note_embeddings_vec(rowid, embedding) 
-            VALUES (?, ?)
-            """,
-            [note.id, str(vector)]
-        )
-        
-        db.commit()
-        db.close()
-        
-        return embedding
+            # Create the embedding record
+            embedding = cls.objects.create(note_id=note.id)
+            
+            # Get embedding vector from ollama
+            vector = cls.get_embedding(note.text)
+            
+            # Get database path and create new connection
+            db_path = cls.get_embedding_db_path()
+            db = sqlite3.connect(db_path)
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            
+            # First delete any existing vector for this note
+            db.execute(
+                "DELETE FROM note_embeddings_vec WHERE rowid = ?",
+                [note.id]
+            )
+
+                
+            # Insert new vector
+            db.execute(
+                """
+                INSERT INTO note_embeddings_vec(rowid, embedding) 
+                VALUES (?, json(?))
+                """,
+                [note.id, json.dumps(vector)]
+            )
+            
+            db.commit()
+            db.close()
+            
+            return embedding
+            
+        except Exception as e:
+            # Log the error and re-raise
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to process embedding for note {note.id}: {str(e)}")
+            raise
 
     @staticmethod
     def find_similar_notes(note_id, limit=3):
-        # Get database path and create new connection
-        db_path = NoteEmbedding.get_embedding_db_path()
-        db = sqlite3.connect(db_path)
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        
-        # First get the embedding for the target note
-        cursor = db.cursor()
-        cursor.execute(
-            """
-            SELECT embedding 
-            FROM note_embeddings_vec 
-            WHERE rowid = ?
-            """,
-            [note_id]
-        )
-        result = cursor.fetchone()
-        if not result:
+        """Find similar notes using vector similarity search"""
+        try:
+            # Get database path and create new connection
+            db_path = NoteEmbedding.get_embedding_db_path()
+            db = sqlite3.connect(db_path)
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            
+            # First get the embedding for the target note
+            cursor = db.cursor()
+            cursor.execute(
+                """
+                SELECT embedding 
+                FROM note_embeddings_vec 
+                WHERE rowid = ?
+                """,
+                [note_id]
+            )
+            result = cursor.fetchone()
+            if not result:
+                db.close()
+                return []
+            
+            target_embedding = result[0]
+            
+            # Find similar notes using cosine similarity
+            cursor.execute(
+                """
+                SELECT 
+                    rowid,
+                    distance
+                FROM note_embeddings_vec
+                WHERE embedding MATCH ?
+                    AND rowid != ?
+                ORDER BY distance DESC
+                LIMIT ?
+                """,
+                [target_embedding, note_id, limit]
+            )
+            
+            results = [{'note_id': row[0], 'distance': row[1]} 
+                      for row in cursor.fetchall()]
+            
             db.close()
+            return results
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error finding similar notes for note {note_id}: {str(e)}")
             return []
-        
-        target_embedding = result[0]
-        
-        # Find similar notes
-        cursor.execute(
-            """
-            SELECT 
-                rowid,
-                distance
-            FROM note_embeddings_vec
-            WHERE embedding MATCH ? 
-                AND rowid != ?
-                AND k = ?
-            """,
-            [target_embedding, note_id, limit]
-        )
-        
-        results = [{'note_id': row[0], 'distance': row[1]} 
-                  for row in cursor.fetchall()]
-        
-        db.close()
-        return results
