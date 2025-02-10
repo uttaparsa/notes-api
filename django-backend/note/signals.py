@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from .models import LocalMessage, NoteEmbedding
 import threading
 import functools
+import traceback
 
 def async_task(func):
     @functools.wraps(func)
@@ -36,7 +37,9 @@ def create_or_update_embedding_async(note_id):
         NoteEmbedding.create_for_note(note)
             
     except Exception as e:
+        
         print(f"Failed to process embedding for note {note_id}: {str(e)}")
+        traceback.print_exc()
 
 @receiver(post_save, sender=LocalMessage)
 def trigger_embedding_processing(sender, instance, created, **kwargs):

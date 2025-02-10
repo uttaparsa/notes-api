@@ -131,7 +131,7 @@ class NoteEmbedding(models.Model):
         response = requests.post(
             f'{settings.OLLAMA_URL}/api/embed',
             json={
-            "model": "nomic-embed-text",
+            "model": "nomic-embed-text",    
             "input": text
             }
         )
