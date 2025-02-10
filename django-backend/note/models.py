@@ -193,55 +193,46 @@ class NoteEmbedding(models.Model):
             raise
 
     @staticmethod
-    def find_similar_notes(note_id, limit=3):
-        """Find similar notes using vector similarity search"""
-        try:
-            # Get database path and create new connection
-            db_path = NoteEmbedding.get_embedding_db_path()
-            db = sqlite3.connect(db_path)
-            db.enable_load_extension(True)
-            sqlite_vec.load(db)
-            
-            # First get the embedding for the target note
-            cursor = db.cursor()
-            cursor.execute(
-                """
-                SELECT embedding 
-                FROM note_embeddings_vec 
-                WHERE rowid = ?
-                """,
-                [note_id]
-            )
-            result = cursor.fetchone()
-            if not result:
-                db.close()
-                return []
-            
-            target_embedding = result[0]
-            
-            # Find similar notes using cosine similarity
-            cursor.execute(
-                """
-                SELECT 
-                    rowid,
-                    distance
-                FROM note_embeddings_vec
-                WHERE embedding MATCH ?
-                    AND rowid != ?
-                ORDER BY distance DESC
-                LIMIT ?
-                """,
-                [target_embedding, note_id, limit]
-            )
-            
-            results = [{'note_id': row[0], 'distance': row[1]} 
-                      for row in cursor.fetchall()]
-            
+    def find_similar_notes(note_id):
+        # Get database path and create new connection
+        db_path = NoteEmbedding.get_embedding_db_path()
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        
+        # First get the embedding for the target note
+        cursor = db.cursor()
+        cursor.execute(
+            """
+            SELECT embedding 
+            FROM note_embeddings_vec 
+            WHERE rowid = ?
+            """,
+            [note_id]
+        )
+        result = cursor.fetchone()
+        if not result:
             db.close()
-            return results
-            
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error finding similar notes for note {note_id}: {str(e)}")
             return []
+        
+        target_embedding = result[0]
+        
+        # Find similar notes
+        cursor.execute(
+            """
+            SELECT 
+                rowid,
+                distance
+            FROM note_embeddings_vec
+            WHERE embedding MATCH ? 
+                AND rowid != ?
+                AND k = 3
+            """,
+            [target_embedding, note_id]
+        )
+        
+        results = [{'note_id': row[0], 'distance': row[1]} 
+                  for row in cursor.fetchall()]
+        
+        db.close()
+        return results
