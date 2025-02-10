@@ -47,7 +47,6 @@ class Command(BaseCommand):
                     f"Failed to process note {note.id}: {str(e)}\n"
                     f"Traceback: {traceback.format_exc()}"
                 ))
-                break
         
         self.stdout.write(self.style.SUCCESS(
             f"\nFinished processing notes:\n"
