@@ -52,13 +52,36 @@ class FileUploadView(APIView):
 
     def compress_image(self, image, max_size=(1600, 1200), quality=95):
         img = Image.open(image)
-        if img.mode == 'RGBA':
+        
+        # Convert RGBA to RGB if needed, with white background
+        if img.mode in ('RGBA', 'LA'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'RGBA':
+                background.paste(img, mask=img.split()[3])  # Use alpha channel as mask
+            else:
+                background.paste(img, mask=img.split()[1])  # Use alpha channel as mask
+            img = background
+        elif img.mode != 'RGB':
             img = img.convert('RGB')
-        img.thumbnail(max_size, Image.ANTIALIAS)
+
+        # Calculate new dimensions while maintaining aspect ratio
+        width, height = img.size
+        if width > max_size[0] or height > max_size[1]:
+            ratio = min(max_size[0]/width, max_size[1]/height)
+            new_size = (int(width * ratio), int(height * ratio))
+            # Use Lanczos resampling (replacement for ANTIALIAS)
+            img = img.resize(new_size, Image.Resampling.LANCZOS)
+
+        # Save the image
         img_io = io.BytesIO()
-        img.save(img_io, format='JPEG', quality=quality, optimize=True)
+        save_format = 'JPEG' if image.content_type == 'image/jpeg' else 'PNG'
+        if save_format == 'JPEG':
+            img.save(img_io, format=save_format, quality=quality, optimize=True)
+        else:
+            img.save(img_io, format=save_format, optimize=True)
+        
         img_io.seek(0)
-        return img_io
+        return img_io, save_format.lower()
 
     def save_to_minio(self, file_data, object_name, content_type):
         try:
@@ -83,10 +106,11 @@ class FileUploadView(APIView):
         compress_image = request.POST.get('compress_image', 'false').lower() == 'true'
 
         if compress_image and file.content_type.startswith('image'):
-            compressed_file = self.compress_image(file)
-            object_name = f"uploads/compressed_{file.name.rsplit('.', 1)[0]}.jpg"
+            compressed_file, image_format = self.compress_image(file)
+            extension = 'jpg' if image_format == 'jpeg' else image_format
+            object_name = f"uploads/compressed_{file.name.rsplit('.', 1)[0]}.{extension}"
             file_to_save = compressed_file
-            content_type = 'image/jpeg'
+            content_type = f'image/{image_format}'
         else:
             object_name = f"uploads/{file.name}"
             file_to_save = file
@@ -98,7 +122,7 @@ class FileUploadView(APIView):
             file_data = io.BytesIO(file_to_save.read())
 
         url = "/api/note/files/" + self.save_to_minio(file_data, object_name, content_type)
-
+        
         if url:
             return Response({'url': url}, status=status.HTTP_201_CREATED)
         else:
