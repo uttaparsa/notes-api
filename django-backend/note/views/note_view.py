@@ -40,7 +40,7 @@ class RevisionService:
         Manages the revision limit by removing the second oldest revision when the limit is reached
         and updating the diff of the third revision to be relative to the first revision.
         """
-        if cls.get_revision_count(note_id) > cls.MAX_REVISIONS:
+        while cls.get_revision_count(note_id) > cls.MAX_REVISIONS:
             # Get all revisions ordered from oldest to newest
             revisions = list(NoteRevision.objects.filter(
                 note_id=note_id
@@ -50,6 +50,8 @@ class RevisionService:
             # We'll delete the second revision (index 1)
             second_revision = revisions[1]
             third_revision = revisions[2]
+
+            print(f"total number of revisions is {len(revisions) } Deleting revision {second_revision.id}")
             
             # Update the third revision's previous_revision to point to the first revision
             third_revision.previous_revision = revisions[0]
