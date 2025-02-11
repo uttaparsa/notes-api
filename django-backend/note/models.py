@@ -122,11 +122,11 @@ class NoteEmbedding(models.Model):
         
         db.commit()
         db.close()
-
     @staticmethod
-    def has_non_ascii(text):
-        """Check if text contains any non-ASCII characters"""
-        return any(ord(char) > 127 for char in text)
+    def hasRTL(text):
+        """Check if text contains any Arabic RTL characters"""
+        import re
+        return bool(re.compile(r'[\u0600-\u06FF]').search(text))
 
     @staticmethod
     def get_embedding(text):
@@ -146,7 +146,7 @@ class NoteEmbedding(models.Model):
         """Class method to create embedding for a note"""
         try:
             # Check if note contains non-ASCII characters
-            if cls.has_non_ascii(note.text):
+            if cls.hasRTL(note.text):
                 return None
                 
             # First delete any existing embedding for this note

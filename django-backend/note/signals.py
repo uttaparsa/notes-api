@@ -23,7 +23,7 @@ def create_or_update_embedding_async(note_id):
         note = LocalMessage.objects.get(id=note_id)
         
         # Check if note contains non-ASCII characters
-        if NoteEmbedding.has_non_ascii(note.text):
+        if NoteEmbedding.hasRTL(note.text):
             # If there's an existing embedding, delete it since the note now has non-ASCII
             NoteEmbedding.objects.filter(note_id=note.id).delete()
             return
