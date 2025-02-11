@@ -16,6 +16,7 @@ from typing import Optional
 
 class RevisionService:
     MIN_TIME_BETWEEN_REVISIONS = 900  # minimum seconds between revisions
+    MAX_REVISIONS = 20  # maximum number of revisions to keep
 
     @classmethod
     def get_latest_revision(cls, note_id: int) -> Optional[NoteRevision]:
@@ -30,6 +31,42 @@ class RevisionService:
         ).order_by('-created_at')[1:2].first()
 
     @classmethod
+    def get_revision_count(cls, note_id: int) -> int:
+        return NoteRevision.objects.filter(note_id=note_id).count()
+
+    @classmethod
+    def manage_revision_limit(cls, note_id: int) -> None:
+        """
+        Manages the revision limit by removing the second oldest revision when the limit is reached
+        and updating the diff of the third revision to be relative to the first revision.
+        """
+        if cls.get_revision_count(note_id) > cls.MAX_REVISIONS:
+            # Get all revisions ordered from oldest to newest
+            revisions = list(NoteRevision.objects.filter(
+                note_id=note_id
+            ).order_by('created_at'))
+            
+            # The first revision stays (index 0)
+            # We'll delete the second revision (index 1)
+            second_revision = revisions[1]
+            third_revision = revisions[2]
+            
+            # Update the third revision's previous_revision to point to the first revision
+            third_revision.previous_revision = revisions[0]
+            
+            # Recalculate the diff for the third revision against the first revision
+            third_revision.diff_text = NoteRevision.create_diff(
+                revisions[0].revision_text,
+                third_revision.revision_text
+            )
+            
+            # Save the updated third revision
+            third_revision.save()
+            
+            # Delete the second revision
+            second_revision.delete()
+
+    @classmethod
     def _has_changes(cls, note_id: int, new_text: str) -> bool:
         """Check if there are actual changes compared to the latest revision"""
         latest_revision = cls.get_latest_revision(note_id)
@@ -39,15 +76,12 @@ class RevisionService:
 
     @classmethod
     def _should_create_revision(cls, note_id: int, new_text: str) -> bool:
-
         latest_revision = cls.get_latest_revision(note_id)
         if not latest_revision:
             return True
-    
         # First check if there are any actual changes
         if not cls._has_changes(note_id, new_text):
             return False
-            
         time_since_last = timezone.now() - latest_revision.created_at
         return time_since_last.total_seconds() >= cls.MIN_TIME_BETWEEN_REVISIONS
 
@@ -68,6 +102,9 @@ class RevisionService:
                 previous_revision=latest_revision,
                 diff_text=NoteRevision.create_diff(base_text, new_text)
             )
+            
+            # Check and manage revision limit after creating new revision
+            cls.manage_revision_limit(note_id)
         else:
             # Update latest revision
             latest = cls.get_latest_revision(note_id)
@@ -91,6 +128,7 @@ class RevisionService:
             cls.update_or_create_revision(note.id, new_text)
             note.text = new_text
             note.save()
+
 
 class SingleNoteView(APIView):
     serializer_class = MessageSerializer
