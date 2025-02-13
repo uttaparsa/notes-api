@@ -193,7 +193,7 @@ class NoteEmbedding(models.Model):
             raise
 
     @staticmethod
-    def find_similar_notes(note_id, limit=3):
+    def find_similar_notes(note_id, limit=4):
         # Get database path and create new connection
         db_path = NoteEmbedding.get_embedding_db_path()
         db = sqlite3.connect(db_path)
