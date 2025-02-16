@@ -323,7 +323,7 @@ class SimilarNotesView(APIView):
         embedding, created = NoteEmbedding.objects.get_or_create(note_id=note.id)
         
         # Get similar notes
-        similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=3)
+        similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=5)
         
         # Fetch the actual notes with their similarity scores
         notes_with_scores = []
