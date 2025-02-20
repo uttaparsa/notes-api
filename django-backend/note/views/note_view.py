@@ -330,11 +330,12 @@ class SimilarNotesView(APIView):
         for result in similar_notes:
             try:
                 note = LocalMessage.objects.get(id=result['note_id'])
-                notes_with_scores.append({
-                    'id': note.id,
-                    'text': note.text,
-                    'similarity_score': result['distance']
-                })
+                if result['distance'] >= 0.78:
+                    notes_with_scores.append({
+                        'id': note.id,
+                        'text': note.text,
+                        'similarity_score': result['distance']
+                    })
             except LocalMessage.DoesNotExist:
                 continue
         
