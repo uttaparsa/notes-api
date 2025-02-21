@@ -330,6 +330,8 @@ class SimilarNotesView(APIView):
         for result in similar_notes:
             try:
                 note = LocalMessage.objects.get(id=result['note_id'])
+                print(f"result distance is {float(result['distance'])}")
+                
                 if float(result['distance']) >= 0.78:
                     notes_with_scores.append({
                         'id': note.id,
