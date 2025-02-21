@@ -333,7 +333,6 @@ class SimilarNotesView(APIView):
                 
                 max_distance = 4.0
                 similarity_score = max(0, 1 - (float(result['distance']) / max_distance))
-                print(f"result distance is {float(result['distance'])} and similarity score is {similarity_score}")
                 if similarity_score >= 0.78:
                     notes_with_scores.append({
                         'id': note.id,
