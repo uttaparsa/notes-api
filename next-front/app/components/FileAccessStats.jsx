@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Accordion, Badge } from 'react-bootstrap';
+import { formatDateLikeHuman } from "../utils/dateFormatters";
 
 const FileAccessStats = () => {
   const [stats, setStats] = useState({});
@@ -61,7 +62,7 @@ const FileAccessStats = () => {
                   >
                     <span>{access.ip}</span>
                     <small className="text-muted">
-                      {new Date(access.last_access).toLocaleString()}
+                      {formatDateLikeHuman(access.last_access)}
                     </small>
                   </div>
                 ))}

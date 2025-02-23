@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../lib/api';
+import { formatDateShort } from "../utils/dateFormatters";
 
 const StatsDisplay = ({ title, endpoint }) => {
   const [stats, setStats] = useState([]);
@@ -24,11 +25,7 @@ const StatsDisplay = ({ title, endpoint }) => {
         // Format dates
         const formattedData = data.map(item => ({
           ...item,
-          date: new Date(item.date).toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric'
-          })
+          date: formatDateShort(item.date)
         }));
 
         setStats(formattedData);
