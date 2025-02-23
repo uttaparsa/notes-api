@@ -52,6 +52,6 @@ class FileManager:
                 except Exception as e:
                     print(f"Error deleting file {file_path}: {e}")
             else: 
-                print("file was referenced!")
+                print(f"file {file_path} was referenced elsewhere!")
                     
         return deleted_files
