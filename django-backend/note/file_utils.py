@@ -55,3 +55,61 @@ class FileManager:
                 print(f"file {file_path} was referenced elsewhere!")
                     
         return deleted_files
+    
+
+
+from collections import OrderedDict
+from datetime import datetime, timedelta
+import threading
+
+class FileAccessTracker:
+    def __init__(self, max_age_days=30):
+        self.access_log = OrderedDict()  # {file_path: {ip: timestamp}}
+        self.lock = threading.Lock()  # Thread-safe operations
+        self.max_age = timedelta(days=max_age_days)
+        
+    def add_access(self, file_path, ip):
+        with self.lock:
+            # Create nested dict if file_path doesn't exist
+            if file_path not in self.access_log:
+                self.access_log[file_path] = OrderedDict()
+            
+            # Update access time for this IP
+            self.access_log[file_path][ip] = datetime.now()
+            
+            # Clean up old entries
+            self._cleanup()
+    
+    def get_recent_accesses(self, file_path):
+        with self.lock:
+            if file_path not in self.access_log:
+                return {}
+            
+            # Filter out old accesses
+            current_time = datetime.now()
+            recent = {
+                ip: timestamp 
+                for ip, timestamp in self.access_log[file_path].items()
+                if current_time - timestamp <= self.max_age
+            }
+            
+            return recent
+    
+    def _cleanup(self):
+        current_time = datetime.now()
+        
+        # Clean up old accesses for each file
+        for file_path in list(self.access_log.keys()):
+            self.access_log[file_path] = OrderedDict(
+                (ip, timestamp)
+                for ip, timestamp in self.access_log[file_path].items()
+                if current_time - timestamp <= self.max_age
+            )
+            
+            # Remove file entry if no recent accesses
+            if not self.access_log[file_path]:
+                del self.access_log[file_path]
+
+
+
+file_access_tracker = FileAccessTracker()

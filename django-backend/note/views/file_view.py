@@ -11,6 +11,8 @@ from minio import Minio
 import traceback
 from django.http import HttpResponse, Http404
 
+from ..file_utils import file_access_tracker
+
 minio_client = Minio(
     settings.MINIO_ENDPOINT,
     access_key=settings.MINIO_ACCESS_KEY,
@@ -30,10 +32,22 @@ def ensure_bucket_exists(bucket_name):
 # Use this function at the start of your Django app
 ensure_bucket_exists(settings.MINIO_BUCKET_NAME)
 
+
+
 def serve_minio_file(request, file_path):
     file_path = file_path.replace("note/", "")
     file_path = file_path[:-1] if file_path.endswith("/") else file_path
-    print(f"file_path is {file_path}")
+    
+    # Get client IP
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    
+    # Track the access
+    file_access_tracker.add_access(file_path, ip)
+    
     try:
         data = minio_client.get_object(bucket_name=settings.MINIO_BUCKET_NAME, object_name=file_path)
         
@@ -47,6 +61,7 @@ def serve_minio_file(request, file_path):
     except Exception as e:
         traceback.print_exc()
         raise Http404("File not found")
+
     
 
 class FileUploadView(APIView):
@@ -129,3 +144,5 @@ class FileUploadView(APIView):
             return Response({'url': url}, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'Failed to upload file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
