@@ -14,43 +14,51 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_control
 from ..file_utils import file_access_tracker
 
+from django.conf import settings
 
+import pytz
 
 class StatsManager:
     @staticmethod
     def get_date_range_stats(queryset, date_field, days=7):
-        """Generic method to get date-based stats for any queryset"""
-        start_date = timezone.now() - timedelta(days=days)
+        """Generic method to get date-based stats for any queryset in local timezone"""
+        # Get the local timezone
+        local_tz = pytz.timezone(settings.TIME_ZONE)
         
-        # Get daily counts
+        # Get current time in local timezone
+        local_now = timezone.localtime(timezone.now(), local_tz)
+        start_date = local_now - timedelta(days=days)
+        
+        # Get daily counts with timezone conversion
         daily_counts = queryset.filter(
             **{f"{date_field}__gte": start_date}
         ).annotate(
-            date=TruncDate(date_field)
+            # Convert UTC to local time before truncating to date
+            date=TruncDate(f"{date_field}",
+                          tzinfo=local_tz)
         ).values(
             'date'
         ).annotate(
             count=Count('id')
         ).order_by('date')
-        
+
         # Create a complete list of dates with counts
         date_counts = {}
         current_date = start_date.date()
-        end_date = timezone.now().date()
+        end_date = local_now.date()
         
         while current_date <= end_date:
             date_counts[current_date.isoformat()] = 0
             current_date += timedelta(days=1)
-            
+
         # Fill in actual counts
         for entry in daily_counts:
             date_counts[entry['date'].isoformat()] = entry['count']
-            
+
         return [
             {'date': date, 'count': count}
             for date, count in date_counts.items()
         ]
-    
 class RevisionStatsView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
