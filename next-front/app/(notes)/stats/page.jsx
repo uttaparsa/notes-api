@@ -1,7 +1,14 @@
-'use client';
+'use client'
+
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { fetchWithAuth } from '../../lib/api';
+
+const Card = ({ children, className = '' }) => (
+  <div className={`card ${className}`}>
+    {children}
+  </div>
+);
 
 const RevisionStats = () => {
   const [stats, setStats] = useState([]);
@@ -28,7 +35,7 @@ const RevisionStats = () => {
             day: 'numeric'
           })
         }));
-        
+
         setStats(formattedData);
         setTotalRevisions(total);
         setMaxCount(max);
@@ -38,61 +45,67 @@ const RevisionStats = () => {
         setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
   if (loading) {
     return (
       <div className="container py-4">
-        <div className="card">
+        <Card>
           <div className="card-body text-center">
             Loading stats...
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="container py-4">
-      <div className="card">
+      <Card>
         <div className="card-header">
-          <h5 className="card-title mb-0">Revision Activity (Last 7 Days)</h5>
+          <h5 className="card-title mb-1">Revision Activity (Last 7 Days)</h5>
           <div className="text-muted small">
             Total Revisions: {totalRevisions}
           </div>
         </div>
         <div className="card-body">
-          <div className="d-flex align-items-end" style={{ height: "300px", gap: "8px" }}>
-            {stats.map((day) => (
-              <div 
-                key={day.date} 
-                className="d-flex flex-column align-items-center" 
-                style={{ flex: 1 }}
-              >
-                <div 
-                  className="bg-primary rounded-top w-100" 
-                  style={{ 
-                    height: `${(day.count / maxCount) * 100}%`,
-                    minHeight: day.count > 0 ? '10px' : '0px',
-                    transition: 'height 0.3s ease'
-                  }} 
-                />
-                <div className="text-center mt-2" style={{ fontSize: '0.8rem' }}>
-                  <div>{day.date}</div>
-                  <div className="font-weight-bold">{day.count}</div>
-                </div>
-              </div>
-            ))}
+          <div style={{ height: '300px' }}>
+            <div className="h-100 d-flex justify-content-between">
+              {stats.map((day) => {
+                const heightPercentage = (day.count / maxCount) * 100;
+                return (
+                  <div
+                    key={day.date}
+                    className="d-flex flex-column justify-content-end align-items-center"
+                    style={{ width: `${100 / stats.length}%`, padding: '0 4px' }}
+                  >
+                    <div 
+                      style={{ 
+                        height: `${heightPercentage}%`,
+                        width: '100%',
+                        backgroundColor: 'var(--bs-primary)',
+                        transition: 'height 0.3s ease',
+                        borderRadius: '4px 4px 0 0',
+                        minHeight: day.count > 0 ? '4px' : '0'
+                      }} 
+                    />
+                    <div className="text-center mt-2">
+                      <div className="small text-muted">{day.date}</div>
+                      <div className="fw-bold small">{day.count}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+      </Card>
+      <div className="mt-3">
+        <Link href="/sessions" className="text-decoration-none">
+          Sessions
+        </Link>
       </div>
-
-      <Link href="/sessions" passHref legacyBehavior>
-                Sessions
-              </Link>
-
     </div>
   );
 };
