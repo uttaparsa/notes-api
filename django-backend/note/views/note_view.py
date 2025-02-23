@@ -12,6 +12,9 @@ from django.utils import timezone
 from typing import Optional
 
 
+from ..file_utils import FileManager
+
+from django.conf import settings
 
 
 class RevisionService:
@@ -150,9 +153,30 @@ class SingleNoteView(APIView):
         return Response("1", status=status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.delete()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'])
+            
+            # Initialize file manager and clean up unused files
+            file_manager = FileManager()
+            deleted_files = file_manager.delete_unused_files(item.text, item.id)
+            print(f"deleted files are {deleted_files}")
+            # Delete the note
+            item.delete()
+            
+            # Return success response with info about deleted files
+            return Response({
+                "message": "Note deleted successfully",
+                "deleted_files": deleted_files
+            }, status=status.HTTP_200_OK)
+            
+        except LocalMessage.DoesNotExist:
+            return Response({
+                "error": "Note not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class NoteRevisionView(APIView):
     """View for retrieving note revision history"""
@@ -322,8 +346,9 @@ class SimilarNotesView(APIView):
         # Ensure embedding exists for this note
         embedding, created = NoteEmbedding.objects.get_or_create(note_id=note.id)
         
-        # Get similar notes
-        similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=5)
+        if not settings.DEBUG:
+            # Get similar notes
+            similar_notes = NoteEmbedding.find_similar_notes(note_id, limit=5)
         
         # Fetch the actual notes with their similarity scores
         notes_with_scores = []
