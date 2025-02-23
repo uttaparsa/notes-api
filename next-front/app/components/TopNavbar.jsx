@@ -37,8 +37,8 @@ export default function NavbarComponent({ isLoggedIn, onLogout }) {
               </Link>
             </Nav.Item>
             <Nav.Item>
-              <Link href="/sessions" passHref legacyBehavior>
-                <Nav.Link>Sessions</Nav.Link>
+              <Link href="/stats" passHref legacyBehavior>
+                <Nav.Link>Stats</Nav.Link>
               </Link>
             </Nav.Item>
             <Nav.Item>

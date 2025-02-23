@@ -5,6 +5,7 @@ from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMess
 from .views.search_view import SearchResultsView
 from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, SimilarNotesView
 from .views.public_note_view import PublicNoteView
+from .views.stats_view import RevisionStatsView
 
 
 urlpatterns = [
@@ -27,5 +28,6 @@ urlpatterns = [
     # In note/urls.py, add:
     path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
     path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
+    path('stats/revisions/', RevisionStatsView.as_view(), name='revision-stats'),
 
 ]
