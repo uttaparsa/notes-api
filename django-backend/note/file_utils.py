@@ -58,8 +58,10 @@ class FileManager:
     
 
 
+
+from django.utils import timezone
+from datetime import timedelta
 from collections import OrderedDict
-from datetime import datetime, timedelta
 import threading
 
 class FileAccessTracker:
@@ -67,37 +69,35 @@ class FileAccessTracker:
         self.access_log = OrderedDict()  # {file_path: {ip: timestamp}}
         self.lock = threading.Lock()  # Thread-safe operations
         self.max_age = timedelta(days=max_age_days)
-        
+
     def add_access(self, file_path, ip):
         with self.lock:
             # Create nested dict if file_path doesn't exist
             if file_path not in self.access_log:
                 self.access_log[file_path] = OrderedDict()
             
-            # Update access time for this IP
-            self.access_log[file_path][ip] = datetime.now()
+            # Update access time for this IP using timezone-aware datetime
+            self.access_log[file_path][ip] = timezone.now()
             
             # Clean up old entries
             self._cleanup()
-    
+
     def get_recent_accesses(self, file_path):
         with self.lock:
             if file_path not in self.access_log:
                 return {}
             
-            # Filter out old accesses
-            current_time = datetime.now()
+            # Filter out old accesses using timezone-aware datetime
+            current_time = timezone.now()
             recent = {
-                ip: timestamp 
+                ip: timestamp
                 for ip, timestamp in self.access_log[file_path].items()
                 if current_time - timestamp <= self.max_age
             }
-            
             return recent
-    
+
     def _cleanup(self):
-        current_time = datetime.now()
-        
+        current_time = timezone.now()
         # Clean up old accesses for each file
         for file_path in list(self.access_log.keys()):
             self.access_log[file_path] = OrderedDict(
@@ -105,11 +105,8 @@ class FileAccessTracker:
                 for ip, timestamp in self.access_log[file_path].items()
                 if current_time - timestamp <= self.max_age
             )
-            
             # Remove file entry if no recent accesses
             if not self.access_log[file_path]:
                 del self.access_log[file_path]
-
-
 
 file_access_tracker = FileAccessTracker()
