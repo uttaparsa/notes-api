@@ -18,6 +18,8 @@ minio_client = Minio(
     secure=settings.MINIO_USE_SSL
 )
 
+
+
 def ensure_bucket_exists(bucket_name):
     try:
         if not minio_client.bucket_exists(bucket_name):

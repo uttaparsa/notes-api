@@ -53,13 +53,33 @@ export default function NoteList({
 
   const handleDelete = async (noteId) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Deleting note' }));
+    
     try {
       const response = await fetchWithAuth(`/api/note/message/${noteId}/`, {
         method: 'DELETE',
       });
+      
       if (!response.ok) throw new Error('Failed to delete note');
       
+      const data = await response.json();
       onDeleteNote(noteId);
+  
+      // Create toast message including deleted files info
+      let toastBody = "Note Deleted";
+      if (data.deleted_files && data.deleted_files.length > 0) {
+        const fileNames = data.deleted_files.map(path => path.split('/').pop());
+        toastBody += `\nRemoved ${fileNames.length} unused ${fileNames.length === 1 ? 'file' : 'files'}: ${fileNames.join(', ')}`;
+      }
+  
+      window.dispatchEvent(new CustomEvent('showToast', {
+        detail: {
+          title: "Success",
+          body: toastBody,
+          delay: 5000,
+          status: "success",
+        }
+      }));
+      
     } catch (err) {
       console.error('Error deleting note:', err);
       handleApiError(err);
@@ -67,7 +87,7 @@ export default function NoteList({
       window.dispatchEvent(new CustomEvent('hideWaitingModal'));
     }
   };
-
+  
   const handleEdit = async (noteId, newText) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
     try {

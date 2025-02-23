@@ -4,6 +4,7 @@ from .models import LocalMessage, NoteEmbedding
 import threading
 import functools
 import traceback
+from django.conf import settings
 
 def async_task(func):
     @functools.wraps(func)
@@ -27,6 +28,10 @@ def create_or_update_embedding_async(note_id):
             # If there's an existing embedding, delete it since the note now has non-ASCII
             NoteEmbedding.objects.filter(note_id=note.id).delete()
             return
+        
+        if settings.DEBUG:
+            return
+
             
         # Create or update the embedding
         existing = NoteEmbedding.objects.filter(note_id=note.id).first()
