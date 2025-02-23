@@ -34,8 +34,6 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
       }
 
       const { url } = await response.json();
-      const newText = initialText + (initialText ? '\n' : '') + `[${selectedFile.name}](${encodeURI(url)})`;
-      onTextChange(newText);
       onFileUploaded(url);
       setUploadProgress('Upload complete!');
       setSelectedFile(null);
