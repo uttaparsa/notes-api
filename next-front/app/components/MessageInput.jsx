@@ -91,9 +91,18 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     }
   };
 
+
   const handleFileUpload = (url) => {
-    setText(prevText => prevText + (prevText ? '\n' : '') + url);
-  };
+    const fileName = url.split("/").pop(); // Get filename from URL
+    const markdownLink = `[${fileName}](${url})`;
+    setText(
+        (prevText) => prevText + (prevText ? "\n" : "") + markdownLink
+    );
+};
+
+  // const handleFileUpload = (url) => {
+  //   setText(prevText => prevText + (prevText ? '\n' : '') + url);
+  // };
 
   return (
     <div dir="ltr">

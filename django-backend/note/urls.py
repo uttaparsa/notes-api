@@ -30,7 +30,7 @@ urlpatterns = [
     path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
     path('stats/revisions/', RevisionStatsView.as_view(), name='revision-stats'),
     path('stats/notes/', NoteStatsView.as_view(), name='note-stats'),
-    path('stats/file-access/', FileAccessStatsView.as_view(), name='file-access'),
+    path('stats/access/', FileAccessStatsView.as_view(), name='file-access'),
 
 
 ]

@@ -34,34 +34,90 @@ ensure_bucket_exists(settings.MINIO_BUCKET_NAME)
 
 
 
+from django.http import HttpResponse, Http404
+from django.conf import settings
+import traceback
+
+# Import your minio client and file access tracker from your module
+# from .minio_client import minio_client
+# from .file_access_tracker import file_access_tracker
+
 def serve_minio_file(request, file_path):
     file_path = file_path.replace("note/", "")
     file_path = file_path[:-1] if file_path.endswith("/") else file_path
     
-    # Get client IP
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
+    # Get client IP with more robust method
+    def get_client_ip(request):
+        """Extract the real client IP from various headers"""
+        # Check for common proxy headers first
+        for header in [
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_REAL_IP',
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+        ]:
+            value = request.META.get(header)
+            if value:
+                # Take the first IP in case of a comma-separated list
+                return value.split(',')[0].strip()
+        
+        # Fall back to REMOTE_ADDR if no proxy headers
+        return request.META.get('REMOTE_ADDR', '0.0.0.0')
     
-    # Track the access
+    ip = get_client_ip(request)
+    
+    # Add user info if authenticated
+    if request.user.is_authenticated:
+        ip = f"{ip} ({request.user.username})"
+    
+    # Track the access with enhanced metadata
     file_access_tracker.add_access(file_path, ip)
     
     try:
         data = minio_client.get_object(bucket_name=settings.MINIO_BUCKET_NAME, object_name=file_path)
         
+        # More comprehensive content type detection
         content_type = 'application/octet-stream'
-        if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
-            content_type = f'image/{file_path.split(".")[-1].lower()}'
+        file_ext = file_path.split('.')[-1].lower() if '.' in file_path else ''
+        
+        if file_ext in ['png', 'jpg', 'jpeg', 'gif', 'webp']:
+            content_type = f'image/{file_ext}'
+        elif file_ext in ['pdf']:
+            content_type = 'application/pdf'
+        elif file_ext in ['mp4', 'webm', 'ogg']:
+            content_type = f'video/{file_ext}'
+        elif file_ext in ['mp3', 'wav']:
+            content_type = f'audio/{file_ext}'
+        elif file_ext in ['txt']:
+            content_type = 'text/plain'
+        elif file_ext in ['html', 'htm']:
+            content_type = 'text/html'
+        elif file_ext in ['css']:
+            content_type = 'text/css'
+        elif file_ext in ['js']:
+            content_type = 'application/javascript'
+        elif file_ext in ['json']:
+            content_type = 'application/json'
+        elif file_ext in ['xml']:
+            content_type = 'application/xml'
         
         response = HttpResponse(data.read(), content_type=content_type)
-        response['Content-Disposition'] = f'inline; filename="{file_path.split("/")[-1]}"'
+        filename = file_path.split("/")[-1]
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        
+        # Add cache control headers if not an authenticated resource
+        if not request.user.is_authenticated:
+            response['Cache-Control'] = 'public, max-age=3600'  # 1 hour cache
+        else:
+            response['Cache-Control'] = 'private, max-age=600'  # 10 minutes for authenticated users
+        
         return response
     except Exception as e:
         traceback.print_exc()
         raise Http404("File not found")
-
     
 
 class FileUploadView(APIView):

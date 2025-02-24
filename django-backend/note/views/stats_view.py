@@ -80,36 +80,94 @@ class NoteStatsView(APIView):
         )
     
 
+
 class FileAccessStatsView(APIView):
+    """
+    API view to retrieve file access statistics.
+    
+    Endpoints:
+    - GET /api/note/stats/access/ - Get overall stats grouped by IP
+    - GET /api/note/stats/access/?ip=192.168.1.1 - Get files accessed by specific IP
+    - GET /api/note/stats/access/?file=image.jpg - Get IPs that accessed a specific file
+    """
     permission_classes = [IsAuthenticated]
     
     @method_decorator(cache_control(no_cache=True, no_store=True, must_revalidate=True))
-    def get(self, request, file_path=None):
-        if file_path:
-            # Get stats for specific file
-            recent_accesses = file_access_tracker.get_recent_accesses(file_path)
-            return Response({
-                'file_path': file_path,
-                'accesses': [
+    def get(self, request, format=None):
+        # Get query parameters
+        ip_filter = request.query_params.get('ip', None)
+        file_filter = request.query_params.get('file', None)
+        limit = int(request.query_params.get('limit', 50))
+        
+        if ip_filter:
+            # Get accesses for a specific IP
+            if ip_filter in file_access_tracker.ip_access_log:
+                files_accessed = file_access_tracker.ip_access_log[ip_filter]
+                
+                # Filter by file if specified
+                if file_filter:
+                    files_accessed = {
+                        path: timestamp 
+                        for path, timestamp in files_accessed.items()
+                        if file_filter in path
+                    }
+                
+                # Format response
+                file_list = [
                     {
-                        'ip': ip,
+                        'file_path': path,
                         'last_access': timestamp.isoformat(),
                     }
-                    for ip, timestamp in recent_accesses.items()
+                    for path, timestamp in sorted(
+                        files_accessed.items(), 
+                        key=lambda x: x[1], 
+                        reverse=True
+                    )
+                    if timezone.now() - timestamp <= file_access_tracker.max_age
                 ]
-            })
-        else:
-            # Get stats for all files
-            all_stats = {}
-            for file_path in file_access_tracker.access_log.keys():
-                recent_accesses = file_access_tracker.get_recent_accesses(file_path)
-                if recent_accesses:  # Only include files with recent accesses
-                    all_stats[file_path] = [
-                        {
-                            'ip': ip,
-                            'last_access': timestamp.isoformat(),
-                        }
-                        for ip, timestamp in recent_accesses.items()
-                    ]
+                
+                return Response({
+                    'ip': ip_filter,
+                    'accessed_files': file_list
+                })
+            else:
+                return Response({
+                    'ip': ip_filter,
+                    'accessed_files': []
+                })
+        
+        elif file_filter:
+            # Get IPs that accessed a specific file
+            recent_accesses = file_access_tracker.get_recent_file_accesses(file_filter)
             
-            return Response(all_stats)
+            # Format response
+            ip_list = [
+                {
+                    'ip': ip,
+                    'last_access': timestamp.isoformat(),
+                }
+                for ip, timestamp in sorted(recent_accesses.items(), key=lambda x: x[1], reverse=True)
+            ]
+            
+            return Response({
+                'file_path': file_filter,
+                'accessing_ips': ip_list
+            })
+        
+        else:
+            # Get overall stats grouped by IP
+            recent_ips = file_access_tracker.get_recent_ip_accesses(limit=limit)
+            
+            # Format for API response
+            result = []
+            for ip, data in recent_ips.items():
+                result.append({
+                    'ip': ip,
+                    'last_access': data['last_access'].isoformat(),
+                    'files': data['files']
+                })
+            
+            return Response({
+                'recent_accesses': result,
+                'total_ips': len(result)
+            })
