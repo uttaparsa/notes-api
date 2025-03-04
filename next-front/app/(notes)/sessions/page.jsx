@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Container, ListGroup, Button, Row, Col, Alert } from 'react-bootstrap';
-import { formatDateLikeHuman } from "../utils/dateFormatters";
+import { formatDateLikeHuman } from "../../utils/dateFormatters";
 
 const SessionsPage = () => {
   const [sessions, setSessions] = useState([]);
