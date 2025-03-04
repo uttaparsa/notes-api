@@ -35,7 +35,7 @@ const EditNoteModal = ({
                     : "ltr";
             }
         }
-    }, [show, editText, note.text]);
+    }, [show]);
 
     const handleSave = async () => {
         await onSave();
