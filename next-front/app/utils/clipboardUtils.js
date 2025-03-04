@@ -5,14 +5,6 @@ export function copyTextInsideElementToClipboard(element) {
     window.getSelection().addRange(range);
     document.execCommand("copy");
     window.getSelection().removeAllRanges();
-   window.dispatchEvent(new CustomEvent('showToast', {
-      detail: {
-        title: "Copy",
-        body: "Text copied",
-        delay: 3000,
-        variant: "success",
-      }
-    }));
   }
   
   export function copyTextToClipboard(text) {
@@ -21,25 +13,11 @@ export function copyTextInsideElementToClipboard(element) {
     document.body.appendChild(textarea);
     copyTextAreaContentsToClipboard(textarea);
     document.body.removeChild(textarea);
-    window.dispatchEvent(new CustomEvent('showToast', {
-      detail: {
-        title: "Copy",
-        body: "Text copied",
-        delay: 3000,
-        variant: "success",
-      }
-    }));
+
   }
 
   export function copyTextAreaContentsToClipboard(textarea) {
     textarea.select();
     document.execCommand("copy");
-    window.dispatchEvent(new CustomEvent('showToast', {
-      detail: {
-        title: "Copy",
-        body: "Text copied",
-        delay: 3000,
-        variant: "success",
-      }
-    }));
+
   }
