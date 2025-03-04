@@ -5,6 +5,7 @@ import YouTubeLink from './YouTubeLink';
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import { isRTL } from "../utils/stringUtils";
+import { copyTextToClipboard } from "../utils/clipboardUtils";
 
 // Helper function to safely encode URLs
 const safeUrlEncode = (url) => {
@@ -119,9 +120,7 @@ const NoteTextRenderer = ({
       const codeString = String(props.children).replace(/\n$/, '');
       const copyCode = (element) => {
 
-
         // check if parent element is not pre
-
 
         if (element.target.parentElement.tagName !== 'PRE') {
 
