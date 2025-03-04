@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import { isRTL } from "../utils/stringUtils";
 import { copyTextToClipboard } from "../utils/clipboardUtils";
+import { Button, } from 'react-bootstrap';
+
 
 // Helper function to safely encode URLs
 const safeUrlEncode = (url) => {
