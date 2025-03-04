@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Container, ListGroup, Button, Row, Col, Alert } from 'react-bootstrap';
+import { formatDateLikeHuman } from "../utils/dateFormatters";
 
 const SessionsPage = () => {
   const [sessions, setSessions] = useState([]);
@@ -69,8 +70,8 @@ const SessionsPage = () => {
                 <strong>Device:</strong> {session.device_name} <br />
                 <strong>IP:</strong> {session.ip_address} <br />
                 <strong>User Agent:</strong> {session.user_agent} <br />
-                <strong>Created At:</strong> {new Date(session.created_at).toLocaleString()} <br />
-                <strong>Last Activity:</strong> {new Date(session.last_activity).toLocaleString()}
+                <strong>Created At:</strong> {formatDateLikeHuman(session.created_at)} <br />
+                <strong>Last Activity:</strong> {formatDateLikeHuman(session.last_activity)}
               </Col>
               <Col md={4} className="text-end">
                 <Button
