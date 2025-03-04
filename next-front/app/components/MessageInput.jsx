@@ -93,16 +93,23 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
 
   const handleFileUpload = (url) => {
-    const fileName = url.split("/").pop(); // Get filename from URL
-    const markdownLink = `[${fileName}](${url})`;
-    setText(
+    // Decode the URL first to handle any existing encoding
+    const decodedUrl = decodeURIComponent(url);
+    
+    // Get the filename, handling spaces and special characters
+    const fileName = decodeURIComponent(decodedUrl.split("/").pop());
+    
+    // Encode the URL to ensure special characters are properly handled
+    const encodedUrl = encodeURI(decodedUrl);
+    
+    // Create markdown link with encoded URL and decoded filename
+    const markdownLink = `[${fileName}](${encodedUrl})`;
+    
+    setEditText(
         (prevText) => prevText + (prevText ? "\n" : "") + markdownLink
     );
 };
 
-  // const handleFileUpload = (url) => {
-  //   setText(prevText => prevText + (prevText ? '\n' : '') + url);
-  // };
 
   return (
     <div dir="ltr">

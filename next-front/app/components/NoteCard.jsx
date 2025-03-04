@@ -1,75 +1,17 @@
 'use client'
 
-import React, { useState, useRef, useContext, forwardRef, useImperativeHandle, useEffect } from "react";
+import React, { useState, useRef, useContext, forwardRef, useImperativeHandle } from "react";
 import { Dropdown, Modal, Button, Collapse} from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../(notes)/layout";
-import ReactMarkdown from "react-markdown";
-import { isRTL } from "../utils/stringUtils";
 import { copyTextToClipboard } from "../utils/clipboardUtils";
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
-import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import Link from 'next/link';
-import YouTubeLink from './YouTubeLink';
 import RevisionHistoryModal from './RevisionHistoryModal';
 import EditNoteModal from './EditNoteModal';
-
-
-const ResponsiveImage = ({ src, alt, title }) => {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (containerRef.current) {
-      const resizeObserver = new ResizeObserver(entries => {
-        for (let entry of entries) {
-          const { width, height } = entry.contentRect;
-          setDimensions({ width, height });
-        }
-      });
-      resizeObserver.observe(containerRef.current);
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }
-  }, []);
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  return (
-    <>
-      <span 
-        ref={containerRef} 
-        className={`${styles.markdownImage} ${isFullscreen ? styles.fullscreenContainer : ''}`}
-        onClick={toggleFullscreen}
-      >
-        <img
-          src={src}
-          alt={alt || ''}
-          title={title || ''}
-          className={`${styles.responsiveImage} ${isFullscreen ? styles.fullscreenImage : ''}`}
-        />
-      </span>
-
-      {isFullscreen && (
-        <div 
-          className={styles.overlay}
-          onClick={toggleFullscreen}
-        />
-      )}
-    </>
-  );
-};
-
-
-
-
-  
+import NoteTextRenderer from './NoteTextRenderer'; // New import
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);
@@ -84,11 +26,9 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
 
-
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
-
 
   const expandNote = () => {
     setIsExpanded(true);
@@ -120,12 +60,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     window.dispatchEvent(new CustomEvent("hideWaitingModal"));
   };
 
-
   const copyNoteLink = () => {
     const noteLink = `[related](/message/${note.id})`;
     copyTextToClipboard(noteLink);
     showToast("Success", "Note link copied to clipboard", 3000, "success");
   };
+
   const handleSave = async () => {
     try {
       const result = await onEditNote(note.id, editText);
@@ -149,45 +89,17 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     }
   };
 
-
-  const processNoteText = (note) => {
-    let text = singleView || note.text.length < 1000 || isExpanded
-      ? note.text
-      : note.text.substring(0, 1000);
-  
-    // Split by code blocks and process only non-code parts
-    const parts = text.split(/(```[\s\S]*?```)/);
-    const processed = parts.map((part, index) => {
-      // Even indices are non-code blocks
-      if (index % 2 === 0) {
-        // Use negative lookbehind to avoid matching hashtags in URLs
-        return part.replace(
-          /(?<!https?:\/\/[^\s]*)#(\w+)/g,
-          (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
-        );
-      }
-      // Odd indices are code blocks - leave unchanged
-      return part;
-    });
-  
-    return processed.join('');
-  };
-  
   const showEditModalHandler = () => {
     setEditText(note.text);
     setShowEditModal(true);
     setShouldLoadLinks(false);  // Disable link loading when editing
-
   };
-
-
 
   const showDeleteModalHandler = () => {
     const textInModal = note.text.length > 30 ? note.text.substring(0, 30) + " ..." : note.text;
     setTextInsideDeleteModal(textInModal);
     setShowDeleteModal(true);
   };
-
 
   const renderCategoryButtons = (categories, isArchived = false) => {
     return categories.map(lst => (
@@ -202,56 +114,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     ));
   };
 
-  const customRenderers = {
-    pre: ({ node, inline,className, children, ...props }) => {
-
-      const codeString = String(children.props.children).replace(/\n$/, '');
-      const copyCode = () => {
-        copyTextToClipboard(codeString);
-        showToast("Success", "Code copied to clipboard", 3000, "success");
-      };
-      return (
-        <div className={styles.codeBlockWrapper}>
-          <pre  className={styles.codeBlock + " bg-body border"}>
-          {children}
-
-         </pre>
-             
-         <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
-              Copy
-          </Button>
-        </div>
-
-      )
-    },
-    code: ({ node, ...props }) => {
-        const codeString = String(props.children).replace(/\n$/, '');
-        const copyCode = (element) => {
-          // check if parent element is not pre
-          if (element.target.parentElement.tagName !== 'PRE') {
-            copyTextToClipboard(codeString);
-            showToast("Success", "Code copied to clipboard", 3000, "success");
-          }
-
-        };
-        return (
-            <code onClick={copyCode} className={styles.codeSnippet} >
-              {props.children}
-            </code>
-
-        );
-    
-    },
-    a: ({ href, children }) => {
-      if (href.includes('youtube.com') || href.includes('youtu.be')) {
-        return <YouTubeLink url={href} shouldLoadLinks={shouldLoadLinks} />;
-      }
-      return <Link href={href} rel="noopener noreferrer">{children}</Link>;
-    },
-    img: (props) => <ResponsiveImage {...props} />, 
-
-  };
-
   return (
     <div className="card rounded mb-2 border shadow-sm bg-body-tertiary">
       <div className="card-body pb-1">
@@ -260,49 +122,40 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             <Dropdown>
               <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic"></Dropdown.Toggle>
               <Dropdown.Menu>
-    {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
-    <Dropdown.Divider />
-    <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
-    <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
-    {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
-    {!hideEdits && (
-      <Dropdown.Item onClick={() => setShowRevisionModal(true)}>
-        <span className="d-flex align-items-center">
-          Revision History
-        </span>
-      </Dropdown.Item>
-    )}
-    {!singleView && !hideEdits && (
-      <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
-    )}
-  </Dropdown.Menu>
+                {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
+                <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
+                {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
+                {!hideEdits && (
+                  <Dropdown.Item onClick={() => setShowRevisionModal(true)}>
+                    <span className="d-flex align-items-center">
+                      Revision History
+                    </span>
+                  </Dropdown.Item>
+                )}
+                {!singleView && !hideEdits && (
+                  <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
+                )}
+              </Dropdown.Menu>
             </Dropdown>
           </div>
           <div className="col-sm-11 pl-md-1">
             <h6 className="card-subtitle mb-2 text-primary fw-bold">{note.sender_name}</h6>
-            <span
-              className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
-              dir={isRTL(note.text) ? "rtl" : "ltr"}
-            >
-<ReactMarkdown 
-  components={customRenderers} 
-  remarkPlugins={[remarkGfm]} 
-  className={` ${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
->
-  {processNoteText(note)}
-</ReactMarkdown>
-              {!singleView && note.text.length > 1000 && !isExpanded && (
-                <span onClick={() => expandNote()} className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap">
-                  <b>...</b>
-                </span>
-              )}
-            </span>
+            
+            <NoteTextRenderer 
+              note={note} 
+              singleView={singleView} 
+              isExpanded={isExpanded}
+              onExpand={expandNote}
+              shouldLoadLinks={shouldLoadLinks}
+            />
           </div>
         </div>
         <NoteCardBottomBar note={note}></NoteCardBottomBar>
       </div>
       
-      {/* Modals */}
+      {/* Existing Modals remain the same */}
       <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Moving note</Modal.Title>
@@ -362,24 +215,23 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
       </Modal>
 
       <EditNoteModal
-    show={showEditModal}
-    onHide={() => setShowEditModal(false)}
-    note={note}
-    editText={editText}
-    setEditText={setEditText}
-    onSave={handleSave}
-    onSaveAndClose={handleSaveAndClose}
-    singleView={singleView}
-    showToast={showToast}
-    refreshNotes={refreshNotes}
-  />
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        note={note}
+        editText={editText}
+        setEditText={setEditText}
+        onSave={handleSave}
+        onSaveAndClose={handleSaveAndClose}
+        singleView={singleView}
+        showToast={showToast}
+        refreshNotes={refreshNotes}
+      />
 
       <RevisionHistoryModal 
-  show={showRevisionModal}
-  onHide={() => setShowRevisionModal(false)}
-  noteId={note.id}
-/>
-
+        show={showRevisionModal}
+        onHide={() => setShowRevisionModal(false)}
+        noteId={note.id}
+      />
     </div>
   );
 });
@@ -387,4 +239,3 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 NoteCard.displayName = "NoteCard";
 
 export default NoteCard;
-

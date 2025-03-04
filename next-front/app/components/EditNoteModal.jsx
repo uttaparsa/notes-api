@@ -5,7 +5,7 @@ import FileUploadComponent from "./FileUploadComponent";
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
-import ReactMarkdown from "react-markdown";
+import NoteTextRenderer from "./NoteTextRenderer";
 
 const EditNoteModal = ({
     show,
@@ -28,21 +28,14 @@ const EditNoteModal = ({
     useEffect(() => {
         if (show) {
             setLastSavedText(editText);
-            // Set initial text direction and height
+            // Set initial text direction
             if (editMessageTextAreaRef.current) {
-                // updateTextAreaHeight(editMessageTextAreaRef.current);
-                console.log("isRTL(note.text):", isRTL(note.text));
-
                 editMessageTextAreaRef.current.dir = isRTL(note.text)
                     ? "rtl"
                     : "ltr";
-            } else {
-                console.log("editMessageTextAreaRef.current is null");
             }
         }
-    }, [show]);
-
-
+    }, [show, editText, note.text]);
 
     const handleSave = async () => {
         await onSave();
@@ -66,7 +59,6 @@ const EditNoteModal = ({
         }
     };
 
-    
     const handleClose = () => {
         if (hasUnsavedChanges) {
             setShowConfirmDialog(true);
@@ -97,10 +89,6 @@ const EditNoteModal = ({
             }
         };
 
-        viewport.addEventListener("resize", handleResize);
-        viewport.addEventListener("scroll", handleResize);
-
-        // Add keyboard shortcut listener
         const handleKeyPress = (e) => {
             if (e.ctrlKey && e.key === "p") {
                 e.preventDefault();
@@ -108,6 +96,8 @@ const EditNoteModal = ({
             }
         };
 
+        viewport.addEventListener("resize", handleResize);
+        viewport.addEventListener("scroll", handleResize);
         document.addEventListener("keydown", handleKeyPress);
         handleResize();
 
@@ -118,7 +108,6 @@ const EditNoteModal = ({
         };
     }, []);
 
-
     const toggleEditorRtl = () => {
         if (editMessageTextAreaRef.current) {
             editMessageTextAreaRef.current.dir =
@@ -127,8 +116,18 @@ const EditNoteModal = ({
     };
 
     const handleFileUpload = (url) => {
-        const fileName = url.split("/").pop(); // Get filename from URL
-        const markdownLink = `[${fileName}](${url})`;
+        // Decode the URL first to handle any existing encoding
+        const decodedUrl = decodeURIComponent(url);
+        
+        // Get the filename, handling spaces and special characters
+        const fileName = decodeURIComponent(decodedUrl.split("/").pop());
+        
+        // Encode the URL to ensure special characters are properly handled
+        const encodedUrl = encodeURI(decodedUrl);
+        
+        // Create markdown link with encoded URL and decoded filename
+        const markdownLink = `[${fileName}](${encodedUrl})`;
+        
         setEditText(
             (prevText) => prevText + (prevText ? "\n" : "") + markdownLink
         );
@@ -205,13 +204,11 @@ const EditNoteModal = ({
 
     return (
         <>
-        
-        
         <Modal show={show} onHide={handleClose} size="xl">
             <Modal.Body>
                 <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
                     <div>
-                        {!singleView && (
+                    {!singleView && (
                             <>
                                 {!note.pinned ? (
                                     <Button
@@ -255,18 +252,14 @@ const EditNoteModal = ({
                         )}
                         
                     </div>
-
                     <div>
                         <Button
                             className="me-2"
-                            variant={
-                                hasUnsavedChanges
-                                    ? "outline-warning"
-                                    : "outline-success"
-                            }
+                            variant={hasUnsavedChanges ? "outline-warning" : "outline-success"}
                             size="sm"
                             onClick={handleSave}
                         >
+                            {/* Save icon */}
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 height="24px"
@@ -297,6 +290,7 @@ const EditNoteModal = ({
                             className="mx-2"
                             onClick={toggleEditorRtl}
                         >
+                            {/* RTL toggle icons */}
                             <span>
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -335,11 +329,7 @@ const EditNoteModal = ({
                             overlay={<Tooltip>Toggle Preview (Ctrl+P)</Tooltip>}
                         >
                             <Button
-                                variant={
-                                    isPreviewMode
-                                        ? "primary"
-                                        : "outline-secondary"
-                                }
+                                variant={isPreviewMode ? "primary" : "outline-secondary"}
                                 size="sm"
                                 onClick={() => setIsPreviewMode(!isPreviewMode)}
                             >
@@ -360,10 +350,12 @@ const EditNoteModal = ({
 
                 <div className="position-relative">
                     {isPreviewMode ? (
-                        <div
-                            className={`${styles.previewArea} p-3 border rounded`}
-                        >
-                            <ReactMarkdown>{editText}</ReactMarkdown>
+                        <div className={`${styles.previewArea} p-3 border rounded`}>
+                            <NoteTextRenderer 
+                                note={{ text: editText }} 
+                                singleView={true}
+                                shouldLoadLinks={false}
+                            />
                         </div>
                     ) : (
                         <textarea
@@ -378,7 +370,7 @@ const EditNoteModal = ({
             </Modal.Body>
 
             <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
+                <Button variant="secondary" onClick={handleClose}>
                     Cancel
                 </Button>
                 <Button variant="primary" onClick={handleSaveAndClose}>
@@ -388,29 +380,27 @@ const EditNoteModal = ({
         </Modal>
 
         <Modal
-    show={showConfirmDialog}
-    onHide={handleCancelClose}
-    size="sm"
-    centered
->
-    <Modal.Header>
-        <Modal.Title>Unsaved Changes</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-        Are you sure you want to close? Your unsaved changes will be lost.
-    </Modal.Body>
-    <Modal.Footer>
-        <Button variant="secondary" onClick={handleCancelClose}>
-            Cancel
-        </Button>
-        <Button variant="danger" onClick={handleConfirmClose}>
-            Close Without Saving
-        </Button>
-    </Modal.Footer>
-</Modal>
-</>
-
-        
+            show={showConfirmDialog}
+            onHide={handleCancelClose}
+            size="sm"
+            centered
+        >
+            <Modal.Header>
+                <Modal.Title>Unsaved Changes</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                Are you sure you want to close? Your unsaved changes will be lost.
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={handleCancelClose}>
+                    Cancel
+                </Button>
+                <Button variant="danger" onClick={handleConfirmClose}>
+                    Close Without Saving
+                </Button>
+            </Modal.Footer>
+        </Modal>
+        </>
     );
 };
 
