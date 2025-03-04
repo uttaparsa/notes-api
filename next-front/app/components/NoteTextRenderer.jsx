@@ -74,7 +74,8 @@ const NoteTextRenderer = ({
   singleView = false, 
   isExpanded = false, 
   onExpand = () => {}, 
-  shouldLoadLinks = true 
+  shouldLoadLinks = true ,
+  showToast = () => {} 
 }) => {
   const processNoteText = (note) => {
     let text = singleView || note.text.length < 1000 || isExpanded

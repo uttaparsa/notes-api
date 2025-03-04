@@ -7,8 +7,6 @@ import { copyTextToClipboard } from "../utils/clipboardUtils";
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
-import styles from "./NoteCard.module.css";
-import Link from 'next/link';
 import RevisionHistoryModal from './RevisionHistoryModal';
 import EditNoteModal from './EditNoteModal';
 import NoteTextRenderer from './NoteTextRenderer'; // New import
@@ -149,6 +147,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
               isExpanded={isExpanded}
               onExpand={expandNote}
               shouldLoadLinks={shouldLoadLinks}
+              showToast={showToast}
             />
           </div>
         </div>

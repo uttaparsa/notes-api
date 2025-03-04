@@ -355,6 +355,7 @@ const EditNoteModal = ({
                                 note={{ text: editText }} 
                                 singleView={true}
                                 shouldLoadLinks={false}
+                                showToast={showToast}
                             />
                         </div>
                     ) : (
