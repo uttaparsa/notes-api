@@ -102,27 +102,34 @@ const NoteTextRenderer = ({
     pre: ({ node, inline, className, children, ...props }) => {
       const codeString = String(children.props.children).replace(/\n$/, '');
       const copyCode = () => {
-        // You might want to pass a showToast function as a prop
-        navigator.clipboard.writeText(codeString);
+        copyTextToClipboard(codeString);
+        showToast("Success", "Code copied to clipboard", 3000, "success");
       };
       return (
         <div className={styles.codeBlockWrapper}>
           <pre className={styles.codeBlock + " bg-body border"}>
             {children}
           </pre>
-          <button onClick={copyCode} className={styles.copyButton}>
-            Copy
-          </button>
+          <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
+            Copy </Button>
         </div>
       );
     },
     code: ({ node, ...props }) => {
       const codeString = String(props.children).replace(/\n$/, '');
       const copyCode = (element) => {
-        // Check if parent element is not pre
+
+
+        // check if parent element is not pre
+
+
         if (element.target.parentElement.tagName !== 'PRE') {
-          navigator.clipboard.writeText(codeString);
+
+          copyTextToClipboard(codeString);
+          showToast("Success", "Code copied to clipboard", 3000, "success");
+
         }
+
       };
       return (
         <code onClick={copyCode} className={styles.codeSnippet}>
