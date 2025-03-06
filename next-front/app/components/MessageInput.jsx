@@ -105,7 +105,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     // Create markdown link with encoded URL and decoded filename
     const markdownLink = `[${fileName}](${encodedUrl})`;
     
-    setEditText(
+    setText(
         (prevText) => prevText + (prevText ? "\n" : "") + markdownLink
     );
 };
