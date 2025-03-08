@@ -15,7 +15,7 @@ const UsernameInput = ({ modelValue, serverErrors, ...rest }) => {
       <input
         type="text"
         id="username"
-        placeholder="نام کاربری"
+        placeholder="enter username"
         value={username}
         onChange={handleChange}
         {...rest} // Pass through any additional props
