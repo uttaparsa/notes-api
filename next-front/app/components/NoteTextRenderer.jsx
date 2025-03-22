@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from "react-markdown";
 import Link from 'next/link';
+// Try using next/compat/router if available, fallback to regular router
 import YouTubeLink from './YouTubeLink';
 import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
@@ -20,6 +21,67 @@ const safeUrlEncode = (url) => {
     // If not a valid URL, return the original string
     return url;
   }
+};
+
+const slugify = (text) => {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove non-word chars
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+};
+
+// Custom hook for handling hash fragment navigation without relying on Next.js router
+const useHashFragment = () => {
+  const [currentHash, setCurrentHash] = useState('');
+  
+  useEffect(() => {
+    // Function to handle hash changes
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const id = hash.replace('#', '');
+        setCurrentHash(id);
+        
+        // Wait for DOM to be ready
+        setTimeout(() => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        }, 100);
+      }
+    };
+
+    // Handle initial hash on page load
+    if (window.location.hash) {
+      handleHashChange();
+    }
+    
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+  
+  // Function to handle internal hash links
+  const scrollToHash = (hash) => {
+    const id = hash.replace('#', '');
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+  
+  return { scrollToHash, currentHash };
 };
 
 const ResponsiveImage = ({ src, alt, title }) => {
@@ -76,9 +138,12 @@ const NoteTextRenderer = ({
   singleView = false, 
   isExpanded = false, 
   onExpand = () => {}, 
-  shouldLoadLinks = true ,
+  shouldLoadLinks = true,
   showToast = () => {} 
 }) => {
+  const contentRef = useRef(null);
+  const { scrollToHash } = useHashFragment();
+  
   const processNoteText = (note) => {
     let text = singleView || note.text.length < 1000 || isExpanded
       ? note.text
@@ -102,7 +167,48 @@ const NoteTextRenderer = ({
     return processed.join('');
   };
 
+  // Create heading components with proper ID handling
+  const createHeadingComponent = (level) => {
+    return ({ children, ...props }) => {
+      const text = children.toString();
+      const slug = slugify(text);
+      const HeadingTag = `h${level}`;
+      
+      const handleClick = (e) => {
+        e.preventDefault();
+        
+        // Update URL without full page reload
+        const url = `${window.location.pathname}#${slug}`;
+        window.history.pushState({}, '', url);
+        
+        // Scroll to element
+        scrollToHash(`#${slug}`);
+      };
+      
+      return (
+        <HeadingTag id={slug} {...props}>
+          
+          <a 
+            href={`#${slug}`}
+            onClick={handleClick}
+            className='unstyled-link'
+            aria-label={`Link to ${text}`}
+
+          >
+            {children}
+          </a>
+        </HeadingTag>
+      );
+    };
+  };
+
   const customRenderers = {
+    h1: createHeadingComponent(1),
+    h2: createHeadingComponent(2),
+    h3: createHeadingComponent(3),
+    h4: createHeadingComponent(4),
+    h5: createHeadingComponent(5),
+    h6: createHeadingComponent(6),
     pre: ({ node, inline, className, children, ...props }) => {
       const codeString = String(children.props.children).replace(/\n$/, '');
       const copyCode = () => {
@@ -115,23 +221,19 @@ const NoteTextRenderer = ({
             {children}
           </pre>
           <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
-            Copy </Button>
+            Copy
+          </Button>
         </div>
       );
     },
     code: ({ node, ...props }) => {
       const codeString = String(props.children).replace(/\n$/, '');
       const copyCode = (element) => {
-
         // check if parent element is not pre
-
         if (element.target.parentElement.tagName !== 'PRE') {
-
           copyTextToClipboard(codeString);
           showToast("Success", "Code copied to clipboard", 3000, "success");
-
         }
-
       };
       return (
         <code onClick={copyCode} className={styles.codeSnippet}>
@@ -143,9 +245,29 @@ const NoteTextRenderer = ({
       // Encode URLs with spaces
       const encodedHref = safeUrlEncode(href);
 
+      // Handle internal hash links
+      if (href.startsWith('#')) {
+        return (
+          <a 
+            href={encodedHref}
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToHash(href);
+              
+              // Update URL without full page reload
+              const url = `${window.location.pathname}${href}`;
+              window.history.pushState({}, '', url);
+            }}
+          >
+            {children}
+          </a>
+        );
+      }
+
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
         return <YouTubeLink url={encodedHref} shouldLoadLinks={shouldLoadLinks} />;
       }
+      
       return <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
     },
     img: (props) => {
@@ -159,13 +281,14 @@ const NoteTextRenderer = ({
 
   return (
     <span
+      ref={contentRef}
       className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
       dir={isRTL(note.text) ? "rtl" : "ltr"}
     >
       <ReactMarkdown 
         components={customRenderers} 
         remarkPlugins={[remarkGfm]} 
-        className={` ${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
+        className={`${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
       >
         {processedText}
       </ReactMarkdown>
