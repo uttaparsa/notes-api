@@ -152,7 +152,23 @@ const NoteTextRenderer = ({
       // Encode image URLs with spaces
       const encodedSrc = safeUrlEncode(props.src);
       return <ResponsiveImage {...props} src={encodedSrc} />;
-    }, 
+    },
+    // Add custom blockquote renderer
+    blockquote: ({ node, children }) => {
+      const isRTLContent = children && children.props && 
+        children.props.children && 
+        typeof children.props.children === 'string' && 
+        isRTL(children.props.children);
+      
+      return (
+        <blockquote 
+          className={`${styles.blockquote} border-start ps-3 my-3 text-body-secondary`}
+          dir={isRTLContent ? "rtl" : "ltr"}
+        >
+          {children}
+        </blockquote>
+      );
+    },
   };
 
   const processedText = processNoteText(note);

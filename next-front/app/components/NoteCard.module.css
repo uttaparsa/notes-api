@@ -184,3 +184,29 @@ pre.codeBlock code {
   color: var(--bs-body-color);
 }
 
+
+
+/* Add these styles to your NoteCard.module.css file */
+
+.blockquote {
+  border-left: 4px solid var(--bs-border-color);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--bs-secondary-color);
+  font-style: italic;
+}
+
+/* For RTL support */
+[dir="rtl"] .blockquote {
+  border-left: none;
+  border-right: 4px solid var(--bs-border-color);
+  padding-left: 0;
+  padding-right: 1rem;
+  text-align: right;
+}
+
+/* Add a subtle background color when in dark mode */
+[data-bs-theme="dark"] .blockquote {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.25rem;
+}
