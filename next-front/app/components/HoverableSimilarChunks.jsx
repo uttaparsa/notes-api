@@ -1,14 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Tooltip, Overlay, Card, Badge } from 'react-bootstrap';
-import Link from 'next/link';
+import React, { useState, useEffect, useRef } from 'react';
+
 import styles from './HoverableSimilarChunks.module.css';
+// Add this import for Bootstrap icons if not already in your project
+// import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchWithAuth } from '../lib/api';
 
-const HoverableSimilarChunks = ({ children, onHover, selectedText, similarChunks, noteId }) => {
-  const [show, setShow] = useState(false);
+// Custom event names for margin communication
+const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
+const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
+
+const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const target = useRef(null);
   const timeoutRef = useRef(null);
   
   // Clear timeout on unmount
@@ -28,14 +30,13 @@ const HoverableSimilarChunks = ({ children, onHover, selectedText, similarChunks
     // Delay the API call to avoid excessive requests during quick mouse movements
     timeoutRef.current = setTimeout(async () => {
       setLoading(true);
-      setShow(true);
       
       try {
         // Get the text content from the children
         const text = children.props?.children || selectedText || '';
         
         if (text && text.length > 10) { // Only process if there's enough text
-          const response = await fetchWithAuth('/api/note/chunks/similar/', {
+          const response = await fetchWithAuth('/api/note/similar/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -49,11 +50,18 @@ const HoverableSimilarChunks = ({ children, onHover, selectedText, similarChunks
           
           if (response.ok) {
             const data = await response.json();
-            setResults(data);
+            
+            // Dispatch custom event to show similar notes in margin
+            if (data && data.length > 0) {
+              window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
+                detail: {
+                  results: data,
+                  sourceText: text,
+                  position: getElementPosition()
+                }
+              }));
+            }
           }
-        } else if (similarChunks && similarChunks.length) {
-          // If similar chunks were provided directly as props
-          setResults(similarChunks);
         }
       } catch (error) {
         console.error('Error fetching similar chunks:', error);
@@ -68,86 +76,40 @@ const HoverableSimilarChunks = ({ children, onHover, selectedText, similarChunks
       clearTimeout(timeoutRef.current);
     }
     
-    // Add a small delay before hiding to make it easier to move to the tooltip
+    // Increased delay before hiding to give more time to move to margin
     timeoutRef.current = setTimeout(() => {
-      setShow(false);
-    }, 300);
+      // Dispatch custom event to hide similar notes in margin
+      window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
+    }, 10000); // Increased from 300ms to 1000ms
+  };
+
+  // Helper function to get the element's position for positioning in margin
+  const getElementPosition = () => {
+    const element = document.activeElement;
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      return {
+        top: rect.top + window.scrollY,
+        bottom: rect.bottom + window.scrollY
+      };
+    }
+    return null;
   };
 
   return (
-    <>
-      <span
-        ref={target}
-        className={styles.hoverableText}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        {children}
-      </span>
-      
-      <Overlay 
-        target={target.current} 
-        show={show && (loading || results.length > 0)} 
-        placement="auto"
-      >
-        {(props) => (
-          <Tooltip 
-            id="similar-chunks-tooltip" 
-            {...props}
-            className={styles.tooltip}
-            onMouseEnter={() => setShow(true)}
-            onMouseLeave={handleMouseLeave}
-          >
-            <Card className={styles.tooltipCard}>
-              <Card.Header className="d-flex justify-content-between align-items-center">
-                <small>Similar content</small>
-                {loading && <small>Loading...</small>}
-              </Card.Header>
-              <Card.Body className={styles.tooltipBody}>
-                {results.length > 0 ? (
-                  <div className={styles.resultsList}>
-                    {results.map((result, index) => (
-                      <Link 
-                        href={`/message/${result.note_id}`} 
-                        key={`${result.note_id}-${result.chunk_index || index}`}
-                        className={styles.resultLink}
-                      >
-                        <div className={styles.resultItem}>
-                          <div className={styles.resultText}>
-                            {result.chunk_text || result.text}
-                          </div>
-                          <div className={styles.resultMeta}>
-                            <Badge 
-                              bg={getBadgeColor(result.similarity_score)} 
-                              className={styles.similarityBadge}
-                            >
-                              {Math.round(result.similarity_score * 100)}%
-                            </Badge>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : loading ? (
-                  <div className={styles.loadingState}>Searching for similar content...</div>
-                ) : (
-                  <div className={styles.emptyState}>No similar content found</div>
-                )}
-              </Card.Body>
-            </Card>
-          </Tooltip>
-        )}
-      </Overlay>
-    </>
+    <span
+      className={`${styles.hoverableText} ${loading ? styles.loading : ''}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {children}
+      {loading && (
+        <small className={styles.loadingIndicator}>
+          <i className="bi bi-three-dots"></i>
+        </small>
+      )}
+    </span>
   );
-};
-
-// Helper function to get badge color based on similarity score
-const getBadgeColor = (score) => {
-  if (score >= 0.8) return 'success';
-  if (score >= 0.6) return 'info';
-  if (score >= 0.4) return 'warning';
-  return 'secondary';
 };
 
 export default HoverableSimilarChunks;

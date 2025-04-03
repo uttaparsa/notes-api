@@ -1,83 +1,37 @@
 .hoverableText {
-    /* Subtle indication that this text is hoverable */
-    border-bottom: 1px dashed transparent;
-    transition: border-color 0.2s;
-    cursor: pointer;
-  }
-  
-  .hoverableText:hover {
-    border-bottom-color: var(--bs-primary);
-  }
-  
-  .tooltip {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    padding: 0 !important;
-    max-width: 320px;
-    z-index: 1070;
-  }
-  
-  .tooltipCard {
-    width: 100%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border: none;
-  }
-  
-  .tooltipBody {
-    padding: 0.5rem;
-    max-height: 300px;
-    overflow-y: auto;
-  }
-  
-  .resultsList {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .resultLink {
-    text-decoration: none;
-    color: inherit;
-    display: block;
-  }
-  
-  .resultItem {
-    padding: 8px;
-    border-radius: 4px;
-    background-color: rgba(0, 0, 0, 0.03);
-    transition: background-color 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  
-  .resultItem:hover {
-    background-color: rgba(0, 0, 0, 0.08);
-  }
-  
-  .resultText {
-    font-size: 0.9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-  
-  .resultMeta {
-    display: flex;
-    justify-content: flex-end;
-    font-size: 0.8rem;
-  }
-  
-  .similarityBadge {
-    font-size: 0.7rem;
-    font-weight: normal;
-  }
-  
-  .loadingState, .emptyState {
-    padding: 1rem;
-    text-align: center;
-    color: #888;
-    font-size: 0.9rem;
-  }
+  border-bottom: 1px dashed transparent;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  cursor: help;
+}
+
+.hoverableText:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+  border-bottom-color: rgba(0, 123, 255, 0.5);
+}
+
+.loading {
+  background-color: rgba(0, 123, 255, 0.05);
+  border-bottom-color: rgba(0, 123, 255, 0.5);
+}
+
+.loadingIndicator {
+  font-size: 0.75rem;
+  color: #007bff;
+  margin-left: 3px;
+  animation: pulse 1.5s infinite;
+  display: inline-block;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { opacity: 0.3; }
+}
+
+/* Dark mode support */
+html[data-bs-theme="dark"] .hoverableText:hover,
+html[data-bs-theme="dark"] .loading {
+  background-color: rgba(0, 123, 255, 0.15);
+  border-bottom-color: rgba(0, 123, 255, 0.7);
+}

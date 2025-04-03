@@ -6,7 +6,7 @@ from .views.search_view import SearchResultsView
 from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
-from .views.similar_note_view import SimilarNotesView, SimilarChunksView, NoteChunkSimilarityView
+from .views.similar_note_view import SimilarNotesView
 
 
 urlpatterns = [
@@ -18,6 +18,10 @@ urlpatterns = [
     path('list/', NoteListView.as_view(), name='note-list'),
     path('search/', SearchResultsView.as_view()),
     path('', NoteView.as_view()),
+
+    path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
+    path('similar/', SimilarNotesView.as_view(), name='similar-text'),
+    
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),
     path('message/pin/<int:note_id>/', PinMessageView.as_view(), name='pin-message'),
@@ -28,13 +32,10 @@ urlpatterns = [
     path('<slug>/', NoteView.as_view()),
     # In note/urls.py, add:
     path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
-    path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
     path('stats/revisions/', RevisionStatsView.as_view(), name='revision-stats'),
     path('stats/notes/', NoteStatsView.as_view(), name='note-stats'),
     path('stats/access/', FileAccessStatsView.as_view(), name='file-access'),
 
 
-    path('chunks/similar/', SimilarChunksView.as_view(), name='similar-chunks'),
-    path('message/<int:note_id>/chunks/similar/', NoteChunkSimilarityView.as_view(), name='note-chunk-similarity'),
 
 ]

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/NoteCard';
+import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
@@ -12,6 +13,7 @@ const SingleNoteView = () => {
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
   const noteComponentRef = useRef(null);
+  const noteContainerRef = useRef(null);
   const params = useParams();
 
   useEffect(() => {
@@ -119,18 +121,22 @@ const SingleNoteView = () => {
     <div className="container-fluid py-5" dir="ltr">
       <div className="row">
         <div className="col-lg-2"></div>
-        <div className="col-lg-8">
+        <div className="col-lg-8 position-relative" ref={noteContainerRef}>
           {busy ? (
             <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
             </Spinner>
           ) : (
-            <NoteCard
-              ref={noteComponentRef}
-              note={note}
-              onEditNote={editNote}
-              singleView={true}
-            />
+            <>
+              <NoteCard
+                ref={noteComponentRef}
+                note={note}
+                onEditNote={editNote}
+                singleView={true}
+              />
+              {/* The MarginSimilarNotes component will be positioned absolutely */}
+              <MarginSimilarNotes />
+            </>
           )}
         </div>
         <div className="col-lg-2 pl-lg-0">
