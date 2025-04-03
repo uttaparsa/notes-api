@@ -150,6 +150,7 @@ class SingleNoteView(APIView):
         new_text = request.data.get("text")
         RevisionService.update_note_with_revision(item, new_text)
         insert_links(item)
+        item.update_chunks()
         return Response("1", status=status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
