@@ -147,7 +147,7 @@ class NoteEmbedding(models.Model):
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
             USING vec0(
-                embedding float[384]
+                embedding float[768]
             );
         """)
         
@@ -296,7 +296,7 @@ class NoteChunk(models.Model):
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_chunk_embeddings_vec 
             USING vec0(
-                embedding float[384]
+                embedding float[768]
             );
         """)
         
