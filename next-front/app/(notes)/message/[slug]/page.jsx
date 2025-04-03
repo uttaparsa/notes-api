@@ -162,7 +162,7 @@ const SingleNoteView = () => {
                 {similarNotes.map(similarNote => (
                   <Link href={`/message/${similarNote.id}`} key={similarNote.id}>
                     <li className="list-group-item list-group-item-secondary">
-                      <div>{similarNote.text}</div>
+                      <div>{similarNote.text.length > 30 ? similarNote.text.slice(0, 30) + '...' : similarNote.text}</div>
                       <small className="text-muted">
                         Similarity: {formatSimilarityScore(similarNote.similarity_score)}
                       </small>

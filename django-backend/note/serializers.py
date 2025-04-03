@@ -119,7 +119,6 @@ class NoteRevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = NoteRevision
         fields = ['id', 'created_at', 'changed_text', "revision_text"]
-        # Note: removed revision_text and diff_text to reduce payload size
 
 
 class SimilarNoteSerializer(serializers.Serializer):

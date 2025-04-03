@@ -80,7 +80,7 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
     timeoutRef.current = setTimeout(() => {
       // Dispatch custom event to hide similar notes in margin
       window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
-    }, 10000); // Increased from 300ms to 1000ms
+    }, 1000);
   };
 
   // Helper function to get the element's position for positioning in margin

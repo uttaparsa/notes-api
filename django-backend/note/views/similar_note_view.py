@@ -47,13 +47,14 @@ class SimilarNotesView(APIView):
                     try:
                         similar_note = LocalMessage.objects.get(id=result['note_id'])
                         distance = float(result['distance'])
-                        
+                        sim_score = self._calculate_similarity_score(distance)
                         # Only include notes with reasonable similarity
-                        if self._calculate_similarity_score(distance) >= 0.65:
+                        if sim_score >= 0.65:
                             results.append({
                                 'id': similar_note.id,
                                 'text': similar_note.text[:200] + ('...' if len(similar_note.text) > 200 else ''),
-                                'similarity_score': distance,
+                                'similarity_score': sim_score,
+                                'distance': distance,
                                 'is_full_note': True,
                                 'created_at': similar_note.created_at,
                                 'updated_at': similar_note.updated_at
