@@ -48,7 +48,7 @@ const SingleNoteView = () => {
 
   const fetchSimilarNotes = async (noteId) => {
     try {
-      const response = await fetchWithAuth(`/api/note/message/${noteId}/similar/`);
+      const response = await fetchWithAuth(`/api/note/message/${noteId}/similar/`, timeout=10000);
       if (!response.ok) {
         throw new Error('Failed to fetch similar notes');
       }
