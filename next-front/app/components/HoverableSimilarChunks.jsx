@@ -64,7 +64,7 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
         setLoading(true);
         
         try {
-          const response = await fetchWithAuth('/api/note/similar/', {
+          const response = await fetchWithAuth('/api/note/similar/', options = {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
               limit: 3,
               exclude_note_id: noteId,
             }),
-          }, timeout=10000); // 10 seconds timeout
+          }, 10000); // 10 seconds timeout
           
           if (response.ok) {
             const data = await response.json();
