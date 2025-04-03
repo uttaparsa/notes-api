@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from "react-markdown";
 import Link from 'next/link';
 import YouTubeLink from './YouTubeLink';
@@ -71,6 +71,18 @@ const ResponsiveImage = ({ src, alt, title }) => {
   );
 };
 
+// Array of highlight colors for chunks
+const CHUNK_COLORS = [
+  'rgba(255, 87, 51, 0.2)',    // Red
+  'rgba(254, 203, 0, 0.2)',    // Yellow
+  'rgba(30, 144, 255, 0.2)',   // Blue
+  'rgba(50, 205, 50, 0.2)',    // Green
+  'rgba(147, 112, 219, 0.2)',  // Purple
+  'rgba(255, 165, 0, 0.2)',    // Orange
+  'rgba(0, 206, 209, 0.2)',    // Teal
+  'rgba(255, 105, 180, 0.2)',  // Pink
+];
+
 const NoteTextRenderer = ({ 
   note, 
   singleView = false, 
@@ -79,6 +91,22 @@ const NoteTextRenderer = ({
   shouldLoadLinks = true,
   showToast = () => {} 
 }) => {
+  // State to track if chunks should be highlighted
+  const [highlightChunks, setHighlightChunks] = useState(false);
+  
+  // Effect to highlight chunks for 5 seconds when in single view
+  useEffect(() => {
+    if (singleView) {
+      setHighlightChunks(true);
+      
+      const timer = setTimeout(() => {
+        setHighlightChunks(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [singleView, note.id]);
+
   const processNoteText = (note) => {
     let text = singleView || note.text.length < 1000 || isExpanded
       ? note.text
@@ -102,19 +130,32 @@ const NoteTextRenderer = ({
     return processed.join('');
   };
 
-  // Custom renderer for paragraphs to add hoverable functionality
-  const renderParagraph = ({ children }) => {
+  // Custom renderer for paragraphs to add hoverable functionality and highlight chunks
+  const renderParagraph = ({ children, node }) => {
+    // Create a unique key based on the text content
+    const textContent = children?.toString() || '';
+    const key = textContent.slice(0, 20) + '-' + Math.random().toString(36).substring(2, 7);
+    
     // Only add HoverableSimilarChunks in single view mode
     if (singleView) {
+      // Use a random color from the CHUNK_COLORS array if highlighting is active
+      const style = highlightChunks ? {
+        backgroundColor: CHUNK_COLORS[Math.floor(Math.random() * CHUNK_COLORS.length)],
+        transition: 'background-color 0.5s ease-out',
+        padding: '5px',
+        borderRadius: '3px',
+        marginBottom: '10px',
+      } : {};
+      
       return (
-        <HoverableSimilarChunks noteId={note.id}>
-          <p>{children}</p>
+        <HoverableSimilarChunks noteId={note.id} key={key}>
+          <p style={style}>{children}</p>
         </HoverableSimilarChunks>
       );
     }
     
     // Otherwise render normally
-    return <p>{children}</p>;
+    return <p key={key}>{children}</p>;
   };
 
   const customRenderers = {

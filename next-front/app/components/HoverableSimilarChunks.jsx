@@ -103,11 +103,7 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      {loading && (
-        <small className={styles.loadingIndicator}>
-          <i className="bi bi-three-dots"></i>
-        </small>
-      )}
+ 
     </span>
   );
 };
