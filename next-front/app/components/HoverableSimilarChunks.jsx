@@ -64,7 +64,7 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
         setLoading(true);
         
         try {
-          const response = await fetchWithAuth('/api/note/similar/', options = {
+          const response = await fetchWithAuth('/api/note/similar/',  {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
