@@ -184,10 +184,10 @@ const MarginSimilarNotes = () => {
                       </div>
                       <div className={styles.resultMeta}>
                         <Badge 
-                          bg={getBadgeColor(1 - (result.similarity_score || 0.5))} 
+                          bg={getBadgeColor( (result.similarity_score || 0.5))} 
                           className={styles.similarityBadge}
                         >
-                          {Math.round((1 - (result.similarity_score || 0.5)) * 100)}%
+                          {Math.round(( (result.similarity_score || 0.5)) * 100)}%
                         </Badge>
                       </div>
                     </div>
