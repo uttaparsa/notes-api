@@ -143,3 +143,49 @@ class SimilarNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalMessage
         fields = ['id', 'text', 'similarity_score']
+
+
+
+class SimilarChunkSerializer(serializers.Serializer):
+    note_id = serializers.IntegerField()
+    chunk_index = serializers.IntegerField()
+    chunk_text = serializers.CharField()
+    distance = serializers.FloatField()
+    similarity_score = serializers.FloatField(read_only=True)
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Convert distance to a similarity score between 0 and 1
+        # Lower distance means higher similarity
+        max_distance = 4.0  # This might need adjustment based on your embeddings
+        representation['similarity_score'] = max(0, 1 - (representation['distance'] / max_distance))
+        
+        # Truncate the chunk text for preview
+        representation['chunk_text'] = self.truncate_text(representation['chunk_text'])
+        
+        return representation
+    
+    def truncate_text(self, value):
+        max_length = 100  # Longer than the note serializer to provide more context
+        if len(value) > max_length:
+            return value[:max_length] + '...'  # Truncate and add ellipsis
+        return value
+
+
+class SimilarNotesResponseSerializer(serializers.Serializer):
+    source_chunk = serializers.SerializerMethodField()
+    similar_chunks = SimilarChunkSerializer(many=True)
+    
+    def get_source_chunk(self, obj):
+        source = obj.get('source_chunk', {})
+        return {
+            'note_id': source.get('note_id'),
+            'chunk_index': source.get('chunk_index'),
+            'chunk_text': self.truncate_text(source.get('chunk_text', ''))
+        }
+    
+    def truncate_text(self, value):
+        max_length = 100
+        if len(value) > max_length:
+            return value[:max_length] + '...'
+        return value

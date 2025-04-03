@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactMarkdown from "react-markdown";
 import Link from 'next/link';
 import YouTubeLink from './YouTubeLink';
@@ -6,8 +6,8 @@ import remarkGfm from "remark-gfm";
 import styles from "./NoteCard.module.css";
 import { isRTL } from "../utils/stringUtils";
 import { copyTextToClipboard } from "../utils/clipboardUtils";
-import { Button, } from 'react-bootstrap';
-
+import { Button } from 'react-bootstrap';
+import HoverableSimilarChunks from './HoverableSimilarChunks';
 
 // Helper function to safely encode URLs
 const safeUrlEncode = (url) => {
@@ -76,9 +76,31 @@ const NoteTextRenderer = ({
   singleView = false, 
   isExpanded = false, 
   onExpand = () => {}, 
-  shouldLoadLinks = true ,
+  shouldLoadLinks = true,
   showToast = () => {} 
 }) => {
+  // State to hold similar chunks for this note
+  const [similarChunks, setSimilarChunks] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch similar chunks for this note when in single view
+  useEffect(() => {
+    if (singleView && note?.id) {
+      setIsLoading(true);
+      fetch(`/api/note/message/${note.id}/chunks/similar/`)
+        .then(response => response.json())
+        .then(data => {
+          setSimilarChunks(data);
+        })
+        .catch(error => {
+          console.error('Error fetching similar chunks:', error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [singleView, note?.id]);
+
   const processNoteText = (note) => {
     let text = singleView || note.text.length < 1000 || isExpanded
       ? note.text
@@ -102,7 +124,72 @@ const NoteTextRenderer = ({
     return processed.join('');
   };
 
+  // Helper function to find matching similar chunks for a paragraph
+  const findMatchingChunks = (text) => {
+    if (!similarChunks || !Array.isArray(similarChunks)) return [];
+    
+    // Look through our chunks to find if this text is part of any source chunks
+    for (const item of similarChunks) {
+      const sourceText = item.source_chunk?.chunk_text || '';
+      if (sourceText.includes(text) || text.includes(sourceText)) {
+        console.log("found matching chunks for "+text);
+        
+        return item.similar_chunks || [];
+      }
+    }
+    return [];
+  };
+
+  // Custom renderer for paragraphs to add hoverable functionality
+  const renderParagraph = ({ children }) => {
+    // If we don't have similar chunks data yet or not in single view, render normally
+    if (!singleView || !similarChunks) {
+      return <p>{children}</p>;
+    }
+
+    // Get the text content from children
+    const paragraphText = extractTextFromChildren(children);
+    
+    // Find matching chunks
+    const matchingChunks = findMatchingChunks(paragraphText);
+    
+    // If we have matching chunks, make this paragraph hoverable
+    if (matchingChunks.length > 0) {
+      return (
+        <HoverableSimilarChunks
+          similarChunks={matchingChunks}
+          noteId={note.id}
+        >
+          <p>{children}</p>
+        </HoverableSimilarChunks>
+      );
+    }
+    
+    // Otherwise render normally
+    return <p>{children}</p>;
+  };
+
+  // Helper to extract text content from React children
+  const extractTextFromChildren = (children) => {
+    if (typeof children === 'string') return children;
+    
+    if (Array.isArray(children)) {
+      return children.map(child => {
+        if (typeof child === 'string') return child;
+        if (child?.props?.children) return extractTextFromChildren(child.props.children);
+        return '';
+      }).join('');
+    }
+    
+    if (children?.props?.children) {
+      return extractTextFromChildren(children.props.children);
+    }
+    
+    return '';
+  };
+
   const customRenderers = {
+    p: renderParagraph,
     pre: ({ node, inline, className, children, ...props }) => {
       const codeString = String(children.props.children).replace(/\n$/, '');
       const copyCode = () => {
@@ -115,23 +202,19 @@ const NoteTextRenderer = ({
             {children}
           </pre>
           <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
-            Copy </Button>
+            Copy
+          </Button>
         </div>
       );
     },
     code: ({ node, ...props }) => {
       const codeString = String(props.children).replace(/\n$/, '');
       const copyCode = (element) => {
-
         // check if parent element is not pre
-
         if (element.target.parentElement.tagName !== 'PRE') {
-
           copyTextToClipboard(codeString);
           showToast("Success", "Code copied to clipboard", 3000, "success");
-
         }
-
       };
       return (
         <code onClick={copyCode} className={styles.codeSnippet}>

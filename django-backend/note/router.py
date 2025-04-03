@@ -20,18 +20,18 @@ class RevisionRouter:
             return db == 'revisions'
         return None
     
-
+    
 class EmbeddingRouter:
     """
     Router to send all embedding-related operations to a separate database
     """
     def db_for_read(self, model, **hints):
-        if model._meta.db_table == 'note_embeddings':
+        if model._meta.db_table == 'note_embeddings' or model._meta.db_table == 'note_chunks':
             return 'embeddings'
         return None
 
     def db_for_write(self, model, **hints):
-        if model._meta.db_table == 'note_embeddings':
+        if model._meta.db_table == 'note_embeddings' or model._meta.db_table == 'note_chunks':
             return 'embeddings'
         return None
 
@@ -39,6 +39,6 @@ class EmbeddingRouter:
         return True
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        if model_name == 'noteembedding':
+        if model_name == 'noteembedding' or model_name == 'notechunk':
             return db == 'embeddings'
         return None

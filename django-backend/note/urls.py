@@ -3,9 +3,10 @@ from django.urls import path
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView
 from .views.search_view import SearchResultsView
-from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, SimilarNotesView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
+from .views.similar_note_view import SimilarNotesView, SimilarChunksView, NoteChunkSimilarityView
 
 
 urlpatterns = [
@@ -32,5 +33,8 @@ urlpatterns = [
     path('stats/notes/', NoteStatsView.as_view(), name='note-stats'),
     path('stats/access/', FileAccessStatsView.as_view(), name='file-access'),
 
+
+    path('chunks/similar/', SimilarChunksView.as_view(), name='similar-chunks'),
+    path('message/<int:note_id>/chunks/similar/', NoteChunkSimilarityView.as_view(), name='note-chunk-similarity'),
 
 ]

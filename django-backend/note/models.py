@@ -8,6 +8,14 @@ from django.template.defaultfilters import slugify
 from django.utils import timezone
 
 import difflib
+import json
+import sqlite3
+import sqlite_vec
+import requests
+from django.conf import settings
+
+# Import the LangChain markdown text splitter
+from langchain_text_splitters.markdown import MarkdownTextSplitter
 
 class NoteRevision(models.Model):
     note_id = models.IntegerField()
@@ -73,6 +81,37 @@ class LocalMessage(models.Model):
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def split_into_chunks(self):
+        """Split the note content into chunks using the MarkdownTextSplitter"""
+        # Create a text splitter with reasonable defaults
+        text_splitter = MarkdownTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50
+        )
+        
+        # Split the text into chunks
+        chunks = text_splitter.split_text(self.text)
+        
+        # Create and save NoteChunk objects for each chunk
+        note_chunks = []
+        for i, chunk_text in enumerate(chunks):
+            note_chunk = NoteChunk.objects.create(
+                note_id=self.id,
+                chunk_index=i,
+                chunk_text=chunk_text,
+            )
+            note_chunks.append(note_chunk)
+        
+        return note_chunks
+    
+    def update_chunks(self):
+        """Update chunks for this note"""
+        # Delete existing chunks
+        NoteChunk.objects.filter(note_id=self.id).delete()
+        
+        # Create new chunks
+        return self.split_into_chunks()
 
 class Link(models.Model):
     source_message = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='dest_links')
@@ -80,14 +119,6 @@ class Link(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
-from django.conf import settings
-
-from django.db import models
-import requests
-import sqlite3
-import sqlite_vec
-import json
 
 class NoteEmbedding(models.Model):
     note_id = models.IntegerField(unique=True)  # Add unique constraint
@@ -116,7 +147,7 @@ class NoteEmbedding(models.Model):
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
             USING vec0(
-                embedding float[768]
+                embedding float[384]
             );
         """)
         
@@ -235,4 +266,209 @@ class NoteEmbedding(models.Model):
                   for row in cursor.fetchall()]
         
         db.close()
+        return results
+
+
+# New model for storing note chunks and their embeddings
+class NoteChunk(models.Model):
+    note_id = models.IntegerField()  # Foreign key to the parent note
+    chunk_index = models.IntegerField()  # Index of this chunk within the note
+    chunk_text = models.TextField()  # The content of this chunk
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'note_chunks'
+        # Ensure each chunk has a unique combination of note_id and chunk_index
+        unique_together = ('note_id', 'chunk_index')
+        # Order chunks by note_id and then by chunk_index
+        ordering = ['note_id', 'chunk_index']
+    
+    @staticmethod
+    def setup_vector_table():
+        """Setup the vector table for chunk embeddings in the database"""
+        db_path = NoteEmbedding.get_embedding_db_path()
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        
+        # Create the vector table for chunks with composite primary key
+        db.execute("""
+            CREATE VIRTUAL TABLE IF NOT EXISTS note_chunk_embeddings_vec 
+            USING vec0(
+                embedding float[384]
+            );
+        """)
+        
+        db.commit()
+        db.close()
+    
+    @staticmethod
+    def hasRTL(text):
+        """Check if text contains any Arabic RTL characters"""
+        # Reuse the existing method from NoteEmbedding
+        return NoteEmbedding.hasRTL(text)
+    
+    @staticmethod
+    def get_embedding(text):
+        """Get embedding for a chunk of text"""
+        # Reuse the existing method from NoteEmbedding
+        return NoteEmbedding.get_embedding(text)
+    
+    def create_embedding(self):
+        """Create an embedding for this chunk"""
+        try:
+            # Check if chunk contains non-ASCII characters
+            if self.hasRTL(self.chunk_text):
+                return None
+            
+            # Get embedding vector from ollama
+            vector = self.get_embedding(self.chunk_text)
+            
+            # Get database path and create new connection
+            db_path = NoteEmbedding.get_embedding_db_path()
+            db = sqlite3.connect(db_path)
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            
+            # Generate a unique rowid for this chunk
+            # Format: noteId + 10000 + chunkIndex (to avoid collisions with note IDs)
+            chunk_rowid = (self.note_id * 10000) + self.chunk_index
+            
+            # First delete any existing vector for this chunk
+            db.execute(
+                "DELETE FROM note_chunk_embeddings_vec WHERE rowid = ?",
+                [chunk_rowid]
+            )
+            
+            # Insert new vector
+            db.execute(
+                """
+                INSERT INTO note_chunk_embeddings_vec(rowid, embedding) 
+                VALUES (?, json(?))
+                """,
+                [chunk_rowid, json.dumps(vector)]
+            )
+            
+            db.commit()
+            db.close()
+            
+            return True
+            
+        except Exception as e:
+            # Log the error and re-raise
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to process embedding for chunk {self.id}: {str(e)}")
+            raise
+    
+    @staticmethod
+    def find_similar_chunks(chunk_text, limit=10, exclude_note_id=None):
+        """Find chunks similar to the given text"""
+        try:
+            # Get embedding for the input text
+            vector = NoteChunk.get_embedding(chunk_text)
+            
+            # Get database path and create new connection
+            db_path = NoteEmbedding.get_embedding_db_path()
+            db = sqlite3.connect(db_path)
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            
+            cursor = db.cursor()
+            
+            # Find similar chunks
+            query = """
+                SELECT 
+                    rowid,
+                    distance
+                FROM note_chunk_embeddings_vec
+                WHERE embedding MATCH ?
+                AND k = ?
+            """
+            params = [json.dumps(vector), limit]
+            
+            # If we need to exclude chunks from a specific note
+            if exclude_note_id is not None:
+                # Calculate the range of rowids to exclude
+                # Each note's chunks use IDs in the format noteId*10000 + chunkIndex
+                min_exclude = exclude_note_id * 10000
+                max_exclude = (exclude_note_id + 1) * 10000 - 1
+                
+                query += " AND (rowid < ? OR rowid > ?)"
+                params.extend([min_exclude, max_exclude])
+            
+            cursor.execute(query, params)
+            
+            # Process the results
+            results = []
+            for row in cursor.fetchall():
+                rowid = row[0]
+                distance = row[1]
+                
+                # Calculate the original note_id and chunk_index from the rowid
+                note_id = rowid // 10000
+                chunk_index = rowid % 10000
+                
+                results.append({
+                    'note_id': note_id,
+                    'chunk_index': chunk_index,
+                    'distance': distance
+                })
+            
+            db.close()
+            
+            # Fetch the actual chunks from the database
+            chunk_details = []
+            for result in results:
+                try:
+                    chunk = NoteChunk.objects.get(
+                        note_id=result['note_id'],
+                        chunk_index=result['chunk_index']
+                    )
+                    
+                    chunk_details.append({
+                        'note_id': result['note_id'],
+                        'chunk_index': result['chunk_index'],
+                        'chunk_text': chunk.chunk_text,
+                        'distance': result['distance']
+                    })
+                except NoteChunk.DoesNotExist:
+                    # Skip if the chunk doesn't exist anymore
+                    continue
+            
+            return chunk_details
+            
+        except Exception as e:
+            # Log the error and return empty list
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to find similar chunks: {str(e)}")
+            return []
+    
+    @staticmethod
+    def find_similar_chunks_for_note(note_id, limit=10):
+        """Find chunks similar to each chunk in the given note"""
+        # Get all chunks for this note
+        note_chunks = NoteChunk.objects.filter(note_id=note_id)
+        
+        # For each chunk, find similar chunks
+        results = []
+        for chunk in note_chunks:
+            similar_chunks = NoteChunk.find_similar_chunks(
+                chunk.chunk_text,
+                limit=limit,
+                exclude_note_id=note_id
+            )
+            
+            if similar_chunks:
+                results.append({
+                    'source_chunk': {
+                        'note_id': note_id,
+                        'chunk_index': chunk.chunk_index,
+                        'chunk_text': chunk.chunk_text
+                    },
+                    'similar_chunks': similar_chunks
+                })
+        
         return results
