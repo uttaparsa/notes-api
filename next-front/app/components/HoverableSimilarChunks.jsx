@@ -1,18 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
-
 import styles from './HoverableSimilarChunks.module.css';
-// Add this import for Bootstrap icons if not already in your project
-// import 'bootstrap-icons/font/bootstrap-icons.css';
 import { fetchWithAuth } from '../lib/api';
 
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
 
-const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
+const HoverableSimilarChunks = ({ children, noteId }) => {
   const [loading, setLoading] = useState(false);
   const timeoutRef = useRef(null);
+  const childRef = useRef(null);
   
+  // Get the text content from the children
+  const getTextContent = () => {
+    // Try to get from props directly
+    const directText = children?.props?.children;
+    if (typeof directText === 'string') return directText;
+    
+    // Try to get from ref
+    if (childRef.current) {
+      return childRef.current.textContent || '';
+    }
+    
+    // Last resort - try to stringify the children
+    try {
+      if (children) {
+        const text = React.Children.toArray(children)
+          .map(child => {
+            if (typeof child === 'string') return child;
+            if (child?.props?.children && typeof child.props.children === 'string')
+              return child.props.children;
+            return '';
+          })
+          .join(' ');
+        return text;
+      }
+    } catch (e) {
+      console.error('Error getting text content:', e);
+    }
+    
+    return '';
+  };
+
   // Clear timeout on unmount
   useEffect(() => {
     return () => {
@@ -22,20 +51,19 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
     };
   }, []);
 
-  const handleMouseEnter = async () => {
+  const handleMouseEnter = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     
     // Delay the API call to avoid excessive requests during quick mouse movements
     timeoutRef.current = setTimeout(async () => {
-      setLoading(true);
+      const text = getTextContent();
       
-      try {
-        // Get the text content from the children
-        const text = children.props?.children || selectedText || '';
+      if (text && text.length > 20) { // Only process if there's enough text
+        setLoading(true);
         
-        if (text && text.length > 10) { // Only process if there's enough text
+        try {
           const response = await fetchWithAuth('/api/note/similar/', {
             method: 'POST',
             headers: {
@@ -57,16 +85,18 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
                 detail: {
                   results: data,
                   sourceText: text,
-                  position: getElementPosition()
+                  position: getElementPosition(),
+                  // Pass chunk index if available from data attribute
+                  chunkIndex: children?.props?.['data-chunk-index']
                 }
               }));
             }
           }
+        } catch (error) {
+          console.error('Error fetching similar chunks:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching similar chunks:', error);
-      } finally {
-        setLoading(false);
       }
     }, 500); // 500ms delay
   };
@@ -85,25 +115,47 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
 
   // Helper function to get the element's position for positioning in margin
   const getElementPosition = () => {
+    // Try to get position from the rendered element
+    if (childRef.current) {
+      const rect = childRef.current.getBoundingClientRect();
+      return {
+        top: rect.top + window.scrollY,
+        bottom: rect.bottom + window.scrollY,
+        left: rect.left,
+        right: rect.right
+      };
+    }
+    
+    // Fallback to active element
     const element = document.activeElement;
     if (element) {
       const rect = element.getBoundingClientRect();
       return {
         top: rect.top + window.scrollY,
-        bottom: rect.bottom + window.scrollY
+        bottom: rect.bottom + window.scrollY,
+        left: rect.left,
+        right: rect.right
       };
     }
+    
     return null;
   };
+  
+  // Create a new child with the ref
+  const childWithRef = React.cloneElement(
+    children,
+    {
+      ref: childRef,
+      className: `${children.props.className || ''} ${styles.hoverableText} ${loading ? styles.loading : ''}`
+    }
+  );
 
   return (
     <span
-      className={`${styles.hoverableText} ${loading ? styles.loading : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {children}
-
+      {childWithRef}
     </span>
   );
 };

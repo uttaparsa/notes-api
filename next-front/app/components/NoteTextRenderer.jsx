@@ -8,6 +8,7 @@ import { isRTL } from "../utils/stringUtils";
 import { copyTextToClipboard } from "../utils/clipboardUtils";
 import { Button } from 'react-bootstrap';
 import HoverableSimilarChunks from './HoverableSimilarChunks';
+import { fetchWithAuth } from '../lib/api';
 
 // Helper function to safely encode URLs
 const safeUrlEncode = (url) => {
@@ -91,21 +92,46 @@ const NoteTextRenderer = ({
   shouldLoadLinks = true,
   showToast = () => {} 
 }) => {
+  // State for tracking chunks from backend
+  const [chunks, setChunks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   // State to track if chunks should be highlighted
   const [highlightChunks, setHighlightChunks] = useState(false);
   
-  // Effect to highlight chunks for 5 seconds when in single view
+  // Effect to fetch chunks from backend when in single view
   useEffect(() => {
-    if (singleView) {
-      setHighlightChunks(true);
-      
-      const timer = setTimeout(() => {
-        setHighlightChunks(false);
-      }, 5000);
-      
-      return () => clearTimeout(timer);
+    if (singleView && note?.id) {
+      setLoading(true);
+      fetchWithAuth(`/api/note/message/${note.id}/chunks/`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch note chunks');
+          }
+          return response.json();
+        })
+        .then(data => {
+          setChunks(data);
+          // Enable highlighting after chunks are loaded
+          setHighlightChunks(true);
+          
+          // Auto-disable highlighting after 5 seconds
+          const timer = setTimeout(() => {
+            setHighlightChunks(false);
+          }, 5000);
+          
+          return () => clearTimeout(timer);
+        })
+        .catch(err => {
+          console.error('Error fetching chunks:', err);
+          setError(err.message);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-  }, [singleView, note.id]);
+  }, [singleView, note?.id]);
 
   const processNoteText = (note) => {
     let text = singleView || note.text.length < 1000 || isExpanded
@@ -130,26 +156,71 @@ const NoteTextRenderer = ({
     return processed.join('');
   };
 
+  // Find the chunk that contains a specific text position
+  // This is used to determine which chunk a markdown component belongs to
+  const findChunkForPosition = (position, text) => {
+    if (!chunks || chunks.length === 0) return null;
+    
+    let currentPos = 0;
+    for (const chunk of chunks) {
+      const chunkLength = chunk.chunk_text.length;
+      if (position >= currentPos && position < currentPos + chunkLength) {
+        return chunk;
+      }
+      currentPos += chunkLength;
+    }
+    return null;
+  };
+
+  // Function to get chunk index based on text content
+  const getChunkForText = (text) => {
+    if (!chunks || chunks.length === 0) return null;
+    
+    // Try to find an exact match first
+    const exactMatch = chunks.find(chunk => chunk.chunk_text === text);
+    if (exactMatch) return exactMatch;
+    
+    // If no exact match, try to find the first chunk that contains this text
+    const containingChunk = chunks.find(chunk => chunk.chunk_text.includes(text));
+    if (containingChunk) return containingChunk;
+    
+    // If all else fails, find position in the full text
+    const position = note.text.indexOf(text);
+    if (position >= 0) {
+      return findChunkForPosition(position, note.text);
+    }
+    
+    return null;
+  };
+
   // Custom renderer for paragraphs to add hoverable functionality and highlight chunks
   const renderParagraph = ({ children, node }) => {
     // Create a unique key based on the text content
     const textContent = children?.toString() || '';
     const key = textContent.slice(0, 20) + '-' + Math.random().toString(36).substring(2, 7);
     
-    // Only add HoverableSimilarChunks in single view mode
+    // Only add chunk highlighting and HoverableSimilarChunks in single view mode
     if (singleView) {
-      // Use a random color from the CHUNK_COLORS array if highlighting is active
-      const style = highlightChunks ? {
-        backgroundColor: CHUNK_COLORS[Math.floor(Math.random() * CHUNK_COLORS.length)],
+      // Find which chunk this paragraph belongs to
+      const chunk = getChunkForText(textContent);
+      
+      // Determine style based on chunk information
+      const style = (highlightChunks && chunk) ? {
+        backgroundColor: CHUNK_COLORS[chunk.chunk_index % CHUNK_COLORS.length],
         transition: 'background-color 0.5s ease-out',
         padding: '5px',
         borderRadius: '3px',
         marginBottom: '10px',
       } : {};
       
+      // Add data attributes for debugging
+      const dataAttributes = chunk ? {
+        'data-chunk-index': chunk.chunk_index,
+      } : {};
+      
       return (
         <HoverableSimilarChunks noteId={note.id} key={key}>
-          <p style={style}>{children}</p>
+          <p style={style} {...dataAttributes}>{children}</p>
         </HoverableSimilarChunks>
       );
     }
@@ -226,28 +297,65 @@ const NoteTextRenderer = ({
 
   const processedText = processNoteText(note);
 
+  // Add a debug UI for chunks if in development mode
+  const renderDebugChunks = () => {
+    if (process.env.NODE_ENV !== 'development' || !singleView || !chunks.length) {
+      return null;
+    }
+    
+    return (
+      <div className="mt-3 p-2 border-top">
+        <details>
+          <summary className="text-muted">Debug: {chunks.length} chunks found</summary>
+          <div className="mt-2 small">
+            {chunks.map((chunk, index) => (
+              <div key={index} className="mb-2 p-2 border" style={{
+                backgroundColor: CHUNK_COLORS[index % CHUNK_COLORS.length],
+                opacity: 0.7
+              }}>
+                <div><strong>Chunk {chunk.chunk_index}:</strong></div>
+                <div>{chunk.chunk_text.substring(0, 100)}...</div>
+              </div>
+            ))}
+          </div>
+        </details>
+      </div>
+    );
+  };
+
   return (
-    <span
-      className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
-      dir={isRTL(note.text) ? "rtl" : "ltr"}
-    >
-      <ReactMarkdown 
-        components={customRenderers} 
-        remarkPlugins={[remarkGfm]} 
-        className={` ${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
+    <>
+      <span
+        className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
+        dir={isRTL(note.text) ? "rtl" : "ltr"}
       >
-        {processedText}
-      </ReactMarkdown>
-      
-      {!singleView && note.text.length > 1000 && !isExpanded && (
-        <span 
-          onClick={() => onExpand()} 
-          className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap"
+        {loading && singleView && (
+          <div className="text-center text-muted my-2">
+            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Loading chunks...
+          </div>
+        )}
+        
+        <ReactMarkdown 
+          components={customRenderers} 
+          remarkPlugins={[remarkGfm]} 
+          className={` ${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
         >
-          <b>...</b>
-        </span>
-      )}
-    </span>
+          {processedText}
+        </ReactMarkdown>
+        
+        {!singleView && note.text.length > 1000 && !isExpanded && (
+          <span 
+            onClick={() => onExpand()} 
+            className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap"
+          >
+            <b>...</b>
+          </span>
+        )}
+      </span>
+      
+      {renderDebugChunks()}
+    </>
   );
 };
 

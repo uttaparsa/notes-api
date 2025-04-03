@@ -15,7 +15,10 @@ import requests
 from django.conf import settings
 
 # Import the LangChain markdown text splitter
-from langchain_text_splitters.markdown import MarkdownTextSplitter
+from langchain_text_splitters import (
+    Language,
+    RecursiveCharacterTextSplitter,
+)
 
 class NoteRevision(models.Model):
     note_id = models.IntegerField()
@@ -76,32 +79,68 @@ class LocalMessage(models.Model):
     text = models.TextField(blank=True)
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
     pinned = models.BooleanField(default=False)
-    # image = ResizedImageField(upload_to=get_image_upload_path, size=[1024, 1024], blank=True, null=True)
-    # file = models.FileField(upload_to=get_file_upload_path, blank=True, null=True)
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def split_into_chunks(self):
-        """Split the note content into chunks using the MarkdownTextSplitter"""
-        # Create a text splitter with reasonable defaults
-        text_splitter = MarkdownTextSplitter(
-            chunk_size=500,
-            chunk_overlap=50
+        """Split the note content into chunks using the RecursiveCharacterTextSplitter"""
+        import re
+        
+        # Extract code blocks
+        code_blocks = []
+        text_without_code_blocks = self.text
+        
+        # Regex pattern for triple backtick code blocks
+        pattern = r"```(?:[a-zA-Z0-9]*\n)?(.*?)```"
+        
+        # Find all code blocks
+        matches = re.finditer(pattern, self.text, re.DOTALL)
+        offset = 0
+        
+        # Extract code blocks and remove them from text
+        for match in matches:
+            code_block = match.group(1).strip()
+            code_blocks.append(code_block)
+            
+            # Replace the code block with a placeholder to maintain text integrity
+            start, end = match.span()
+            start -= offset
+            end -= offset
+            text_without_code_blocks = text_without_code_blocks[:start] + " [CODE_BLOCK_PLACEHOLDER] " + text_without_code_blocks[end:]
+            offset += (end - start) - len(" [CODE_BLOCK_PLACEHOLDER] ")
+        
+        # Create a text splitter for Markdown with specified chunk size and overlap
+        md_splitter = RecursiveCharacterTextSplitter.from_language(
+            language=Language.MARKDOWN, chunk_size=1000, chunk_overlap=0
         )
         
-        # Split the text into chunks
-        chunks = text_splitter.split_text(self.text)
+        # Split the text into documents (exclude code blocks)
+        md_docs = md_splitter.create_documents([text_without_code_blocks])
         
         # Create and save NoteChunk objects for each chunk
         note_chunks = []
-        for i, chunk_text in enumerate(chunks):
+        chunk_index = 0
+        
+        # First add text chunks
+        for doc in md_docs:
             note_chunk = NoteChunk.objects.create(
                 note_id=self.id,
-                chunk_index=i,
-                chunk_text=chunk_text,
+                chunk_index=chunk_index,
+                chunk_text=doc.page_content,
             )
             note_chunks.append(note_chunk)
+            chunk_index += 1
+        
+        # Then add code blocks as separate chunks
+        for code_block in code_blocks:
+            note_chunk = NoteChunk.objects.create(
+                note_id=self.id,
+                chunk_index=chunk_index,
+                chunk_text=code_block,
+            )
+            note_chunks.append(note_chunk)
+            chunk_index += 1
         
         return note_chunks
     

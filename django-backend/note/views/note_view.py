@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link, NoteRevision
-from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk
+from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer, NoteChunkSerializer
 import re 
 from django.utils import timezone
 from typing import Optional
@@ -339,3 +339,40 @@ class NoteRevisionView(APIView):
         return Response(serializer.data)
 
 
+class NoteChunksView(APIView):
+    """View to retrieve chunks for a note"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, note_id, format=None):
+        """
+        Get all chunks for a specific note
+        """
+        # Check if the note exists and user has access to it
+        try:
+            note = LocalMessage.objects.get(id=note_id)
+            # You might want to add additional access checks here
+            
+            # Get all chunks for this note
+            chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
+            
+            # If no chunks exist yet, create them
+            if not chunks.exists():
+                note.update_chunks()
+                chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
+            
+            serializer = NoteChunkSerializer(chunks, many=True)
+            return Response(serializer.data)
+            
+        except LocalMessage.DoesNotExist:
+            return Response(
+                {"error": "Note not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error retrieving note chunks: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "Failed to retrieve note chunks"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

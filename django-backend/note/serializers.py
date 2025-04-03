@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk
 import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
@@ -33,6 +33,12 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalMessage
         fields = "__all__"
+
+
+class NoteChunkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NoteChunk
+        fields = ['note_id', 'chunk_index', 'chunk_text', 'created_at', 'updated_at']
 
 
 
