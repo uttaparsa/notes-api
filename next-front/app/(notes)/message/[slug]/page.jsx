@@ -9,7 +9,8 @@ import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
 
 const SingleNoteView = () => {
-  const [busy, setBusy] = useState(true);
+  const [noteBusy, setNoteBusy] = useState(true);
+  const [similarNotesBusy, setSimilarNotesBusy] = useState(true);
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
   const noteComponentRef = useRef(null);
@@ -17,24 +18,33 @@ const SingleNoteView = () => {
   const params = useParams();
 
   useEffect(() => {
-    const updateTitle = async () => {
+    const loadData = async () => {
       try {
+        // Load the main note
         const currentNote = await getCurrentNote();
         setNote(currentNote);
-        await fetchSimilarNotes(currentNote.id);
-        setBusy(false);
+        setNoteBusy(false); // Set to false as soon as the note is loaded
         
         if (currentNote?.text) {
           document.title = extractMarkdownTitleFromText(currentNote.text);
         }
+        
+        // Load similar notes separately
+        try {
+          await fetchSimilarNotes(currentNote.id);
+        } finally {
+          setSimilarNotesBusy(false);
+        }
       } catch (error) {
         console.error('Error fetching note:', error);
         document.title = 'Note - Error';
+        setNoteBusy(false);
+        setSimilarNotesBusy(false);
       }
     };
 
-    updateTitle();
-  }, []); 
+    loadData();
+  }, []);
 
   const fetchSimilarNotes = async (noteId) => {
     try {
@@ -122,7 +132,7 @@ const SingleNoteView = () => {
       <div className="row">
         <div className="col-lg-2"></div>
         <div className="col-lg-8 position-relative" ref={noteContainerRef}>
-          {busy ? (
+          {noteBusy ? (
             <Spinner animation="border" role="status">
               <span className="visually-hidden">Loading...</span>
             </Spinner>

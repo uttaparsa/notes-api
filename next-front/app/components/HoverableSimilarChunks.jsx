@@ -103,7 +103,7 @@ const HoverableSimilarChunks = ({ children, selectedText, noteId }) => {
       onMouseLeave={handleMouseLeave}
     >
       {children}
- 
+
     </span>
   );
 };
