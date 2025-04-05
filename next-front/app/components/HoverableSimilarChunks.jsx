@@ -10,7 +10,7 @@ const SIMILARITY_MODE_ENABLED = 'similarityModeEnabled';
 const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
   const [loading, setLoading] = useState(false);
   const [similarResults, setSimilarResults] = useState(null);
-  const timeoutRef = useRef(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const childRef = useRef(null);
   
   // Get the text content from the children - enhanced to handle more element types
@@ -58,19 +58,17 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
     return '';
   };
 
-  // Clear timeout on unmount
+  // Load data once on initial render if enabled
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+    if (enabled && !dataLoaded && !loading) {
+      fetchSimilarContent();
+    }
+  }, [enabled, dataLoaded]);
 
   // Listen for similarity mode enabled event
   useEffect(() => {
     const handleSimilarityModeEnabled = () => {
-      if (!similarResults && !loading) {
+      if (!dataLoaded && !loading) {
         fetchSimilarContent();
       }
     };
@@ -80,14 +78,11 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
     return () => {
       window.removeEventListener(SIMILARITY_MODE_ENABLED, handleSimilarityModeEnabled);
     };
-  }, [similarResults, loading]);
+  }, [dataLoaded, loading]);
 
-  // More efficient fetch strategy - debounced fetch on hover
+  // Load data once and store in state
   const fetchSimilarContent = async () => {
     const text = getTextContent();
-    
-    // We still capture chunk index for UI purposes, even though we don't use a chunk-specific endpoint
-    const chunkIndex = children?.props?.['data-chunk-index'];
     
     if (text && text.length > 15) { // Lowered minimum content length for better coverage
       setLoading(true);
@@ -112,14 +107,11 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
         if (response.ok) {
           const data = await response.json();
           setSimilarResults(data);
-          
-          // Don't automatically show results when initially loading
-          // Only show results on explicit hover events
+          setDataLoaded(true);
         } else {
           console.error('Error fetching similar chunks: API returned status', response.status);
         }
       } catch (error) {
-        // Replace toast with console log for timeouts or other errors
         console.error('Error fetching similar chunks:', error);
       } finally {
         setLoading(false);
@@ -130,69 +122,22 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
   const handleMouseEnter = () => {
     if (!enabled) return;
     
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    // Get chunk index from data attribute - for UI purposes only
-    const chunkIndex = children?.props?.['data-chunk-index'];
-    
     // If we have results, show them
     if (similarResults && similarResults.length > 0) {
       window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
         detail: {
           results: similarResults,
-          sourceText: getTextContent(),
-          position: getElementPosition(),
-          chunkIndex: chunkIndex // Pass chunk info for UI purposes
+          sourceText: getTextContent()
         }
       }));
-    } else if (!loading) {
-      // If we don't have results yet and aren't currently loading, fetch them
-      fetchSimilarContent();
     }
   };
 
   const handleMouseLeave = () => {
     if (!enabled) return;
     
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    
-    // Increased delay before hiding to give more time to move to margin
-    timeoutRef.current = setTimeout(() => {
-      // Dispatch custom event to hide similar notes in margin
-      window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
-    }, 1000);
-  };
-
-  // Helper function to get the element's position for positioning in margin
-  const getElementPosition = () => {
-    // Try to get position from the rendered element
-    if (childRef.current) {
-      const rect = childRef.current.getBoundingClientRect();
-      return {
-        top: rect.top + window.scrollY,
-        bottom: rect.bottom + window.scrollY,
-        left: rect.left,
-        right: rect.right
-      };
-    }
-    
-    // Fallback to active element
-    const element = document.activeElement;
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      return {
-        top: rect.top + window.scrollY,
-        bottom: rect.bottom + window.scrollY,
-        left: rect.left,
-        right: rect.right
-      };
-    }
-    
-    return null;
+    // Just dispatch hide event, let the margin component handle timing
+    window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
   };
   
   // Create a new child with the ref, handling different element types

@@ -132,16 +132,12 @@ const SingleNoteView = () => {
               <span className="visually-hidden">Loading...</span>
             </Spinner>
           ) : (
-            <>
-              <NoteCard
-                ref={noteComponentRef}
-                note={note}
-                onEditNote={editNote}
-                singleView={true}
-              />
-              {/* The MarginSimilarNotes component will be positioned absolutely */}
-              <MarginSimilarNotes />
-            </>
+            <NoteCard
+              ref={noteComponentRef}
+              note={note}
+              onEditNote={editNote}
+              singleView={true}
+            />
           )}
         </div>
         <div className="col-lg-2 pl-lg-0">
@@ -179,6 +175,9 @@ const SingleNoteView = () => {
           )}
         </div>
       </div>
+      
+      {/* Single global instance of margin similar notes */}
+      <MarginSimilarNotes />
     </div>
   );
 };
