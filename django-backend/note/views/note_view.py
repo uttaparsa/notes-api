@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, NoteEmbedding
 from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer, NoteChunkSerializer
 import re 
 from django.utils import timezone
@@ -150,7 +150,25 @@ class SingleNoteView(APIView):
         new_text = request.data.get("text")
         RevisionService.update_note_with_revision(item, new_text)
         insert_links(item)
-        item.update_chunks()
+        
+        # Update chunks and create embeddings
+        chunks = item.update_chunks()
+        
+        # Create embeddings for note if it's not RTL
+        try:
+            if not NoteEmbedding.hasRTL(item.text):
+                NoteEmbedding.create_for_note(item)
+                
+            # Create embeddings for chunks if there's more than one chunk
+            if len(chunks) > 1:
+                for chunk in chunks:
+                    if not NoteEmbedding.hasRTL(chunk.chunk_text):
+                        chunk.create_embedding()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error creating embeddings for note {item.id}: {str(e)}")
+        
         return Response("1", status=status.HTTP_200_OK)
 
     def delete(self, request, **kwargs):
@@ -313,6 +331,25 @@ class NoteView(GenericAPIView, ListModelMixin):
             
             # Handle links
             insert_links(note)
+            
+            # Create chunks and embeddings for the new note
+            try:
+                # Create chunks
+                chunks = note.split_into_chunks()
+                
+                # Create embedding for the note if it's not RTL
+                if not NoteEmbedding.hasRTL(note.text):
+                    NoteEmbedding.create_for_note(note)
+                
+                # Create embeddings for chunks if there's more than one chunk
+                if len(chunks) > 1:
+                    for chunk in chunks:
+                        if not NoteEmbedding.hasRTL(chunk.chunk_text):
+                            chunk.create_embedding()
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error creating chunks/embeddings for new note {note.id}: {str(e)}")
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
