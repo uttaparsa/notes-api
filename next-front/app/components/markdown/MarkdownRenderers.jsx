@@ -4,30 +4,19 @@ import { Button } from 'react-bootstrap';
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../utils/stringUtils";
 import { copyTextToClipboard } from "../../utils/clipboardUtils";
-import HoverableSimilarChunks from '../HoverableSimilarChunks';
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
 import { getChunkForText, getHighlightStyle } from './ChunkUtils';
 
 /**
- * Creates a component wrapped with hoverable similarity feature
+ * Creates a component with applied styling based on similarity if needed
  */
-export const withHoverableSimilarity = (Component, props, elementType, note, similarityModeEnabled, chunks, singleView) => {
-  // Skip wrapping if not in single view or similarity mode not enabled
-  if (!singleView || !similarityModeEnabled) {
+export const withSimilarityStyles = (Component, props, elementType, note, similarityModeEnabled, chunks) => {
+  // Skip style application if similarity mode not enabled
+  if (!similarityModeEnabled) {
     return <Component {...props} />;
   }
-  
-  // Generate a key for this component - safely extract text from props
-  let keyText;
-  if (typeof props.children === 'string') {
-    keyText = props.children.slice(0, 20);
-  } else {
-    // Generate a safe identifier without stringifying the entire props object
-    keyText = `${elementType}-${Math.random().toString(36).substring(2, 7)}`;
-  }
-  const key = `${elementType}-${keyText}-${Math.random().toString(36).substring(2, 7)}`;
   
   // Look up chunk information for this content if it's a paragraph
   const chunk = elementType === 'p' && typeof props.children === 'string' 
@@ -49,15 +38,7 @@ export const withHoverableSimilarity = (Component, props, elementType, note, sim
     ...dataAttributes
   };
   
-  return (
-    <HoverableSimilarChunks 
-      noteId={note.id} 
-      key={key} 
-      enabled={similarityModeEnabled}
-    >
-      <Component {...updatedProps} />
-    </HoverableSimilarChunks>
-  );
+  return <Component {...updatedProps} />;
 };
 
 /**
@@ -71,16 +52,16 @@ export const createCustomRenderers = (
   shouldLoadLinks,
   showToast
 ) => ({
-  p: (props) => withHoverableSimilarity('p', props, 'p', note, similarityModeEnabled, chunks, singleView),
+  p: (props) => withSimilarityStyles('p', props, 'p', note, similarityModeEnabled, chunks),
   
-  h1: props => withHoverableSimilarity('h1', props, 'h1', note, similarityModeEnabled, chunks, singleView),
-  h2: props => withHoverableSimilarity('h2', props, 'h2', note, similarityModeEnabled, chunks, singleView),
-  h3: props => withHoverableSimilarity('h3', props, 'h3', note, similarityModeEnabled, chunks, singleView),
-  h4: props => withHoverableSimilarity('h4', props, 'h4', note, similarityModeEnabled, chunks, singleView),
-  h5: props => withHoverableSimilarity('h5', props, 'h5', note, similarityModeEnabled, chunks, singleView),
-  h6: props => withHoverableSimilarity('h6', props, 'h6', note, similarityModeEnabled, chunks, singleView),
+  h1: props => withSimilarityStyles('h1', props, 'h1', note, similarityModeEnabled, chunks),
+  h2: props => withSimilarityStyles('h2', props, 'h2', note, similarityModeEnabled, chunks),
+  h3: props => withSimilarityStyles('h3', props, 'h3', note, similarityModeEnabled, chunks),
+  h4: props => withSimilarityStyles('h4', props, 'h4', note, similarityModeEnabled, chunks),
+  h5: props => withSimilarityStyles('h5', props, 'h5', note, similarityModeEnabled, chunks),
+  h6: props => withSimilarityStyles('h6', props, 'h6', note, similarityModeEnabled, chunks),
   
-  li: props => withHoverableSimilarity('li', props, 'li', note, similarityModeEnabled, chunks, singleView),
+  li: props => withSimilarityStyles('li', props, 'li', note, similarityModeEnabled, chunks),
   
   blockquote: (props) => {
     const isRTLContent = props.children && 
@@ -94,7 +75,7 @@ export const createCustomRenderers = (
       dir: isRTLContent ? "rtl" : "ltr"
     };
     
-    return withHoverableSimilarity('blockquote', blockquoteProps, 'blockquote', note, similarityModeEnabled, chunks, singleView);
+    return withSimilarityStyles('blockquote', blockquoteProps, 'blockquote', note, similarityModeEnabled, chunks);
   },
   
   pre: ({ node, inline, className, children, ...props }) => {
@@ -104,7 +85,7 @@ export const createCustomRenderers = (
       showToast("Success", "Code copied to clipboard", 3000, "success");
     };
     
-    const codeBlock = (
+    return (
       <div className={styles.codeBlockWrapper}>
         <pre className={styles.codeBlock + " bg-body border"}>
           {children}
@@ -114,16 +95,6 @@ export const createCustomRenderers = (
         </Button>
       </div>
     );
-    
-    return singleView && similarityModeEnabled ? (
-      <HoverableSimilarChunks 
-        noteId={note.id}
-        enabled={similarityModeEnabled}
-        key={`pre-${codeString.slice(0, 20)}-${Math.random().toString(36).substring(2, 7)}`}
-      >
-        {codeBlock}
-      </HoverableSimilarChunks>
-    ) : codeBlock;
   },
   
   code: ({ node, ...props }) => {
@@ -137,29 +108,11 @@ export const createCustomRenderers = (
       }
     };
     
-    const codeElement = (
+    return (
       <code onClick={copyCode} className={styles.codeSnippet}>
         {props.children}
       </code>
     );
-    
-    // Safely check if this is not inside a pre tag
-    const isInlineCode = !(node.parent && node.parent.tagName === 'pre');
-    
-    // Inline code should be hoverable when not inside pre
-    if (singleView && similarityModeEnabled && isInlineCode) {
-      return (
-        <HoverableSimilarChunks 
-          noteId={note.id}
-          enabled={similarityModeEnabled}
-          key={`code-${codeString.slice(0, 20)}-${Math.random().toString(36).substring(2, 7)}`}
-        >
-          {codeElement}
-        </HoverableSimilarChunks>
-      );
-    }
-    
-    return codeElement;
   },
   
   a: ({ href, children }) => {
@@ -170,22 +123,7 @@ export const createCustomRenderers = (
       return <YouTubeLink url={encodedHref} shouldLoadLinks={shouldLoadLinks} />;
     }
     
-    // Wrap links in HoverableSimilarChunks when in similarity mode
-    const linkElement = <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
-    
-    if (singleView && similarityModeEnabled) {
-      return (
-        <HoverableSimilarChunks 
-          noteId={note.id} 
-          enabled={similarityModeEnabled}
-          key={`link-${href.slice(0, 20)}-${Math.random().toString(36).substring(2, 7)}`}
-        >
-          {linkElement}
-        </HoverableSimilarChunks>
-      );
-    }
-    
-    return linkElement;
+    return <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
   },
   
   img: (props) => {
@@ -193,22 +131,7 @@ export const createCustomRenderers = (
     const encodedSrc = safeUrlEncode(props.src);
     
     // Create responsive image component
-    const imageComponent = <ResponsiveImage {...props} src={encodedSrc} />;
-    
-    // Make images hoverable for similarity search
-    if (singleView && similarityModeEnabled) {
-      return (
-        <HoverableSimilarChunks 
-          noteId={note.id} 
-          enabled={similarityModeEnabled}
-          key={`img-${props.src?.slice(0, 20)}-${Math.random().toString(36).substring(2, 7)}`}
-        >
-          <span>{imageComponent}</span>
-        </HoverableSimilarChunks>
-      );
-    }
-    
-    return imageComponent;
+    return <ResponsiveImage {...props} src={encodedSrc} />;
   },
 });
 
