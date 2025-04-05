@@ -20,7 +20,7 @@ const NoteTextRenderer = ({
   
   // Effect to fetch chunks from backend when in single view
   useEffect(() => {
-    if (singleView && note?.id && similarityModeEnabled) {
+    if (singleView && note?.id ) {
       setLoading(true);
       fetchWithAuth(`/api/note/message/${note.id}/chunks/`)
         .then(response => {
@@ -38,30 +38,13 @@ const NoteTextRenderer = ({
         .catch(err => {
           console.error('Error fetching chunks:', err);
           setError(err.message);
-          showToast("Failed to load note chunks", "error");
         })
         .finally(() => {
           setLoading(false);
         });
     }
-  }, [singleView, note?.id, similarityModeEnabled, showToast]);
+  }, [singleView, note?.id]);
 
-  // Effect to handle similarity mode changes
-  useEffect(() => {
-    if (similarityModeEnabled) {
-      // When similarity mode is enabled
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('similarityModeEnabled'));
-      }, 300);
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    } else {
-      // When disabling similarity mode
-      window.dispatchEvent(new CustomEvent('hideSimilarInMargin'));
-    }
-  }, [similarityModeEnabled]);
 
 
   // Add a debug UI for chunks if in development mode

@@ -15,10 +15,10 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
   
   // Load data once on initial render if enabled
   useEffect(() => {
-    if (enabled && !dataLoaded && !loading) {
+    if ( !dataLoaded && !loading) {
       fetchSimilarContent();
     }
-  }, [enabled, dataLoaded]);
+  }, [ dataLoaded]);
 
   // Listen for similarity mode enabled event
   useEffect(() => {
