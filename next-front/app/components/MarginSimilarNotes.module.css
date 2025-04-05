@@ -1,16 +1,16 @@
 .marginNotesContainer {
   position: fixed;
-  right: 0;
+  left: 0; /* Changed from right to left */
   top: 100px; /* Fixed position from top */
   width: 280px;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(100%);
-  padding-left: 10px;
+  transform: translateX(-100%); /* Changed from translateX(100%) to translateX(-100%) */
+  padding-right: 10px; /* Changed from padding-left to padding-right */
   transition: transform 0.3s, opacity 0.3s, visibility 0.3s;
   /* Create an invisible buffer zone to make it easier to navigate to */
-  margin-left: -20px; /* Negative margin creates an invisible hover area */
+  margin-right: -20px; /* Changed from margin-left to margin-right for buffer zone */
 }
 
 .marginNotesContainer.visible {
@@ -22,7 +22,7 @@
 .marginCard {
   width: 100%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-left: 3px solid #007bff;
+  border-right: 3px solid #007bff; /* Changed from border-left to border-right */
   /* Add visual indicator for interactive element */
   animation: pulseHighlight 2s ease-in-out;
   transition: all 0.5s ease;
@@ -36,15 +36,15 @@
 @keyframes magicBreathing {
   0% {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-left: 3px solid #007bff;
+    border-right: 3px solid #007bff; /* Changed from border-left to border-right */
   }
   50% {
     box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
-    border-left: 3px solid #2196f3;
+    border-right: 3px solid #2196f3; /* Changed from border-left to border-right */
   }
   100% {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-left: 3px solid #007bff;
+    border-right: 3px solid #007bff; /* Changed from border-left to border-right */
   }
 }
 
