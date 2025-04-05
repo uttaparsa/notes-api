@@ -124,6 +124,7 @@ const SingleNoteView = () => {
 
   return (
     <div className="container-fluid py-5" dir="ltr">
+      <MarginSimilarNotes />
       <div className="row">
         <div className="col-lg-2"></div>
         <div className="col-lg-8 position-relative" ref={noteContainerRef}>
@@ -195,7 +196,7 @@ const SingleNoteView = () => {
       </div>
       
       {/* Single global instance of margin similar notes */}
-      <MarginSimilarNotes />
+      
     </div>
   );
 };
