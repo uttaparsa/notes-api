@@ -5,13 +5,15 @@ import { fetchWithAuth } from '../lib/api';
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
+const SIMILARITY_MODE_ENABLED = 'similarityModeEnabled';
 
-const HoverableSimilarChunks = ({ children, noteId }) => {
+const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
   const [loading, setLoading] = useState(false);
+  const [similarResults, setSimilarResults] = useState(null);
   const timeoutRef = useRef(null);
   const childRef = useRef(null);
   
-  // Get the text content from the children
+  // Get the text content from the children - enhanced to handle more element types
   const getTextContent = () => {
     // Try to get from props directly
     const directText = children?.props?.children;
@@ -20,6 +22,20 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
     // Try to get from ref
     if (childRef.current) {
       return childRef.current.textContent || '';
+    }
+    
+    // Special case for links - get href + text
+    if (children?.props?.href) {
+      const linkText = children.props.children;
+      const linkHref = children.props.href;
+      if (typeof linkText === 'string') {
+        return `${linkText} (${linkHref})`;
+      }
+    }
+    
+    // Special case for images - get alt text + src
+    if (children?.props?.src) {
+      return `Image: ${children.props.alt || ''} (${children.props.src})`;
     }
     
     // Last resort - try to stringify the children
@@ -51,57 +67,107 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
     };
   }, []);
 
+  // Prefetch similar content when similarity mode is enabled
+  useEffect(() => {
+    if (enabled && !similarResults && !loading) {
+      fetchSimilarContent();
+    }
+  }, [enabled]);
+
+  // Listen for similarity mode enabled event
+  useEffect(() => {
+    const handleSimilarityModeEnabled = () => {
+      if (!similarResults && !loading) {
+        fetchSimilarContent();
+      }
+    };
+
+    window.addEventListener(SIMILARITY_MODE_ENABLED, handleSimilarityModeEnabled);
+    
+    return () => {
+      window.removeEventListener(SIMILARITY_MODE_ENABLED, handleSimilarityModeEnabled);
+    };
+  }, [similarResults, loading]);
+
+  // More efficient fetch strategy - debounced fetch on hover
+  const fetchSimilarContent = async () => {
+    const text = getTextContent();
+    
+    // Get chunk index from data attribute if available
+    const chunkIndex = children?.props?.['data-chunk-index'];
+    
+    if (text && text.length > 15) { // Lowered minimum content length for better coverage
+      setLoading(true);
+      
+      try {
+        // Use chunk-specific endpoint if available, otherwise fall back to text-based similarity
+        const endpoint = chunkIndex !== undefined ? 
+          `/api/note/message/${noteId}/chunks/${chunkIndex}/similar/` : 
+          '/api/note/similar/';
+          
+        const requestBody = chunkIndex !== undefined ? 
+          {} : 
+          {
+            text: text,
+            limit: 3,
+            exclude_note_id: noteId,
+          };
+          
+        const response = await fetchWithAuth(endpoint, {
+          method: chunkIndex !== undefined ? 'GET' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: chunkIndex !== undefined ? undefined : JSON.stringify(requestBody),
+        }, 10000);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSimilarResults(data);
+          
+          // Don't automatically show results when initially loading
+          // Only show results on explicit hover events
+        } else {
+          console.error('Error fetching similar chunks: API returned status', response.status);
+        }
+      } catch (error) {
+        // Replace toast with console log for timeouts or other errors
+        console.error('Error fetching similar chunks:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleMouseEnter = () => {
+    if (!enabled) return;
+    
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
     
-    // Delay the API call to avoid excessive requests during quick mouse movements
-    timeoutRef.current = setTimeout(async () => {
-      const text = getTextContent();
-      
-      if (text && text.length > 20) { // Only process if there's enough text
-        setLoading(true);
-        
-        try {
-          const response = await fetchWithAuth('/api/note/similar/',  {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              text: text,
-              limit: 3,
-              exclude_note_id: noteId,
-            }),
-          }, 10000); // 10 seconds timeout
-          
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Dispatch custom event to show similar notes in margin
-            if (data && data.length > 0) {
-              window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
-                detail: {
-                  results: data,
-                  sourceText: text,
-                  position: getElementPosition(),
-                  // Pass chunk index if available from data attribute
-                  chunkIndex: children?.props?.['data-chunk-index']
-                }
-              }));
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching similar chunks:', error);
-        } finally {
-          setLoading(false);
+    // Get chunk index from data attribute
+    const chunkIndex = children?.props?.['data-chunk-index'];
+    
+    // If we have results, show them
+    if (similarResults && similarResults.length > 0) {
+      window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
+        detail: {
+          results: similarResults,
+          sourceText: getTextContent(),
+          position: getElementPosition(),
+          chunkIndex: chunkIndex
         }
-      }
-    }, 500); // 500ms delay
+      }));
+    } else if (!loading) {
+      // If we don't have results yet and aren't currently loading, fetch them
+      fetchSimilarContent();
+    }
   };
 
   const handleMouseLeave = () => {
+    if (!enabled) return;
+    
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
@@ -141,19 +207,44 @@ const HoverableSimilarChunks = ({ children, noteId }) => {
     return null;
   };
   
-  // Create a new child with the ref
-  const childWithRef = React.cloneElement(
-    children,
-    {
-      ref: childRef,
-      className: `${children.props.className || ''} ${styles.hoverableText} ${loading ? styles.loading : ''}`
+  // Create a new child with the ref, handling different element types
+  const createChildWithRef = () => {
+    // For DOM elements like spans, divs, paragraphs
+    if (typeof children.type === 'string') {
+      return React.cloneElement(
+        children,
+        {
+          ref: childRef,
+          className: `${children.props.className || ''} 
+            ${enabled ? styles.hoverableText : ''} 
+            ${loading ? styles.loading : ''} 
+            ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}`
+        }
+      );
     }
-  );
+    
+    // For React components that don't accept refs directly
+    return (
+      <span 
+        ref={childRef}
+        className={`
+          ${enabled ? styles.hoverableTextWrapper : ''} 
+          ${loading ? styles.loading : ''} 
+          ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}`
+        }
+      >
+        {children}
+      </span>
+    );
+  };
+  
+  // Use the enhanced method to create child with ref
+  const childWithRef = createChildWithRef();
 
   return (
     <span
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={enabled ? handleMouseEnter : undefined}
+      onMouseLeave={enabled ? handleMouseLeave : undefined}
     >
       {childWithRef}
     </span>

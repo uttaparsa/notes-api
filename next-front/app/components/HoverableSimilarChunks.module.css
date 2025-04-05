@@ -1,15 +1,19 @@
 .hoverableText {
   cursor: pointer;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  border-bottom: 1px dotted rgba(0, 123, 255, 0.3);
 }
 
 .hoverableText:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: rgba(0, 123, 255, 0.1);
   border-radius: 3px;
+  border-bottom: 1px dotted rgba(0, 123, 255, 0.7);
 }
 
-/* Loading indicator style */
+/* Removing redundant wrapper styles - they duplicate hoverableText functionality */
+
+/* Enhanced loading indicator */
 .loading {
   position: relative;
 }
@@ -17,14 +21,15 @@
 .loading::after {
   content: '';
   position: absolute;
-  right: -5px;
+  right: -8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background-color: #007bff;
   animation: pulse 1s infinite;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
 }
 
 @keyframes pulse {
@@ -42,6 +47,26 @@
 /* Style for when similar content is found */
 .hasResults {
   border-bottom: 1px dashed #007bff;
+  animation: subtleWink 2s ease-in-out infinite;
+}
+
+@keyframes subtleWink {
+  0% { background-color: rgba(0, 123, 255, 0.05); }
+  50% { background-color: rgba(0, 123, 255, 0.15); }
+  100% { background-color: rgba(0, 123, 255, 0.05); }
+}
+
+/* Apply subtle highlight to chunks */
+.highlightedChunk {
+  background-color: rgba(0, 123, 255, 0.08);
+  border-left: 2px solid rgba(0, 123, 255, 0.4);
+  padding-left: 5px;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.highlightedChunk:hover {
+  background-color: rgba(0, 123, 255, 0.15);
 }
 
 /* Dark mode support */
@@ -51,4 +76,9 @@
 
 :global(.dark-mode) .loading::after {
   background-color: #45a9ff;
+}
+
+:global(.dark-mode) .highlightedChunk {
+  background-color: rgba(100, 149, 237, 0.08);
+  border-left: 2px solid rgba(100, 149, 237, 0.4);
 }

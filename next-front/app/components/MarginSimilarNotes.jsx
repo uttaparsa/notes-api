@@ -25,9 +25,6 @@ const MarginSimilarNotes = () => {
       
       const { results, position, sourceText } = event.detail;
       
-      // Log the results to debug
-      console.log("Received similar notes:", results);
-      
       // Make sure results has valid IDs before setting state
       const validResults = results.filter(result => result.id !== null && result.id !== undefined);
       
@@ -37,7 +34,8 @@ const MarginSimilarNotes = () => {
         setSourceText(sourceText);
         setVisible(true);
       } else {
-        console.warn("No valid note IDs found in results:", results);
+        console.warn("No valid note IDs found in results");
+        setVisible(false); // Ensure we don't show an empty margin container
       }
     };
 
@@ -52,25 +50,6 @@ const MarginSimilarNotes = () => {
       timeoutRef.current = setTimeout(() => {
         setVisible(false);
       }, 1000); // A reasonable timeout
-    };
-
-    // Handle mouse enter/leave events
-    const handleMarginMouseEnter = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-
-    const handleMarginMouseLeave = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      
-      if (isPinned) return;
-      
-      timeoutRef.current = setTimeout(() => {
-        setVisible(false);
-      }, 1000);
     };
 
     // Add event listeners
@@ -105,25 +84,6 @@ const MarginSimilarNotes = () => {
     };
   }, [marginRef.current]);
 
-  // Helper function to get badge color based on similarity score
-  const getBadgeColor = (score) => {
-    if (score >= 0.8) return 'success';
-    if (score >= 0.6) return 'info';
-    if (score >= 0.4) return 'warning';
-    return 'secondary';
-  };
-
-  // Calculate position for the margin notes
-  const getMarginStyle = () => {
-    if (!position) return {};
-    
-    return {
-      top: `${position.top}px`,
-      maxHeight: '300px',
-      transition: 'opacity 0.3s ease-in-out'
-    };
-  };
-
   // Define handleMarginMouseEnter and handleMarginMouseLeave functions
   const handleMarginMouseEnter = () => {
     if (timeoutRef.current) {
@@ -143,6 +103,25 @@ const MarginSimilarNotes = () => {
     }
   };
 
+  // Helper function to get badge color based on similarity score
+  const getBadgeColor = (score) => {
+    if (score >= 0.8) return 'success';
+    if (score >= 0.6) return 'info';
+    if (score >= 0.4) return 'warning';
+    return 'secondary';
+  };
+
+  // Calculate position for the margin notes
+  const getMarginStyle = () => {
+    if (!position) return {};
+    
+    return {
+      top: `${position.top}px`,
+      maxHeight: '300px',
+      transition: 'opacity 0.3s ease-in-out'
+    };
+  };
+
   if (!visible) return null;
 
   return (
@@ -150,6 +129,8 @@ const MarginSimilarNotes = () => {
       ref={marginRef}
       className={styles.marginNotesContainer} 
       style={getMarginStyle()}
+      onMouseEnter={handleMarginMouseEnter}
+      onMouseLeave={handleMarginMouseLeave}
     >
       <Card className={styles.marginCard}>
         <Card.Header className="d-flex justify-content-between align-items-center">
