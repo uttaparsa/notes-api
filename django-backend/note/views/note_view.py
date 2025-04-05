@@ -10,12 +10,40 @@ from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevision
 import re 
 from django.utils import timezone
 from typing import Optional
-
+import concurrent.futures
+import logging
 
 from ..file_utils import FileManager
 
+# Set up logging
+logger = logging.getLogger(__name__)
 
+# Thread pool executor for async tasks
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
+# Function to create embeddings asynchronously
+def create_embeddings_async(note_id, note_text=None):
+    try:
+        note = LocalMessage.objects.get(pk=note_id)
+        if note_text is None:
+            note_text = note.text
+            
+        # Create chunks
+        chunks = note.update_chunks() if note_text else note.split_into_chunks()
+        
+        # Create embedding for the note if it's not RTL
+        if not NoteEmbedding.hasRTL(note_text):
+            NoteEmbedding.create_for_note(note)
+            
+        # Create embeddings for chunks if there's more than one chunk
+        if len(chunks) > 1:
+            for chunk in chunks:
+                if not NoteEmbedding.hasRTL(chunk.chunk_text):
+                    chunk.create_embedding()
+                    
+        logger.info(f"Successfully created embeddings for note {note_id}")
+    except Exception as e:
+        logger.error(f"Error creating embeddings for note {note_id}: {str(e)}", exc_info=True)
 
 class RevisionService:
     MIN_TIME_BETWEEN_REVISIONS = 900  # minimum seconds between revisions
@@ -151,23 +179,8 @@ class SingleNoteView(APIView):
         RevisionService.update_note_with_revision(item, new_text)
         insert_links(item)
         
-        # Update chunks and create embeddings
-        chunks = item.update_chunks()
-        
-        # Create embeddings for note if it's not RTL
-        try:
-            if not NoteEmbedding.hasRTL(item.text):
-                NoteEmbedding.create_for_note(item)
-                
-            # Create embeddings for chunks if there's more than one chunk
-            if len(chunks) > 1:
-                for chunk in chunks:
-                    if not NoteEmbedding.hasRTL(chunk.chunk_text):
-                        chunk.create_embedding()
-        except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Error creating embeddings for note {item.id}: {str(e)}")
+        # Update chunks and schedule async creation of embeddings
+        executor.submit(create_embeddings_async, item.id, new_text)
         
         return Response("1", status=status.HTTP_200_OK)
 
@@ -332,31 +345,13 @@ class NoteView(GenericAPIView, ListModelMixin):
             # Handle links
             insert_links(note)
             
-            # Create chunks and embeddings for the new note
-            try:
-                # Create chunks
-                chunks = note.split_into_chunks()
-                
-                # Create embedding for the note if it's not RTL
-                if not NoteEmbedding.hasRTL(note.text):
-                    NoteEmbedding.create_for_note(note)
-                
-                # Create embeddings for chunks if there's more than one chunk
-                if len(chunks) > 1:
-                    for chunk in chunks:
-                        if not NoteEmbedding.hasRTL(chunk.chunk_text):
-                            chunk.create_embedding()
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Error creating chunks/embeddings for new note {note.id}: {str(e)}")
+            # Schedule async creation of chunks and embeddings
+            executor.submit(create_embeddings_async, note.id, note.text)
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
             # Log the error properly
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error creating note: {str(e)}", exc_info=True)
             
             return Response(
