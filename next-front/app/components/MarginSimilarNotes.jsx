@@ -6,7 +6,7 @@ import styles from './MarginSimilarNotes.module.css';
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
-const DISPLAY_TIMEOUT = 10000; // 10 seconds display time
+const DISPLAY_TIMEOUT = 5000; // 10 seconds display time
 
 const MarginSimilarNotes = () => {
   const [visible, setVisible] = useState(false);
