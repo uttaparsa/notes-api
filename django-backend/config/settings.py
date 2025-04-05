@@ -232,6 +232,7 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 30 # 1 month
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "granite-embedding:30m")
+OLLAMA_EMBEDDING_SIZE = int(os.environ.get("OLLAMA_EMBEDDING_SIZE", "384"))
 
 TIME_ZONE = "America/Regina"
 

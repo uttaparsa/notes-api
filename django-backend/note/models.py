@@ -183,10 +183,10 @@ class NoteEmbedding(models.Model):
         sqlite_vec.load(db)
         
         # Create the vector table with explicit rowid primary key
-        db.execute("""
+        db.execute(f"""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_embeddings_vec 
             USING vec0(
-                embedding float[768]
+                embedding float[{settings.OLLAMA_EMBEDDING_SIZE}]
             );
         """)
         
@@ -332,10 +332,10 @@ class NoteChunk(models.Model):
         sqlite_vec.load(db)
         
         # Create the vector table for chunks with composite primary key
-        db.execute("""
+        db.execute(f"""
             CREATE VIRTUAL TABLE IF NOT EXISTS note_chunk_embeddings_vec 
             USING vec0(
-                embedding float[768]
+                embedding float[{settings.OLLAMA_EMBEDDING_SIZE}]
             );
         """)
         
