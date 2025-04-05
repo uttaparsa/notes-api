@@ -16,6 +16,8 @@
 /* Enhanced loading indicator */
 .loading {
   position: relative;
+  background-size: 400% 400%;
+  animation: loading-pulse 2s ease infinite;
 }
 
 .loading::after {
@@ -44,10 +46,23 @@
   }
 }
 
+@keyframes loading-pulse {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(13, 110, 253, 0.05);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
 /* Style for when similar content is found */
 .hasResults {
   border-bottom: 1px dashed #007bff;
   animation: subtleWink 2s ease-in-out infinite;
+  border-bottom: 1px dotted rgba(13, 110, 253, 0.5);
 }
 
 @keyframes subtleWink {
@@ -81,4 +96,26 @@
 :global(.dark-mode) .highlightedChunk {
   background-color: rgba(100, 149, 237, 0.08);
   border-left: 2px solid rgba(100, 149, 237, 0.4);
+}
+
+/* Styling for hoverable text with similarity results */
+.hoverableText, .hoverableTextWrapper {
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.hoverableText:hover, .hoverableTextWrapper:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Specific styles for similarity mode */
+.similarity-mode p {
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.similarity-mode p:hover {
+  background-color: rgba(13, 110, 253, 0.1);
 }

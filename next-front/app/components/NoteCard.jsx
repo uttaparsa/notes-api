@@ -23,10 +23,17 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
+  // Add similarityModeEnabled state
+  const [similarityModeEnabled, setSimilarityModeEnabled] = useState(false);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
+
+  // Add toggleSimilarityMode function
+  const toggleSimilarityMode = () => {
+    setSimilarityModeEnabled(!similarityModeEnabled);
+  };
 
   const expandNote = () => {
     setIsExpanded(true);
@@ -132,6 +139,18 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                     </span>
                   </Dropdown.Item>
                 )}
+                {/* Add Similar Thoughts option when in singleView */}
+                {singleView && (
+                  <Dropdown.Item 
+                    onClick={toggleSimilarityMode}
+                    className={similarityModeEnabled ? "text-primary" : ""}
+                  >
+                    <span className="d-flex align-items-center">
+                      <i className="bi bi-lightbulb "></i>
+                      {similarityModeEnabled ? "Disable" : "Enable"} Similar Thoughts
+                    </span>
+                  </Dropdown.Item>
+                )}
                 {!singleView && !hideEdits && (
                   <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
                 )}
@@ -148,6 +167,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
               onExpand={expandNote}
               shouldLoadLinks={shouldLoadLinks}
               showToast={showToast}
+              similarityModeEnabled={similarityModeEnabled}
             />
           </div>
         </div>

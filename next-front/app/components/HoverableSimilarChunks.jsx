@@ -67,13 +67,6 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
     };
   }, []);
 
-  // Prefetch similar content when similarity mode is enabled
-  useEffect(() => {
-    if (enabled && !similarResults && !loading) {
-      fetchSimilarContent();
-    }
-  }, [enabled]);
-
   // Listen for similarity mode enabled event
   useEffect(() => {
     const handleSimilarityModeEnabled = () => {
@@ -93,32 +86,27 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
   const fetchSimilarContent = async () => {
     const text = getTextContent();
     
-    // Get chunk index from data attribute if available
+    // We still capture chunk index for UI purposes, even though we don't use a chunk-specific endpoint
     const chunkIndex = children?.props?.['data-chunk-index'];
     
     if (text && text.length > 15) { // Lowered minimum content length for better coverage
       setLoading(true);
       
       try {
-        // Use chunk-specific endpoint if available, otherwise fall back to text-based similarity
-        const endpoint = chunkIndex !== undefined ? 
-          `/api/note/message/${noteId}/chunks/${chunkIndex}/similar/` : 
-          '/api/note/similar/';
-          
-        const requestBody = chunkIndex !== undefined ? 
-          {} : 
-          {
-            text: text,
-            limit: 3,
-            exclude_note_id: noteId,
-          };
-          
+        // Always use the text-based similarity endpoint
+        const endpoint = '/api/note/similar/';
+        const requestBody = {
+          text: text,
+          limit: 3,
+          exclude_note_id: noteId,
+        };
+        
         const response = await fetchWithAuth(endpoint, {
-          method: chunkIndex !== undefined ? 'GET' : 'POST',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: chunkIndex !== undefined ? undefined : JSON.stringify(requestBody),
+          body: JSON.stringify(requestBody),
         }, 10000);
         
         if (response.ok) {
@@ -146,7 +134,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
       clearTimeout(timeoutRef.current);
     }
     
-    // Get chunk index from data attribute
+    // Get chunk index from data attribute - for UI purposes only
     const chunkIndex = children?.props?.['data-chunk-index'];
     
     // If we have results, show them
@@ -156,7 +144,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
           results: similarResults,
           sourceText: getTextContent(),
           position: getElementPosition(),
-          chunkIndex: chunkIndex
+          chunkIndex: chunkIndex // Pass chunk info for UI purposes
         }
       }));
     } else if (!loading) {

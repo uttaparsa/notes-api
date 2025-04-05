@@ -10,7 +10,6 @@ import { Spinner } from 'react-bootstrap';
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
-  const [similarNotesBusy, setSimilarNotesBusy] = useState(true);
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
   const noteComponentRef = useRef(null);
@@ -30,11 +29,7 @@ const SingleNoteView = () => {
         }
         
         // Load similar notes separately
-        try {
-          await fetchSimilarNotes(currentNote.id);
-        } finally {
-          setSimilarNotesBusy(false);
-        }
+        await fetchSimilarNotes(currentNote.id);
       } catch (error) {
         console.error('Error fetching note:', error);
         document.title = 'Note - Error';
