@@ -241,12 +241,15 @@ class Command(BaseCommand):
                     chunks = note.split_into_chunks()
                     self.stdout.write(f"  - Generated {len(chunks)} chunks for note {note.id}")
                     
-                    # Create embeddings for each chunk
-                    for chunk in chunks:
-                        chunk.create_embedding()
+                    # Create embeddings for each chunk only if there's more than one chunk
+                    if len(chunks) > 1:
+                        for chunk in chunks:
+                            chunk.create_embedding()
+                        self.stdout.write(f"  - Created embeddings for all chunks of note {note.id}")
+                    else:
+                        self.stdout.write(f"  - Skipping chunk embeddings (single chunk note)")
                     
                     processed_chunks += 1
-                    self.stdout.write(f"  - Created embeddings for all chunks of note {note.id}")
             except Exception as e:
                 failed_chunks += 1
                 self.stdout.write(self.style.ERROR(
