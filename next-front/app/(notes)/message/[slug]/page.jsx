@@ -143,34 +143,52 @@ const SingleNoteView = () => {
         <div className="col-lg-2 pl-lg-0">
           {note && note.source_links.length > 0 && (
             <>
-              <span className="text-body-emphasis">backlinks</span>
-              <ul className="list-group mb-4">
+              <h5 className="text-body-emphasis mb-2">Backlinks</h5>
+              <div className="list-group mb-4">
                 {note.source_links.map(link => (
-                  <Link href={`/message/${link.source_message.id}`} key={link.id}>
-                    <li className="list-group-item list-group-item-secondary">
-                      {link.source_message.text}
-                    </li>
+                  <Link href={`/message/${link.source_message.id}`} key={link.id} className="text-decoration-none mb-2">
+                    <div className="list-group-item list-group-item-action border-start border-3" 
+                         style={{ borderLeftColor: '#6c757d' }}>
+                      <div className="small">
+                        {link.source_message.text.length > 40 ? link.source_message.text.slice(0, 40) + '...' : link.source_message.text}
+                      </div>
+                    </div>
                   </Link>
                 ))}
-              </ul>
+              </div>
             </>
           )}
           
           {similarNotes.length > 0 && (
             <>
-              <span className="text-body-emphasis">similar notes</span>
-              <ul className="list-group">
+              <h5 className="text-body-emphasis mb-2">Similar Notes</h5>
+              <div className="list-group">
                 {similarNotes.map(similarNote => (
-                  <Link href={`/message/${similarNote.id}`} key={similarNote.id}>
-                    <li className="list-group-item list-group-item-secondary">
-                      <div>{similarNote.text.length > 30 ? similarNote.text.slice(0, 30) + '...' : similarNote.text}</div>
-                      <small className="text-muted">
-                        Similarity: {formatSimilarityScore(similarNote.similarity_score)}
-                      </small>
-                    </li>
+                  <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none mb-2">
+                    <div className="list-group-item list-group-item-action border-start border-3" 
+                         style={{
+                           borderLeftColor: similarNote.similarity_score > 0.7 ? '#198754' : 
+                                            similarNote.similarity_score > 0.4 ? '#0d6efd' : '#6c757d'
+                         }}>
+                      <div className="d-flex flex-column">
+                        <div className="small">
+                          {similarNote.text.length > 40 ? similarNote.text.slice(0, 40) + '...' : similarNote.text}
+                        </div>
+                        <div className="d-flex justify-content-end mt-1">
+                          <small 
+                            className={`${
+                              similarNote.similarity_score > 0.7 ? 'text-success' : 
+                              similarNote.similarity_score > 0.4 ? 'text-primary' : 'text-secondary'
+                            }`}
+                          >
+                            {formatSimilarityScore(similarNote.similarity_score)}
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   </Link>
                 ))}
-              </ul>
+              </div>
             </>
           )}
         </div>

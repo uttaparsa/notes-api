@@ -135,6 +135,7 @@ export const SimilarityChunkRenderer = ({
             key={`chunk-${index}`}
             noteId={note.id} 
             enabled={true}
+            chunkText={chunkText}
           >
             {content}
           </HoverableSimilarChunks>

@@ -7,57 +7,12 @@ const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
 const SIMILARITY_MODE_ENABLED = 'similarityModeEnabled';
 
-const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
+const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText = null }) => {
   const [loading, setLoading] = useState(false);
   const [similarResults, setSimilarResults] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   const childRef = useRef(null);
   
-  // Get the text content from the children - enhanced to handle more element types
-  const getTextContent = () => {
-    // Try to get from props directly
-    const directText = children?.props?.children;
-    if (typeof directText === 'string') return directText;
-    
-    // Try to get from ref
-    if (childRef.current) {
-      return childRef.current.textContent || '';
-    }
-    
-    // Special case for links - get href + text
-    if (children?.props?.href) {
-      const linkText = children.props.children;
-      const linkHref = children.props.href;
-      if (typeof linkText === 'string') {
-        return `${linkText} (${linkHref})`;
-      }
-    }
-    
-    // Special case for images - get alt text + src
-    if (children?.props?.src) {
-      return `Image: ${children.props.alt || ''} (${children.props.src})`;
-    }
-    
-    // Last resort - try to stringify the children
-    try {
-      if (children) {
-        const text = React.Children.toArray(children)
-          .map(child => {
-            if (typeof child === 'string') return child;
-            if (child?.props?.children && typeof child.props.children === 'string')
-              return child.props.children;
-            return '';
-          })
-          .join(' ');
-        return text;
-      }
-    } catch (e) {
-      console.error('Error getting text content:', e);
-    }
-    
-    return '';
-  };
-
   // Load data once on initial render if enabled
   useEffect(() => {
     if (enabled && !dataLoaded && !loading) {
@@ -82,7 +37,8 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
 
   // Load data once and store in state
   const fetchSimilarContent = async () => {
-    const text = getTextContent();
+    // Use provided chunkText instead of trying to extract it
+    const text = chunkText;
     
     if (text && text.length > 15) { // Lowered minimum content length for better coverage
       setLoading(true);
@@ -102,7 +58,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody),
-        }, 10000);
+        }, 30000);
         
         if (response.ok) {
           const data = await response.json();
@@ -127,7 +83,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false }) => {
       window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
         detail: {
           results: similarResults,
-          sourceText: getTextContent()
+          sourceText: chunkText // Use provided chunkText
         }
       }));
     }
