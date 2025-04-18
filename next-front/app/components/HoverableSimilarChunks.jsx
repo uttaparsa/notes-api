@@ -11,6 +11,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
   const [loading, setLoading] = useState(false);
   const [similarResults, setSimilarResults] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false); // New state to track hover
   const childRef = useRef(null);
   
   // Load data once on initial render if enabled
@@ -78,12 +79,14 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
   const handleMouseEnter = () => {
     if (!enabled) return;
     
+    // Set hovered state to true
+    setIsHovered(true);
+    
     // If we have results, show them
     if (similarResults && similarResults.length > 0) {
       window.dispatchEvent(new CustomEvent(SHOW_SIMILAR_EVENT, {
         detail: {
           results: similarResults,
-          sourceText: chunkText // Use provided chunkText
         }
       }));
     }
@@ -91,6 +94,9 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
 
   const handleMouseLeave = () => {
     if (!enabled) return;
+    
+    // Set hovered state to false
+    setIsHovered(false);
     
     // Just dispatch hide event, let the margin component handle timing
     window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
@@ -107,7 +113,8 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
           className: `${children.props.className || ''} 
             ${enabled ? styles.hoverableText : ''} 
             ${loading ? styles.loading : ''} 
-            ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}`
+            ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}
+            ${isHovered && enabled ? styles.isHovered : ''}`
         }
       );
     }
@@ -119,7 +126,8 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
         className={`
           ${enabled ? styles.hoverableTextWrapper : ''} 
           ${loading ? styles.loading : ''} 
-          ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}`
+          ${similarResults && similarResults.length > 0 && enabled ? styles.hasResults : ''}
+          ${isHovered && enabled ? styles.isHovered : ''}`
         }
       >
         {children}

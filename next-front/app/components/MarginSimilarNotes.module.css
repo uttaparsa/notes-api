@@ -1,16 +1,15 @@
 .marginNotesContainer {
   position: fixed;
-  left: 0; /* Changed from right to left */
-  top: 100px; /* Fixed position from top */
+  left: 0;
+  top: 100px;
   width: 280px;
   z-index: 1000;
   opacity: 0;
   visibility: hidden;
-  transform: translateX(-100%); /* Changed from translateX(100%) to translateX(-100%) */
-  padding-right: 10px; /* Changed from padding-left to padding-right */
+  transform: translateX(-100%);
+  padding-right: 10px;
   transition: transform 0.3s, opacity 0.3s, visibility 0.3s;
-  /* Create an invisible buffer zone to make it easier to navigate to */
-  margin-right: -20px; /* Changed from margin-left to margin-right for buffer zone */
+  margin-right: -20px;
 }
 
 .marginNotesContainer.visible {
@@ -19,32 +18,34 @@
   visibility: visible;
 }
 
-.marginCard {
+/* Dialog-style floating bubble instead of card */
+.marginBubble {
   width: 100%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-right: 3px solid #007bff; /* Changed from border-left to border-right */
-  /* Add visual indicator for interactive element */
-  animation: pulseHighlight 2s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  border-right: 3px solid #007bff;
   transition: all 0.5s ease;
 }
 
-/* Add magic breathing effect when card is visible */
-.visible .marginCard {
+/* Add magic breathing effect when bubbles are visible */
+.visible .marginBubble {
   animation: magicBreathing 3s infinite ease-in-out;
 }
 
 @keyframes magicBreathing {
   0% {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-right: 3px solid #007bff; /* Changed from border-left to border-right */
-  }
-  50% {
-    box-shadow: 0 6px 12px rgba(0, 123, 255, 0.3);
-    border-right: 3px solid #2196f3; /* Changed from border-left to border-right */
-  }
-  100% {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-right: 3px solid #007bff; /* Changed from border-left to border-right */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    border-right: 3px solid var(--bs-primary);
+    }
+    50% {
+    box-shadow: 0 8px 20px rgba(13, 110, 253, 0.25);
+    border-right: 3px solid var(--bs-indigo);
+    }
+    100% {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    border-right: 3px solid var(--bs-primary);
   }
 }
 
@@ -54,10 +55,42 @@
   100% { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
 }
 
-.marginCardBody {
+.marginBubbleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.marginBubbleBody {
   max-height: 300px;
   overflow-y: auto;
   padding: 0.5rem;
+  position: relative;
+}
+
+/* Add fade effects for scrollable content */
+.marginBubbleBody::before,
+.marginBubbleBody::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 20px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.marginBubbleBody::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
+}
+
+.marginBubbleBody::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
 }
 
 .resultsList {
@@ -123,6 +156,23 @@
 }
 
 /* For dark mode compatibility */
+html[data-bs-theme="dark"] .marginBubble {
+  background-color: rgba(30, 30, 30, 0.95);
+}
+
+html[data-bs-theme="dark"] .marginBubbleHeader {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+html[data-bs-theme="dark"] .marginBubbleBody::before {
+  background: linear-gradient(to bottom, rgba(30, 30, 30, 0.95) 0%, rgba(30, 30, 30, 0) 100%);
+}
+
+html[data-bs-theme="dark"] .marginBubbleBody::after {
+  background: linear-gradient(to top, rgba(30, 30, 30, 0.95) 0%, rgba(30, 30, 30, 0) 100%);
+}
+
 html[data-bs-theme="dark"] .resultItem {
   border-color: rgba(255, 255, 255, 0.125);
 }

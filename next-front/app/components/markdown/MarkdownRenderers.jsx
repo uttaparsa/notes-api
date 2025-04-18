@@ -7,7 +7,8 @@ import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
-import {  getHighlightStyle } from './ChunkUtils';
+import { getHighlightStyle } from './ChunkUtils';
+import HoverableSimilarChunks from '../HoverableSimilarChunks';
 
 /**
  * Creates a component with applied styling based on similarity if needed
@@ -18,18 +19,17 @@ export const withSimilarityStyles = (Component, props, elementType, note, simila
     return <Component {...props} />;
   }
   
-
-  // Apply highlighting style
-  const style = getHighlightStyle(chunk, true);
-  
-  
-  // Create a new element with the combined props
-  const updatedProps = {
-    ...props,
-    style: {...(props.style || {}), ...style},
-  };
-  
-  return <Component {...updatedProps} />;
+  // If similarity mode is enabled, wrap the component in HoverableSimilarChunks
+  // to get the hover effects and margin sidebar integration
+  return (
+    <HoverableSimilarChunks 
+      noteId={note.id} 
+      enabled={similarityModeEnabled} 
+      chunkText={props.children}
+    >
+      <Component {...props} />
+    </HoverableSimilarChunks>
+  );
 };
 
 /**

@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, Badge } from 'react-bootstrap';
+import { Badge } from 'react-bootstrap';
 import Link from 'next/link';
 import styles from './MarginSimilarNotes.module.css';
 
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
-const DISPLAY_TIMEOUT = 5000; // 10 seconds display time
+const DISPLAY_TIMEOUT = 5000; // 5 seconds display time
 
 const MarginSimilarNotes = () => {
   const [visible, setVisible] = useState(false);
   const [results, setResults] = useState([]);
-  const [sourceText, setSourceText] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const timeoutRef = useRef(null);
   const marginRef = useRef(null);
@@ -24,17 +23,16 @@ const MarginSimilarNotes = () => {
         clearTimeout(timeoutRef.current);
       }
       
-      const { results, sourceText } = event.detail;
+      const { results } = event.detail;
       
       // Make sure results has valid IDs before setting state
       const validResults = results.filter(result => result.id !== null && result.id !== undefined);
       
       if (validResults.length > 0) {
         setResults(validResults);
-        setSourceText(sourceText);
         setVisible(true);
         
-        // Set timeout to hide after 10 seconds if not pinned
+        // Set timeout to hide after 5 seconds if not pinned
         if (!isPinned) {
           timeoutRef.current = setTimeout(() => {
             setVisible(false);
@@ -50,7 +48,7 @@ const MarginSimilarNotes = () => {
       // Don't hide if the component is pinned
       if (isPinned) return;
       
-      // Don't hide immediately - wait 10 seconds
+      // Don't hide immediately - wait 5 seconds
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -92,7 +90,7 @@ const MarginSimilarNotes = () => {
   };
 
   const handleMouseLeave = () => {
-    // Set timeout to hide after 10 seconds if not pinned
+    // Set timeout to hide after 5 seconds if not pinned
     if (!isPinned) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -125,8 +123,8 @@ const MarginSimilarNotes = () => {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Card className={styles.marginCard}>
-        <Card.Header className="d-flex justify-content-between align-items-center">
+      <div className={styles.marginBubble}>
+        <div className={styles.marginBubbleHeader}>
           <small>Similar content</small>
           <button 
             className={`btn btn-sm ${isPinned ? 'btn-primary' : 'btn-outline-secondary'}`}
@@ -135,16 +133,10 @@ const MarginSimilarNotes = () => {
           >
             <i className={`bi ${isPinned ? 'bi-pin-fill' : 'bi-pin'}`}></i>
           </button>
-        </Card.Header>
-        <Card.Body className={styles.marginCardBody}>
+        </div>
+        <div className={styles.marginBubbleBody}>
           {results.length > 0 ? (
             <div className={styles.resultsList}>
-              {sourceText && (
-                <div className={styles.sourceTextPreview}>
-                  <small className="text-muted">From text:</small>
-                  <p className={styles.sourceTextContent}>{sourceText.substring(0, 100)}...</p>
-                </div>
-              )}
               {results.map((result, index) => (
                 result.id ? (
                   <Link 
@@ -178,8 +170,8 @@ const MarginSimilarNotes = () => {
           ) : (
             <div className={styles.emptyState}>No similar content found</div>
           )}
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
