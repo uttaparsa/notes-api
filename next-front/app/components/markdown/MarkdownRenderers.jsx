@@ -7,35 +7,26 @@ import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
-import { getChunkForText, getHighlightStyle } from './ChunkUtils';
+import {  getHighlightStyle } from './ChunkUtils';
 
 /**
  * Creates a component with applied styling based on similarity if needed
  */
-export const withSimilarityStyles = (Component, props, elementType, note, similarityModeEnabled, chunks) => {
+export const withSimilarityStyles = (Component, props, elementType, note, similarityModeEnabled) => {
   // Skip style application if similarity mode not enabled
   if (!similarityModeEnabled) {
     return <Component {...props} />;
   }
   
-  // Look up chunk information for this content if it's a paragraph
-  const chunk = elementType === 'p' && typeof props.children === 'string' 
-    ? getChunkForText(props.children, chunks, note.text) 
-    : null;
-  
+
   // Apply highlighting style
   const style = getHighlightStyle(chunk, true);
   
-  // Add data attributes for chunk tracking
-  const dataAttributes = chunk ? {
-    'data-chunk-index': chunk.chunk_index,
-  } : {};
   
   // Create a new element with the combined props
   const updatedProps = {
     ...props,
     style: {...(props.style || {}), ...style},
-    ...dataAttributes
   };
   
   return <Component {...updatedProps} />;

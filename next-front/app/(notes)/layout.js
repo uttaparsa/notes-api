@@ -4,7 +4,6 @@ import { createContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
-import { Inter } from 'next/font/google'
 import BootstrapClient from '../components/BootstrapClient'
 import TopNavbar from '../components/TopNavbar'
 import { fetchWithAuth } from '../lib/api';

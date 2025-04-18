@@ -68,7 +68,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
 
   return (
     <Form onSubmit={handleSubmit}>
-      <nav className="navbar navbar-dark bg-info py-1">
+      <nav className="navbar navbar-dark bg-secondary py-1">
         <div className="container px-0" dir="auto">
           <div className="d-flex row justify-content-center w-100 px-0 px-lg-5 mx-0">
             <div className="col-10 d-flex flex-row px-0 px-lg-5">

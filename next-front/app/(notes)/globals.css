@@ -1,5 +1,3 @@
-
-
 @font-face {
 	font-family: 'Vazir';
 	/* src: url( 'Yekan.eot' ); */
@@ -8,3 +6,84 @@
 	font-weight: normal;
 	font-style: normal;
 }
+
+/* Define Bootstrap theme colors */
+:root {
+  /* Primary */
+  --bs-primary: #004892;
+  --bs-primary-rgb: 0, 72, 146;
+  
+  /* Secondary */
+  --bs-secondary: #45a4b9;
+  --bs-secondary-rgb: 69, 164, 185;
+  
+  /* Light */
+  --bs-light: #def1f8;
+  --bs-light-rgb: 222, 241, 248;
+  
+  /* Dark */
+  --bs-dark: #f0d994;
+  --bs-dark-rgb: 240, 217, 148;
+  
+  /* Info */
+  --bs-info: #457976;
+  --bs-info-rgb: 69, 121, 118;
+  
+  /* Success */
+  --bs-success: #00a35c;
+  --bs-success-rgb: 0, 163, 92;
+  
+  /* Warning */
+  --bs-warning: #e3cb00;
+  --bs-warning-rgb: 227, 203, 0;
+  
+  /* Danger */
+  --bs-danger: #f21300;
+  --bs-danger-rgb: 242, 19, 0;
+}
+
+/* Override specific Bootstrap component colors if needed */
+.btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.btn-secondary {
+  background-color: var(--bs-secondary);
+  border-color: var(--bs-secondary);
+}
+
+.btn-success {
+  background-color: var(--bs-success);
+  border-color: var(--bs-success);
+}
+
+.btn-info {
+  background-color: var(--bs-info);
+  border-color: var(--bs-info);
+}
+
+.btn-warning {
+  background-color: var(--bs-warning);
+  border-color: var(--bs-warning);
+}
+
+.btn-danger {
+  background-color: var(--bs-danger);
+  border-color: var(--bs-danger);
+}
+
+.btn-light {
+  background-color: var(--bs-light);
+  border-color: var(--bs-light);
+}
+
+.btn-dark {
+  background-color: var(--bs-dark);
+  border-color: var(--bs-dark);
+}
+
+.text-primary {
+  color: var(--bs-primary) !important;
+}
+
