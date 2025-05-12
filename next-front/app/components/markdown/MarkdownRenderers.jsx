@@ -89,18 +89,9 @@ export const createCustomRenderers = (
   },
   
   code: ({ node, ...props }) => {
-    const codeString = String(props.children).replace(/\n$/, '');
-    const copyCode = (event) => {
-      // Check if parent element is not pre by checking the DOM hierarchy
-      const parentPre = event.target.closest('pre');
-      if (!parentPre || parentPre.contains(event.target) && parentPre !== event.target) {
-        copyTextToClipboard(codeString);
-        showToast("Success", "Code copied to clipboard", 3000, "success");
-      }
-    };
     
     return (
-      <code onClick={copyCode} className={styles.codeSnippet}>
+      <code className={styles.codeSnippet}>
         {props.children}
       </code>
     );
