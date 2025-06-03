@@ -88,6 +88,30 @@ class LocalMessage(models.Model):
     def split_into_chunks(self):
         """Split the note content into chunks using hierarchical splitting: first by headers, then by character count"""
         
+        # Extract code blocks
+        code_blocks = []
+        text_without_code_blocks = self.text
+        
+        # Regex pattern for triple backtick code blocks
+        pattern = r"```(?:[a-zA-Z0-9]*\n)?(.*?)```"
+        
+        # Find all code blocks
+        matches = re.finditer(pattern, self.text, re.DOTALL)
+        offset = 0
+        
+        # Extract code blocks and remove them from text
+        for match in matches:
+            code_block = match.group(1).strip()
+            code_blocks.append(code_block)
+            
+            # Replace the code block with a placeholder to maintain text integrity
+            start, end = match.span()
+            start -= offset
+            end -= offset
+            text_without_code_blocks = text_without_code_blocks[:start] + " [CODE_BLOCK_PLACEHOLDER] " + text_without_code_blocks[end:]
+            offset += (end - start) - len(" [CODE_BLOCK_PLACEHOLDER] ")
+        
+
         # Define headers to split on
         headers_to_split_on = [
             ("#", "Header 1"),
@@ -100,7 +124,8 @@ class LocalMessage(models.Model):
         markdown_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=headers_to_split_on, strip_headers=False
         )
-        md_header_splits = markdown_splitter.split_text(self.text)
+
+        md_header_splits = markdown_splitter.split_text(text_without_code_blocks)
         
         # Then apply character-level splitting to the header-split documents
         chunk_size = 250
@@ -125,6 +150,17 @@ class LocalMessage(models.Model):
             note_chunks.append(note_chunk)
             chunk_index += 1
 
+                # Then add code blocks as separate chunks
+
+        for code_block in code_blocks:
+            note_chunk = NoteChunk.objects.create(
+                note_id=self.id,
+                chunk_index=chunk_index,
+                chunk_text=code_block,
+            )
+            note_chunks.append(note_chunk)
+            chunk_index += 1
+        
         return note_chunks
     
     def update_chunks(self):
