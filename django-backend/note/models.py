@@ -18,6 +18,7 @@ from django.conf import settings
 from langchain_text_splitters import (
     Language,
     RecursiveCharacterTextSplitter,
+    MarkdownHeaderTextSplitter,
 )
 
 class NoteRevision(models.Model):
@@ -75,6 +76,7 @@ def get_file_upload_path(instance, filename):
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
     return f'files/{instance.id}-{random_str}-{filename}'
 
+import re
 class LocalMessage(models.Model):
     text = models.TextField(blank=True)
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
@@ -84,46 +86,35 @@ class LocalMessage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def split_into_chunks(self):
-        """Split the note content into chunks using the RecursiveCharacterTextSplitter"""
-        import re
+        """Split the note content into chunks using hierarchical splitting: first by headers, then by character count"""
         
-        # Extract code blocks
-        code_blocks = []
-        text_without_code_blocks = self.text
+        # Define headers to split on
+        headers_to_split_on = [
+            ("#", "Header 1"),
+            ("##", "Header 2"),
+        ]
         
-        # Regex pattern for triple backtick code blocks
-        pattern = r"```(?:[a-zA-Z0-9]*\n)?(.*?)```"
+        # First split by markdown headers
+        markdown_splitter = MarkdownHeaderTextSplitter(
+            headers_to_split_on=headers_to_split_on, strip_headers=False
+        )
+        md_header_splits = markdown_splitter.split_text(self.text)
         
-        # Find all code blocks
-        matches = re.finditer(pattern, self.text, re.DOTALL)
-        offset = 0
-        
-        # Extract code blocks and remove them from text
-        for match in matches:
-            code_block = match.group(1).strip()
-            code_blocks.append(code_block)
-            
-            # Replace the code block with a placeholder to maintain text integrity
-            start, end = match.span()
-            start -= offset
-            end -= offset
-            text_without_code_blocks = text_without_code_blocks[:start] + " [CODE_BLOCK_PLACEHOLDER] " + text_without_code_blocks[end:]
-            offset += (end - start) - len(" [CODE_BLOCK_PLACEHOLDER] ")
-        
-        # Create a text splitter for Markdown with specified chunk size and overlap
-        md_splitter = RecursiveCharacterTextSplitter.from_language(
-            language=Language.MARKDOWN, chunk_size=1000, chunk_overlap=0
+        # Then apply character-level splitting to the header-split documents
+        chunk_size = 250
+        chunk_overlap = 30
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
         )
         
-        # Split the text into documents (exclude code blocks)
-        md_docs = md_splitter.create_documents([text_without_code_blocks])
+        # Split the header-split documents further by character count
+        splits = text_splitter.split_documents(md_header_splits)
         
         # Create and save NoteChunk objects for each chunk
         note_chunks = []
         chunk_index = 0
         
-        # First add text chunks
-        for doc in md_docs:
+        for doc in splits:
             note_chunk = NoteChunk.objects.create(
                 note_id=self.id,
                 chunk_index=chunk_index,
@@ -131,17 +122,7 @@ class LocalMessage(models.Model):
             )
             note_chunks.append(note_chunk)
             chunk_index += 1
-        
-        # Then add code blocks as separate chunks
-        for code_block in code_blocks:
-            note_chunk = NoteChunk.objects.create(
-                note_id=self.id,
-                chunk_index=chunk_index,
-                chunk_text=code_block,
-            )
-            note_chunks.append(note_chunk)
-            chunk_index += 1
-        
+
         return note_chunks
     
     def update_chunks(self):
