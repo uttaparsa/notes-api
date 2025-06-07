@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './HoverableSimilarChunks.module.css';
-import { fetchWithAuth } from '../lib/api';
+import { fetchWithAuth } from '../../lib/api';
 
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';

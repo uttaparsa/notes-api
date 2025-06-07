@@ -7,33 +7,13 @@ import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
-import HoverableSimilarChunks from '../../HoverableSimilarChunks';
 
-/**
- * Creates a component with applied styling based on similarity if needed
- */
+
 export const withSimilarityStyles = (Component, props, elementType, note, similarityModeEnabled) => {
-  // Skip style application if similarity mode not enabled
-  if (!similarityModeEnabled) {
-    return <Component {...props} />;
-  }
-  
-  // If similarity mode is enabled, wrap the component in HoverableSimilarChunks
-  // to get the hover effects and margin sidebar integration
-  return (
-    <HoverableSimilarChunks 
-      noteId={note.id} 
-      enabled={similarityModeEnabled} 
-      chunkText={props.children}
-    >
-      <Component {...props} />
-    </HoverableSimilarChunks>
-  );
+  return <Component {...props} />;
 };
 
-/**
- * Creates a set of custom renderers for markdown components
- */
+
 export const createCustomRenderers = (
   note, 
   similarityModeEnabled, 
