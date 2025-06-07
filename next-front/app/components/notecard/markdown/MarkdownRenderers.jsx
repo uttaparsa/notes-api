@@ -7,7 +7,6 @@ import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
-import { getHighlightStyle } from './ChunkUtils';
 import HoverableSimilarChunks from '../../HoverableSimilarChunks';
 
 /**

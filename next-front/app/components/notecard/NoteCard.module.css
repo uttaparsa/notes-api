@@ -91,9 +91,6 @@ pre.codeBlock code {
   cursor: pointer;
 }
 
-:not(pre) > .codeSnippet {
-  
-}
 
 
 
