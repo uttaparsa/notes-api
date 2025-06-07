@@ -1,8 +1,8 @@
 import React, { forwardRef, useContext } from "react";
-import { formatDateSmall, formatDateLarge } from "../utils/dateFormatters";
+import { formatDateSmall, formatDateLarge } from "../../utils/dateFormatters";
 import Link from "next/link";
-import { NoteListContext } from "../(notes)/layout";
-import styles from "../styles/NoteCardBottomBar.module.css";
+import { NoteListContext } from "../../(notes)/layout";
+import styles from "./NoteCardBottomBar.module.css";
 
 const NoteCardBottomBar = forwardRef(({ note }, ref) => {
     const getListName = () => {

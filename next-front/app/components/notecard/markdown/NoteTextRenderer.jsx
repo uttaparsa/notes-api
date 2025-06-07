@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { fetchWithAuth } from '../lib/api';
+import { fetchWithAuth } from '../../../lib/api';
 
 // Import the new renderer components
-import { DisplayRenderer, SimilarityChunkRenderer } from './markdown/ChunkRenderers';
+import { DisplayRenderer, SimilarityChunkRenderer } from './ChunkRenderers';
 
 const NoteTextRenderer = ({ 
   note, 

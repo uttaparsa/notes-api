@@ -2,14 +2,14 @@
 
 import React, { useState, useRef, useContext, forwardRef, useImperativeHandle } from "react";
 import { Dropdown, Modal, Button, Collapse} from "react-bootstrap";
-import { NoteListContext, ToastContext } from "../(notes)/layout";
-import { copyTextToClipboard } from "../utils/clipboardUtils";
-import { fetchWithAuth } from "../lib/api";
-import { handleApiError } from "../utils/errorHandler";
+import { NoteListContext, ToastContext } from "../../(notes)/layout";
+import { copyTextToClipboard } from "../../utils/clipboardUtils";
+import { fetchWithAuth } from "../../lib/api";
+import { handleApiError } from "../../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 import RevisionHistoryModal from './RevisionHistoryModal';
 import EditNoteModal from './EditNoteModal';
-import NoteTextRenderer from './NoteTextRenderer'; // New import
+import NoteTextRenderer from './markdown/NoteTextRenderer'; // New import
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);

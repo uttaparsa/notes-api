@@ -32,12 +32,6 @@ const NoteModals = () => {
     editMessageTextAreaRef.current.dir = current === 'rtl' ? 'ltr' : 'rtl';
   };
 
-  const handleShowDeleteModal = (note) => {
-    const textInModal =
-      note.text.length > 30 ? note.text.substring(0, 30) + ' ...' : note.text;
-    setTextInsideDeleteModal(textInModal);
-    setShowDeleteModal(true);
-  };
 
   const handleCloseDeleteModal = () => {
     setShowDeleteModal(false);

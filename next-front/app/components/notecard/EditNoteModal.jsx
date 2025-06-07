@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Modal, Button, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { isRTL } from "../utils/stringUtils";
-import FileUploadComponent from "./FileUploadComponent";
+import { isRTL } from "../../utils/stringUtils";
+import FileUploadComponent from "../FileUploadComponent";
 import styles from "./NoteCard.module.css";
-import { fetchWithAuth } from "../lib/api";
-import { handleApiError } from "../utils/errorHandler";
-import NoteTextRenderer from "./NoteTextRenderer";
+import { fetchWithAuth } from "../../lib/api";
+import { handleApiError } from "../../utils/errorHandler";
+import NoteTextRenderer from "./markdown/NoteTextRenderer";
 
 const EditNoteModal = ({
     show,

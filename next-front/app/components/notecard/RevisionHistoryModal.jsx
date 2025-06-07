@@ -1,8 +1,8 @@
 // components/RevisionHistoryModal.js
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Tabs, Tab } from 'react-bootstrap';
-import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
+import { fetchWithAuth } from '../../lib/api';
+import { handleApiError } from '../../utils/errorHandler';
 import styles from './RevisionHistoryModal.module.css';
 
 const RevisionHistoryModal = ({ show, onHide, noteId }) => {

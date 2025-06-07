@@ -2,10 +2,10 @@ import React from 'react';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import styles from "../NoteCard.module.css";
-import { isRTL } from "../../utils/stringUtils";
+import { isRTL } from "../../../utils/stringUtils";
 import { createCustomRenderers } from './MarkdownRenderers';
 import {  getHighlightStyle } from './ChunkUtils';
-import HoverableSimilarChunks from '../HoverableSimilarChunks';
+import HoverableSimilarChunks from '../../HoverableSimilarChunks';
 
 /**
  * Standard Display Renderer - Renders markdown with proper formatting

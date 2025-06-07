@@ -2,13 +2,13 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from 'react-bootstrap';
 import styles from "../NoteCard.module.css";
-import { isRTL } from "../../utils/stringUtils";
-import { copyTextToClipboard } from "../../utils/clipboardUtils";
+import { isRTL } from "../../../utils/stringUtils";
+import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
 import { getHighlightStyle } from './ChunkUtils';
-import HoverableSimilarChunks from '../HoverableSimilarChunks';
+import HoverableSimilarChunks from '../../HoverableSimilarChunks';
 
 /**
  * Creates a component with applied styling based on similarity if needed

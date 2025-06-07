@@ -18,7 +18,6 @@ const PaginationComponent = ({ currentPage, totalCount, perPage, onPageChange })
 
   items.push(
     <Pagination.First key="first" onClick={() => onPageChange(1)} disabled={currentPage === 1} />,
-    // <Pagination.Prev key="prev" onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} />
   );
 
   if (startPage > 1) {
@@ -38,7 +37,6 @@ const PaginationComponent = ({ currentPage, totalCount, perPage, onPageChange })
   }
 
   items.push(
-    // <Pagination.Next key="next" onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages} />,
     <Pagination.Last key="last" onClick={() => onPageChange(totalPages)} disabled={currentPage === totalPages} />
   );
 

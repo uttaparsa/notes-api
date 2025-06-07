@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import NoteCard from '../../../components/NoteCard';
+import NoteCard from '../../../components/notecard/NoteCard';
 import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
