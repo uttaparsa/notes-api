@@ -7,7 +7,13 @@ const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
 const HIDE_SIMILAR_EVENT = 'hideSimilarInMargin';
 const SIMILARITY_MODE_ENABLED = 'similarityModeEnabled';
 
-const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText = null }) => {
+const HoverableSimilarChunks = ({ 
+  children, 
+  noteId, 
+  enabled = false, 
+  chunkText = null, 
+  isChunkContainer = false // New prop
+}) => {
   const [loading, setLoading] = useState(false);
   const [similarResults, setSimilarResults] = useState(null);
   const [dataLoaded, setDataLoaded] = useState(false);
@@ -101,8 +107,28 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
     // Just dispatch hide event, let the margin component handle timing
     window.dispatchEvent(new CustomEvent(HIDE_SIMILAR_EVENT));
   };
+
+  if (isChunkContainer) {
+    // Render as a chunk container
+    return (
+      <div
+        ref={childRef}
+        className={`
+          ${styles.chunkContainer}
+          ${enabled ? styles.chunkHoverable : ''}
+          ${loading ? styles.loadingChunk : ''} 
+          ${similarResults && similarResults.length > 0 && enabled ? styles.hasResultsChunk : ''}
+          ${isHovered && enabled ? styles.isHoveredChunk : ''}
+        `}
+        onMouseEnter={enabled ? handleMouseEnter : undefined}
+        onMouseLeave={enabled ? handleMouseLeave : undefined}
+      >
+        {children} {/* Children here is the ReactMarkdown output for the entire chunk */}
+      </div>
+    );
+  }
   
-  // Create a new child with the ref, handling different element types
+  // Original logic for wrapping individual elements
   const createChildWithRef = () => {
     // For DOM elements like spans, divs, paragraphs
     if (typeof children.type === 'string') {
@@ -139,7 +165,7 @@ const HoverableSimilarChunks = ({ children, noteId, enabled = false, chunkText =
   const childWithRef = createChildWithRef();
 
   return (
-    <span
+    <span // This span ensures mouse events are captured correctly for inline or multiple root elements from createChildWithRef
       onMouseEnter={enabled ? handleMouseEnter : undefined}
       onMouseLeave={enabled ? handleMouseLeave : undefined}
     >

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchWithAuth } from '../../../lib/api';
 
 // Import the new renderer components
-import { DisplayRenderer, SimilarityChunkRenderer } from './ChunkRenderers';
+import { DisplayRenderer } from './ChunkRenderers';
 
 const NoteTextRenderer = ({ 
   note, 
@@ -20,7 +20,7 @@ const NoteTextRenderer = ({
   
   // Effect to fetch chunks from backend when in single view
   useEffect(() => {
-    if (singleView && note?.id ) {
+    if (singleView && note?.id && similarityModeEnabled) {
       setLoading(true);
       fetchWithAuth(`/api/note/message/${note.id}/chunks/`)
         .then(response => {
@@ -42,8 +42,10 @@ const NoteTextRenderer = ({
         .finally(() => {
           setLoading(false);
         });
+    } else if (!similarityModeEnabled) {
+      setChunks([]); // Clear chunks if similarity mode is turned off
     }
-  }, [singleView, note?.id]);
+  }, [singleView, note?.id, similarityModeEnabled]);
 
 
 
@@ -83,23 +85,17 @@ const NoteTextRenderer = ({
         </div>
       )}
       
-      {/* Conditionally render either the Display renderer or the Similarity renderer based on mode */}
-      {singleView && similarityModeEnabled ? (
-        <SimilarityChunkRenderer 
-          note={note}
-          chunks={chunks}
-          showToast={showToast}
-        />
-      ) : (
-        <DisplayRenderer
-          note={note}
-          singleView={singleView}
-          isExpanded={isExpanded}
-          onExpand={onExpand}
-          shouldLoadLinks={shouldLoadLinks}
-          showToast={showToast}
-        />
-      )}
+      {/* Always render DisplayRenderer, passing similarityModeEnabled and chunks */}
+      <DisplayRenderer
+        note={note}
+        singleView={singleView}
+        isExpanded={isExpanded}
+        onExpand={onExpand}
+        shouldLoadLinks={shouldLoadLinks}
+        showToast={showToast}
+        similarityModeEnabled={similarityModeEnabled}
+        chunks={chunks} // Pass chunks to DisplayRenderer
+      />
       
       {renderDebugChunks()}
     </>

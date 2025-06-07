@@ -7,117 +7,126 @@ import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
+import HoverableSimilarChunks from '../HoverableSimilarChunks'; // Import HoverableSimilarChunks
 
 
-export const withSimilarityStyles = (Component, props, elementType, note, similarityModeEnabled) => {
-  return <Component {...props} />;
+// Helper to extract text from ReactMarkdown children
+const getNodeText = (childrenInput) => {
+  let text = '';
+  const recurse = (children) => {
+    if (children === null || children === undefined) return;
+    if (Array.isArray(children)) {
+      children.forEach(recurse);
+    } else if (typeof children === 'string') {
+      text += children;
+    } else if (typeof children === 'number') {
+      text += String(children);
+    } else if (typeof children === 'object' && children.props) {
+      if (children.props.children) {
+        recurse(children.props.children);
+      } else if (typeof children.props.value === 'string') {
+        text += children.props.value;
+      }
+    }
+  };
+  recurse(childrenInput);
+  return text;
 };
-
 
 export const createCustomRenderers = (
   note, 
   similarityModeEnabled, 
-  chunks, 
   singleView, 
   shouldLoadLinks,
   showToast
-) => ({
-  p: (props) => withSimilarityStyles('p', props, 'p', note, similarityModeEnabled, chunks),
-  
-  h1: props => withSimilarityStyles('h1', props, 'h1', note, similarityModeEnabled, chunks),
-  h2: props => withSimilarityStyles('h2', props, 'h2', note, similarityModeEnabled, chunks),
-  h3: props => withSimilarityStyles('h3', props, 'h3', note, similarityModeEnabled, chunks),
-  h4: props => withSimilarityStyles('h4', props, 'h4', note, similarityModeEnabled, chunks),
-  h5: props => withSimilarityStyles('h5', props, 'h5', note, similarityModeEnabled, chunks),
-  h6: props => withSimilarityStyles('h6', props, 'h6', note, similarityModeEnabled, chunks),
-  
-  li: props => withSimilarityStyles('li', props, 'li', note, similarityModeEnabled, chunks),
-  
-  blockquote: (props) => {
-    const isRTLContent = props.children && 
-      typeof props.children === 'string' && 
-      isRTL(props.children);
-    
-    // Create blockquote with RTL support
-    const blockquoteProps = {
-      ...props,
-      className: `${styles.blockquote} border-start ps-3 my-3 text-body-secondary`,
-      dir: isRTLContent ? "rtl" : "ltr"
-    };
-    
-    return withSimilarityStyles('blockquote', blockquoteProps, 'blockquote', note, similarityModeEnabled, chunks);
-  },
-  
-  pre: ({ node, inline, className, children, ...props }) => {
-    const codeString = String(children.props.children).replace(/\n$/, '');
-    const copyCode = () => {
-      copyTextToClipboard(codeString);
-      showToast("Success", "Code copied to clipboard", 3000, "success");
-    };
-    
-    return (
-      <div className={styles.codeBlockWrapper}>
-        <pre className={styles.codeBlock + " bg-body border"}>
-          {children}
-        </pre>
-        <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
-          Copy
-        </Button>
-      </div>
-    );
-  },
-  
-  code: ({ node, ...props }) => {
-    
-    return (
+) => {
+  const baseRenderers = {
+    p: (props) => <p {...props} />,
+    h1: (props) => <h1 {...props} />,
+    h2: (props) => <h2 {...props} />,
+    h3: (props) => <h3 {...props} />,
+    h4: (props) => <h4 {...props} />,
+    h5: (props) => <h5 {...props} />,
+    h6: (props) => <h6 {...props} />,
+    li: (props) => <li {...props} />,
+    blockquote: (props) => {
+      const isRTLContent = props.children && 
+        typeof props.children === 'string' && 
+        isRTL(props.children);
+      
+      const blockquoteProps = {
+        ...props,
+        className: `${styles.blockquote} border-start ps-3 my-3 text-body-secondary`,
+        dir: isRTLContent ? "rtl" : "ltr"
+      };
+      return <blockquote {...blockquoteProps}>{props.children}</blockquote>;
+    },
+    pre: ({ node, inline, className, children, ...props }) => {
+      // Extract code string for copy functionality and potentially for chunkText
+      const codeString = getNodeText(children).replace(/\n$/, '');
+      const copyCode = () => {
+        copyTextToClipboard(codeString);
+        showToast("Success", "Code copied to clipboard", 3000, "success");
+      };
+      
+      return (
+        <div className={styles.codeBlockWrapper}>
+          <pre className={styles.codeBlock + " bg-body border"}>
+            {children}
+          </pre>
+          <Button onClick={copyCode} variant="outline-primary" size="sm" className={styles.copyButton}>
+            Copy
+          </Button>
+        </div>
+      );
+    },
+    code: ({ node, ...props }) => (
       <code className={styles.codeSnippet}>
         {props.children}
       </code>
-    );
-  },
-  
-  a: ({ href, children }) => {
-    // Encode URLs with spaces
-    const encodedHref = safeUrlEncode(href);
+    ),
+    a: ({ href, children }) => {
+      const encodedHref = safeUrlEncode(href);
+      if (href.includes('youtube.com') || href.includes('youtu.be')) {
+        return <YouTubeLink url={encodedHref} shouldLoadLinks={shouldLoadLinks} />;
+      }
+      return <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
+    },
+    img: (props) => {
+      const encodedSrc = safeUrlEncode(props.src);
+      return <ResponsiveImage {...props} src={encodedSrc} />;
+    },
+  };
 
-    if (href.includes('youtube.com') || href.includes('youtu.be')) {
-      return <YouTubeLink url={encodedHref} shouldLoadLinks={shouldLoadLinks} />;
-    }
+  if (similarityModeEnabled) {
+    const finalRenderers = { ...baseRenderers };
+    const elementsToWrap = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
     
-    return <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
-  },
-  
-  img: (props) => {
-    // Encode image URLs with spaces
-    const encodedSrc = safeUrlEncode(props.src);
-    
-    // Create responsive image component
-    return <ResponsiveImage {...props} src={encodedSrc} />;
-  },
-});
+    for (const elementType of elementsToWrap) {
+      const originalRenderer = baseRenderers[elementType];
+      if (!originalRenderer) continue;
 
-/**
- * Process note text for markdown rendering
- */
-export const processNoteText = (note, singleView, isExpanded) => {
-  let text = singleView || note.text.length < 1000 || isExpanded
-    ? note.text
-    : note.text.substring(0, 1000);
+      finalRenderers[elementType] = (props) => {
+        const renderedElement = originalRenderer(props);
+        const elementText = getNodeText(props.children); 
 
-  // Split by code blocks and process only non-code parts
-  const parts = text.split(/(```[\s\S]*?```)/);
-  const processed = parts.map((part, index) => {
-    // Even indices are non-code blocks
-    if (index % 2 === 0) {
-      // Use negative lookbehind to avoid matching hashtags in URLs
-      return part.replace(
-        /(?<!https?:\/\/[^\s]*)#(\w+)/g,
-        (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
-      );
+        if (elementText && elementText.trim()) {
+          return (
+            <HoverableSimilarChunks
+              noteId={note.id}
+              enabled={true}
+              chunkText={elementText.trim()}
+              // isChunkContainer will be false by default, appropriate for individual elements
+            >
+              {renderedElement}
+            </HoverableSimilarChunks>
+          );
+        }
+        return renderedElement;
+      };
     }
-    // Odd indices are code blocks - leave unchanged
-    return part;
-  });
+    return finalRenderers;
+  }
 
-  return processed.join('');
+  return baseRenderers;
 };
