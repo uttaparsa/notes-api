@@ -128,7 +128,7 @@ class LocalMessage(models.Model):
         md_header_splits = markdown_splitter.split_text(text_without_code_blocks)
         
         # Then apply character-level splitting to the header-split documents
-        chunk_size = 1000
+        chunk_size = 750
         chunk_overlap = 30
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap
