@@ -1,7 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Modal, Button, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Modal, Button } from "react-bootstrap";
 import { isRTL } from "../../utils/stringUtils";
 import FileUploadComponent from "../FileUploadComponent";
+import SaveButton from "../buttons/SaveButton";
+import RtlToggleButton from "../buttons/RtlToggleButton";
+import PreviewToggleButton from "../buttons/PreviewToggleButton";
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
@@ -253,29 +256,11 @@ const EditNoteModal = ({
                         
                     </div>
                     <div>
-                        <Button
-                            className="me-2"
-                            variant={hasUnsavedChanges ? "outline-warning" : "outline-success"}
-                            size="sm"
+                        <SaveButton 
+                            hasUnsavedChanges={hasUnsavedChanges}
                             onClick={handleSave}
-                        >
-                            {/* Save icon */}
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                height="24px"
-                                viewBox="0 0 24 24"
-                                width="24px"
-                                className="save-icon"
-                                style={{
-                                    fill: hasUnsavedChanges
-                                        ? "var(--bs-warning)"
-                                        : "var(--bs-success)",
-                                }}
-                            >
-                                <path d="M0 0h24v24H0z" fill="none" />
-                                <path d="M17 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm0 16H5V5h11.17L19 7.83V19zm-7-1h2v-6h-2v6zm-4-8h10V7H6v3z" />
-                            </svg>
-                        </Button>
+                            className="me-2"
+                        />
 
                         <FileUploadComponent
                             onFileUploaded={handleFileUpload}
@@ -284,67 +269,16 @@ const EditNoteModal = ({
                             size="sm"
                         />
 
-                        <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            className="mx-2"
+                        <RtlToggleButton 
                             onClick={toggleEditorRtl}
-                        >
-                            {/* RTL toggle icons */}
-                            <span>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    height="24px"
-                                    viewBox="0 0 24 24"
-                                    width="24px"
-                                    className="rtl-icon"
-                                    style={{
-                                        display: isRTL ? "none" : "block",
-                                        fill: "var(--bs-body-color)",
-                                    }}
-                                >
-                                    <path d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M10 10v5h2V4h2v11h2V4h2V2h-8C7.79 2 6 3.79 6 6s1.79 4 4 4zm-2 7v-3l-4 4 4 4v-3h12v-2H8z" />
-                                </svg>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    height="24px"
-                                    viewBox="0 0 24 24"
-                                    width="24px"
-                                    className="ltr-icon"
-                                    style={{
-                                        display: isRTL ? "block" : "none",
-                                        fill: "var(--bs-body-color)",
-                                    }}
-                                >
-                                    <path d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M9 10v5h2V4h2v11h2V4h2V2H9C6.79 2 5 3.79 5 6s1.79 4 4 4zm12 8l-4-4v3H5v2h12v3l4-4z" />
-                                </svg>
-                            </span>
-                        </Button>
+                            isRTL={isRTL}
+                            className="mx-2"
+                        />
 
-                        {/* Preview toggle button */}
-                        <OverlayTrigger
-                            placement="bottom"
-                            overlay={<Tooltip>Toggle Preview (Ctrl+P)</Tooltip>}
-                        >
-                            <Button
-                                variant={isPreviewMode ? "primary" : "outline-secondary"}
-                                size="sm"
-                                onClick={() => setIsPreviewMode(!isPreviewMode)}
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    height="24px"
-                                    viewBox="0 0 24 24"
-                                    width="24px"
-                                    style={{ fill: "var(--bs-body-color)" }}
-                                >
-                                    <path d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
-                                </svg>
-                            </Button>
-                        </OverlayTrigger>
+                        <PreviewToggleButton 
+                            isPreviewMode={isPreviewMode}
+                            onClick={() => setIsPreviewMode(!isPreviewMode)}
+                        />
                     </div>
                 </div>
 

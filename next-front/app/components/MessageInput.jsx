@@ -5,6 +5,7 @@ import { Form, Button } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 import FileUploadComponent from './FileUploadComponent';
+import SendButton from './SendButton';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
@@ -130,7 +131,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               as="textarea"
               id="message_text"
               dir="auto"
-              placeholder="Say something..."
+              placeholder="I think..."
               rows={1}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -145,9 +146,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               initialText={text}
               onTextChange={setText}
             />
-            <Button type="submit" variant="primary" className="mr-2 ml-1" disabled={uploading}>
-              Send
-            </Button>
+          <SendButton></SendButton>
           </div>
         </Form>
       </div>
