@@ -7,40 +7,7 @@
 	font-style: normal;
 }
 
-/* Define Bootstrap theme colors */
-:root {
-  /* Primary */
-  --bs-primary: #004892;
-  --bs-primary-rgb: 0, 72, 146;
-  
-  /* Secondary */
-  --bs-secondary: #45a4b9;
-  --bs-secondary-rgb: 69, 164, 185;
-  
-  /* Light */
-  --bs-light: #def1f8;
-  --bs-light-rgb: 222, 241, 248;
-  
-  /* Dark */
-  --bs-dark: #f0d994;
-  --bs-dark-rgb: 240, 217, 148;
-  
-  /* Info */
-  --bs-info: #457976;
-  --bs-info-rgb: 69, 121, 118;
-  
-  /* Success */
-  --bs-success: #00a35c;
-  --bs-success-rgb: 0, 163, 92;
-  
-  /* Warning */
-  --bs-warning: #e3cb00;
-  --bs-warning-rgb: 227, 203, 0;
-  
-  /* Danger */
-  --bs-danger: #f21300;
-  --bs-danger-rgb: 242, 19, 0;
-}
+
 
 /* Override specific Bootstrap component colors if needed */
 .btn-primary {

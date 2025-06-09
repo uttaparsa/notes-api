@@ -1,16 +1,32 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Form, Button, Card } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
+import { isRTL } from '../utils/stringUtils';
 import FileUploadComponent from './FileUploadComponent';
 import SendButton from './SendButton';
+import RtlToggleButton from './buttons/RtlToggleButton';
+import PreviewToggleButton from './buttons/PreviewToggleButton';
+import NoteTextRenderer from './notecard/markdown/NoteTextRenderer';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const textareaRef = useRef(null);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (isExpanded && textareaRef.current) {
+      setTimeout(() => {
+        textareaRef.current.focus();
+        textareaRef.current.dir = isRTL(text) ? "rtl" : "ltr";
+      }, 200);
+    }
+  }, [isExpanded, text]);
 
   const handleEnter = (e) => {
     if (e.ctrlKey && e.key === 'Enter') {
@@ -38,6 +54,8 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
 
       const responseData = await response.json();
       setText('');
+      setIsExpanded(false);
+      setIsPreviewMode(false);
       onNoteSaved(responseData);
     } catch (err) {
       console.error('Error sending message:', err);
@@ -92,64 +110,178 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     }
   };
 
-
   const handleFileUpload = (url) => {
-    // Decode the URL first to handle any existing encoding
     const decodedUrl = decodeURIComponent(url);
-    
-    // Get the filename, handling spaces and special characters
     const fileName = decodeURIComponent(decodedUrl.split("/").pop());
-    
-    // Encode the URL to ensure special characters are properly handled
     const encodedUrl = encodeURI(decodedUrl);
-    
-    // Create markdown link with encoded URL and decoded filename
     const markdownLink = `[${fileName}](${encodedUrl})`;
     
     setText(
         (prevText) => prevText + (prevText ? "\n" : "") + markdownLink
     );
-};
+  };
 
+  const toggleEditorRtl = () => {
+    if (textareaRef.current) {
+      textareaRef.current.dir = textareaRef.current.dir === "rtl" ? "ltr" : "rtl";
+    }
+  };
+
+  const handleExpand = () => {
+    setIsExpanded(true);
+  };
+
+  const handleCollapse = () => {
+    if (!text.trim()) {
+      setIsExpanded(false);
+      setIsPreviewMode(false);
+    }
+  };
+
+  const handleMinimizedClick = () => {
+    handleExpand();
+  };
+
+  if (!isExpanded) {
+    return (
+      <Button
+      onClick={handleMinimizedClick}
+      className="shadow-lg"
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        zIndex: 1050,
+        borderRadius: '50px',
+        padding: '12px 20px',
+        fontSize: '16px',
+        fontWeight: '500',
+      }}
+      >
+      <svg style={{
+      }} width="32px" height="32px" viewBox="0 0 25 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M17 6L19 8M14 5.5H5.5V19.5H19.5V11M9 16L9.5 13.5L19 4L21 6L11.5 15.5L9 16Z" stroke="currentColor" stroke-width="1.2"/>
+  </svg>
+      </Button>
+    );
+  }
 
   return (
-    <div dir="ltr">
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          display: 'block',
-          width: '100vw',
-          backgroundColor: 'gray',
-          height: '45px',
-        }}
-      >
-        <Form onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '20px',
+        right: '20px',
+        maxWidth: '800px',
+        margin: '0 auto',
+        zIndex: 1050,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: isExpanded ? 'translateY(0)' : 'translateY(100%)',
+      }}
+    >
+      <Card className="shadow-lg">
+        <Card.Header className="d-flex justify-content-between align-items-center py-2 px-3">
+          <h6 className="mb-0 fw-medium">New Note</h6>
           <div className="d-flex align-items-center">
+            <Button 
+              variant="link"
+              className="p-1"
+              onClick={handleCollapse}
+              disabled={!!text.trim()}
+              title="Minimize"
+              style={{ fontSize: '16px' }}
+            >
+              <i className="bi bi-dash-lg"></i>
+            </Button>
+          </div>
+        </Card.Header>
+        
+        <Card.Body className="p-0">
+          {isPreviewMode ? (
+            <div 
+              className="p-3"
+              style={{ 
+                minHeight: '120px', 
+                maxHeight: '300px', 
+                overflow: 'auto',
+              }}
+            >
+              <NoteTextRenderer 
+                note={{ text }} 
+                singleView={true}
+                shouldLoadLinks={false}
+              />
+            </div>
+          ) : (
             <Form.Control
               as="textarea"
-              id="message_text"
+              ref={textareaRef}
               dir="auto"
-              placeholder="I think..."
-              rows={1}
+              placeholder="What's on your mind?"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleEnter}
               onPaste={handlePaste}
-              ref={textareaRef}
               disabled={uploading}
+              className="border-0"
+              style={{
+                minHeight: '120px',
+                maxHeight: '300px',
+                resize: 'vertical',
+                fontSize: '16px',
+                fontFamily: 'monospace',
+                padding: '16px',
+                outline: 'none',
+                boxShadow: 'none',
+              }}
             />
-            <input type="hidden" name="replyTo" id="replyTo" value="" />
+          )}
+        </Card.Body>
+
+        <div 
+          className="border-top d-flex justify-content-between align-items-center"
+          style={{ padding: '12px 16px' }}
+        >
+          <div className="d-flex align-items-center gap-2">
             <FileUploadComponent
               onFileUploaded={handleFileUpload}
               initialText={text}
               onTextChange={setText}
+              size="sm"
             />
-          <SendButton></SendButton>
+            
+            <RtlToggleButton 
+              onClick={toggleEditorRtl}
+              isRTL={isRTL}
+              size="sm"
+            />
+            
+            <PreviewToggleButton 
+              isPreviewMode={isPreviewMode}
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+              size="sm"
+            />
           </div>
-        </Form>
-      </div>
+
+          <div className="d-flex align-items-center gap-2">
+            <Button 
+              variant="outline-secondary" 
+              size="sm"
+              onClick={handleCollapse}
+              disabled={!!text.trim()}
+            >
+              Cancel
+            </Button>
+            <SendButton 
+              onClick={sendMessage}
+              disabled={uploading || !text.trim()}
+              uploading={uploading}
+            />
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
