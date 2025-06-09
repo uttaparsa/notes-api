@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Spinner } from 'react-bootstrap';
 import NoteCard from './notecard/NoteCard';
 import { fetchWithAuth } from '../lib/api';
@@ -13,9 +13,26 @@ export default function NoteList({
   showHidden, 
   onUpdateNote,
   onDeleteNote,
-  refreshNotes 
+  refreshNotes,
+  newNoteId = null
 }) {
   const noteRefs = useRef({});
+  const [animatingNotes, setAnimatingNotes] = useState(new Set());
+
+  useEffect(() => {
+    if (newNoteId) {
+      setAnimatingNotes(prev => new Set([...prev, newNoteId]));
+      
+      // Remove animation after it completes
+      setTimeout(() => {
+        setAnimatingNotes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(newNoteId);
+          return newSet;
+        });
+      }, 1000);
+    }
+  }, [newNoteId]);
 
   const handlePinUpdate = async (note, pinned) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Updating note' }));
@@ -128,7 +145,14 @@ export default function NoteList({
         {!isBusy ? (
           <div className="col-xl-12 d-flex flex-vertical flex-column">
             {notes.map(note => (
-              <div key={note.id} id="notesListt">
+              <div 
+                key={note.id} 
+                id="notesListt"
+                className={animatingNotes.has(note.id) ? 'new-note-animation' : ''}
+                style={{
+                  animation: animatingNotes.has(note.id) ? 'slideInFromTop 0.6s cubic-bezier(0.4, 0, 0.2, 1), highlightNew 1s ease-out' : 'none',
+                }}
+              >
                 {(showHidden || !note.archived) && (
                   <NoteCard
                     ref={el => noteRefs.current[note.id] = el}
@@ -161,6 +185,34 @@ export default function NoteList({
       <br className="my-5" />
       <br className="my-5" />
       <br className="my-5" />
+      <style jsx>{`
+        @keyframes slideInFromTop {
+          0% {
+            opacity: 0;
+            transform: translateY(-30px) scale(0.95);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+        
+        @keyframes highlightNew {
+          0% {
+            background-color: rgba(13, 110, 253, 0.1);
+            box-shadow: 0 0 20px rgba(13, 110, 253, 0.3);
+          }
+          100% {
+            background-color: transparent;
+            box-shadow: none;
+          }
+        }
+        
+        .new-note-animation {
+          border-radius: 8px;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
 }

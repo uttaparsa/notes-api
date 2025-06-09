@@ -14,8 +14,10 @@ import NoteTextRenderer from './notecard/markdown/NoteTextRenderer';
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [justSent, setJustSent] = useState(false);
   const textareaRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -37,7 +39,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   const sendMessage = async () => {
     if (!text.trim()) return;
 
-    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Creating note' }));
+    setSending(true);
 
     try {
       const response = await fetchWithAuth(`/api/note/${listSlug ? `${listSlug}/` : ''}`, {
@@ -56,12 +58,18 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
       setText('');
       setIsExpanded(false);
       setIsPreviewMode(false);
+      setJustSent(true);
+      
+      // Reset the success state after animation
+      setTimeout(() => setJustSent(false), 2000);
+      
       onNoteSaved(responseData);
     } catch (err) {
       console.error('Error sending message:', err);
       handleApiError(err);
+    } finally {
+      setSending(false);
     }
-    window.dispatchEvent(new CustomEvent('hideWaitingModal'));
   };
 
   const handlePaste = useCallback(async (e) => {
@@ -146,7 +154,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     return (
       <Button
       onClick={handleMinimizedClick}
-      className="shadow-lg"
+      className={`shadow-lg ${justSent ? 'just-sent' : ''}`}
       style={{
         position: 'fixed',
         bottom: '20px',
@@ -156,6 +164,8 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         padding: '12px 20px',
         fontSize: '16px',
         fontWeight: '500',
+        transition: 'all 0.3s ease',
+        animation: justSent ? 'successPulse 0.6s ease-out' : 'none',
       }}
       >
       <svg style={{
@@ -183,7 +193,12 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
     >
       <Card className="shadow-lg">
         <Card.Header className="d-flex justify-content-between align-items-center py-2 px-3">
-          <h6 className="mb-0 fw-medium">New Note</h6>
+          <h6 className="mb-0 fw-medium" style={{
+            transition: 'color 0.3s ease',
+            color: justSent ? '#198754' : 'inherit'
+          }}>
+            {justSent ? '✓ Note Sent!' : 'New Note'}
+          </h6>
           <div className="d-flex align-items-center">
             <Button 
               variant="link"
@@ -270,18 +285,36 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
               variant="outline-secondary" 
               size="sm"
               onClick={handleCollapse}
-              disabled={!!text.trim()}
+              disabled={!!text.trim() || sending}
             >
               Cancel
             </Button>
             <SendButton 
               onClick={sendMessage}
-              disabled={uploading || !text.trim()}
+              disabled={uploading || !text.trim() || sending}
               uploading={uploading}
+              loading={sending}
             />
           </div>
         </div>
       </Card>
+      
+      <style jsx>{`
+        @keyframes successPulse {
+          0% {
+            transform: scale(1);
+            background-color: var(--bs-success);
+          }
+          50% {
+            transform: scale(1.05);
+            background-color: var(--bs-success);
+          }
+          100% {
+            transform: scale(1);
+            background-color: var(--bs-primary);
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -16,6 +16,7 @@ export default function NoteListPage({ params }) {
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [newNoteId, setNewNoteId] = useState(null);
   const noteListRef = useRef();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -92,7 +93,11 @@ export default function NoteListPage({ params }) {
 
   const addNewNote = (note) => {
     setNotes(prevNotes => [note, ...prevNotes]);
+    setNewNoteId(note.id);
     sortNotes();
+    
+    // Clear the newNoteId after animation completes
+    setTimeout(() => setNewNoteId(null), 1200);
   };
 
   const sortNotes = () => {
@@ -171,6 +176,7 @@ export default function NoteListPage({ params }) {
         onUpdateNote={updateNote}
         onDeleteNote={deleteNote}
         refreshNotes={getRecords}
+        newNoteId={newNoteId}
       />
       </Col>
       <Col lg={2}></Col>

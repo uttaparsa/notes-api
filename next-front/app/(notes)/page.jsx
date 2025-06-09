@@ -19,6 +19,7 @@ export default function NotesPage() {
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
+  const [newNoteId, setNewNoteId] = useState(null);
   const perPage = 20;
   const listSlug = 'All';
 
@@ -89,6 +90,10 @@ export default function NotesPage() {
 
   const addNewNote = (note) => {
     setNotes(prevNotes => sortNotesList([note, ...prevNotes]));
+    setNewNoteId(note.id);
+    
+    // Clear the newNoteId after animation completes
+    setTimeout(() => setNewNoteId(null), 1200);
   };
 
   const sortNotesList = (notesList) => {
@@ -154,6 +159,7 @@ export default function NotesPage() {
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
               refreshNotes={getRecords}
+              newNoteId={newNoteId}
             />
           </Col>
           <Col lg={2}></Col>
