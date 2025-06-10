@@ -135,7 +135,7 @@ const MarginSimilarNotes = () => {
             <i className={`bi ${isPinned ? 'bi-pin-fill' : 'bi-pin'}`}></i>
           </button>
         </div>
-        <div className={styles.marginBubbleBody}>
+        <div className="p-0 ">
           {results.length > 0 ? (
             <div className={styles.resultsList}>
               {results.map((result, index) => (

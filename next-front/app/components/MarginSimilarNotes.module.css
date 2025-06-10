@@ -21,7 +21,6 @@
 /* Dialog-style floating bubble instead of card */
 .marginBubble {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -64,34 +63,6 @@
   background-color: rgba(0, 0, 0, 0.03);
 }
 
-.marginBubbleBody {
-  max-height: 300px;
-  overflow-y: auto;
-  padding: 0.5rem;
-  position: relative;
-}
-
-/* Add fade effects for scrollable content */
-.marginBubbleBody::before,
-.marginBubbleBody::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 20px;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.marginBubbleBody::before {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
-}
-
-.marginBubbleBody::after {
-  bottom: 0;
-  background: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
-}
 
 .resultsList {
   display: flex;
@@ -153,35 +124,4 @@
   font-style: italic;
   color: #666;
   margin: 4px 0 0 0;
-}
-
-/* For dark mode compatibility */
-html[data-bs-theme="dark"] .marginBubble {
-  background-color: rgba(30, 30, 30, 0.95);
-}
-
-html[data-bs-theme="dark"] .marginBubbleHeader {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-html[data-bs-theme="dark"] .marginBubbleBody::before {
-  background: linear-gradient(to bottom, rgba(30, 30, 30, 0.95) 0%, rgba(30, 30, 30, 0) 100%);
-}
-
-html[data-bs-theme="dark"] .marginBubbleBody::after {
-  background: linear-gradient(to top, rgba(30, 30, 30, 0.95) 0%, rgba(30, 30, 30, 0) 100%);
-}
-
-html[data-bs-theme="dark"] .resultItem {
-  border-color: rgba(255, 255, 255, 0.125);
-}
-
-html[data-bs-theme="dark"] .resultItem:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-color: rgba(0, 123, 255, 0.5);
-}
-
-html[data-bs-theme="dark"] .sourceTextContent {
-  color: #aaa;
 }
