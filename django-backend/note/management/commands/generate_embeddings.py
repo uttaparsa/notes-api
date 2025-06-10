@@ -3,6 +3,7 @@ from django.db import transaction
 from note.models import LocalMessage, NoteEmbedding, NoteChunk
 import traceback
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class Command(BaseCommand):
@@ -35,6 +36,12 @@ class Command(BaseCommand):
             default=50,
             help='Number of notes to process in each transaction batch',
         )
+        parser.add_argument(
+            '--max-workers',
+            type=int,
+            default=5,
+            help='Max worker threads for parallel processing of batches',
+        )
         
     def handle(self, *args, **kwargs):
         # Process args
@@ -43,6 +50,7 @@ class Command(BaseCommand):
         force = kwargs.get('force', False)
         specific_note_id = kwargs.get('note_id')
         batch_size = kwargs.get('batch_size', 50)
+        max_workers = kwargs.get('max_workers', 5)
         
         # Setup vector tables
         if not embeddings_only:
@@ -53,217 +61,261 @@ class Command(BaseCommand):
             self.stdout.write("Setting up note embedding vector table...")
             NoteEmbedding.setup_vector_table()
         
-        # Get notes to process
+        # Initialize aggregate counters
+        total_processed_embeddings = 0
+        total_processed_chunks = 0
+        total_skipped_rtl = 0
+        total_skipped_existing_embeddings = 0
+        total_skipped_existing_chunks = 0
+        total_failed_embeddings = 0
+        total_failed_chunks = 0
+        
         if specific_note_id:
             try:
-                all_notes = [LocalMessage.objects.get(id=specific_note_id)]
-                total = 1
+                note = LocalMessage.objects.get(id=specific_note_id)
                 self.stdout.write(f"Processing specific note ID: {specific_note_id}")
+
+                # Pre-fetch info for the single note
+                has_embedding = NoteEmbedding.objects.filter(note_id=note.id).exists() if not embeddings_only else False
+                has_chunks = NoteChunk.objects.filter(note_id=note.id).exists() if not chunks_only else False
+                note_has_rtl = NoteEmbedding.hasRTL(note.text)
+
+                with transaction.atomic():
+                    note_counters = self._process_single_note_logic(
+                        note, chunks_only, embeddings_only, force,
+                        has_embedding, has_chunks, note_has_rtl,
+                        1, 1 # index, total for logging
+                    )
+                
+                total_processed_embeddings += note_counters['processed_embeddings']
+                total_processed_chunks += note_counters['processed_chunks']
+                total_skipped_rtl += note_counters['skipped_rtl']
+                total_skipped_existing_embeddings += note_counters['skipped_existing_embeddings']
+                total_skipped_existing_chunks += note_counters['skipped_existing_chunks']
+                total_failed_embeddings += note_counters['failed_embeddings']
+                total_failed_chunks += note_counters['failed_chunks']
+
             except LocalMessage.DoesNotExist:
                 self.stdout.write(self.style.ERROR(f"Note with ID {specific_note_id} not found"))
                 return
         else:
-            # Use a more efficient query to get IDs only
             all_note_ids = list(LocalMessage.objects.values_list('id', flat=True))
-            total = len(all_note_ids)
-            self.stdout.write(f"Found {total} total notes")
-        
-        # Initialize counters
-        processed_embeddings = 0
-        processed_chunks = 0
-        skipped_hasRTL = 0
-        skipped_existing_embeddings = 0
-        skipped_existing_chunks = 0
-        failed_embeddings = 0
-        failed_chunks = 0
-        
-        # Process notes in batches
-        if specific_note_id:
-            # Process single note without batching
-            self._process_note(
-                all_notes[0], 
-                chunks_only, 
-                embeddings_only, 
-                force,
-                1, 
-                total,
-                processed_embeddings,
-                processed_chunks,
-                skipped_hasRTL,
-                skipped_existing_embeddings,
-                skipped_existing_chunks,
-                failed_embeddings,
-                failed_chunks
-            )
-        else:
-            # Process in batches using transactions
-            for batch_start in range(0, total, batch_size):
-                batch_end = min(batch_start + batch_size, total)
-                batch_ids = all_note_ids[batch_start:batch_end]
+            total_notes = len(all_note_ids)
+            self.stdout.write(f"Found {total_notes} total notes")
+
+            if total_notes == 0:
+                self.stdout.write("No notes to process.")
+            else:
+                num_batches = (total_notes + batch_size - 1) // batch_size
                 
-                self.stdout.write(f"Processing batch {batch_start//batch_size + 1}/{(total+batch_size-1)//batch_size}: notes {batch_start+1}-{batch_end}")
-                
-                # Load the batch of notes
-                batch_notes = LocalMessage.objects.filter(id__in=batch_ids).select_related()
-                
-                # Process batch with transaction
-                with transaction.atomic():
-                    # Pre-fetch existing embeddings and chunks to reduce queries
-                    existing_embedding_ids = set(NoteEmbedding.objects.filter(
-                        note_id__in=batch_ids
-                    ).values_list('note_id', flat=True))
-                    
-                    existing_chunk_note_ids = set(NoteChunk.objects.filter(
-                        note_id__in=batch_ids
-                    ).values_list('note_id', flat=True).distinct())
-                    
-                    # Process each note in the batch
-                    for i, note in enumerate(batch_notes, 1):
-                        overall_index = batch_start + i
-                        result = self._process_note(
-                            note, 
-                            chunks_only, 
-                            embeddings_only, 
-                            force,
-                            overall_index, 
-                            total,
-                            processed_embeddings,
-                            processed_chunks,
-                            skipped_hasRTL,
-                            skipped_existing_embeddings,
-                            skipped_existing_chunks,
-                            failed_embeddings,
-                            failed_chunks,
-                            existing_embedding_ids=existing_embedding_ids,
-                            existing_chunk_note_ids=existing_chunk_note_ids
-                        )
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = []
+                    for i in range(num_batches):
+                        batch_start_index = i * batch_size
+                        batch_end_index = min(batch_start_index + batch_size, total_notes)
+                        current_batch_ids = all_note_ids[batch_start_index:batch_end_index]
                         
-                        # Update counters with results from processing
-                        processed_embeddings = result['processed_embeddings']
-                        processed_chunks = result['processed_chunks']
-                        skipped_hasRTL = result['skipped_hasRTL']
-                        skipped_existing_embeddings = result['skipped_existing_embeddings']
-                        skipped_existing_chunks = result['skipped_existing_chunks']
-                        failed_embeddings = result['failed_embeddings']
-                        failed_chunks = result['failed_chunks']
-                
-                # Add a small delay between batches
-                time.sleep(0.1)
+                        futures.append(executor.submit(
+                            self._process_batch,
+                            current_batch_ids,
+                            chunks_only,
+                            embeddings_only,
+                            force,
+                            i + 1, 
+                            num_batches,
+                            batch_start_index,
+                            total_notes
+                        ))
+                    
+                    for future in as_completed(futures):
+                        try:
+                            batch_counters = future.result()
+                            total_processed_embeddings += batch_counters['processed_embeddings']
+                            total_processed_chunks += batch_counters['processed_chunks']
+                            total_skipped_rtl += batch_counters['skipped_rtl']
+                            total_skipped_existing_embeddings += batch_counters['skipped_existing_embeddings']
+                            total_skipped_existing_chunks += batch_counters['skipped_existing_chunks']
+                            total_failed_embeddings += batch_counters['failed_embeddings']
+                            total_failed_chunks += batch_counters['failed_chunks']
+                        except Exception as e:
+                            self.stdout.write(self.style.ERROR(f"Error processing a batch: {e}\n{traceback.format_exc()}"))
         
         # Print summary
-        self.stdout.write(self.style.SUCCESS(
-            f"\nFinished processing notes:\n"
-        ))
+        self.stdout.write(self.style.SUCCESS("\nFinished processing notes:\n"))
         
         if not chunks_only:
             self.stdout.write(self.style.SUCCESS(
                 f"Note Embeddings:\n"
-                f"- Successfully processed: {processed_embeddings}\n"
-                f"- Skipped (already had embedding): {skipped_existing_embeddings}\n"
-                f"- Skipped (hasRTL): {skipped_hasRTL}\n"
-                f"- Failed: {failed_embeddings}"
+                f"- Successfully processed: {total_processed_embeddings}\n"
+                f"- Skipped (already had embedding): {total_skipped_existing_embeddings}\n"
+                f"- Skipped (RTL characters): {total_skipped_rtl}\n"
+                f"- Failed: {total_failed_embeddings}"
             ))
         
         if not embeddings_only:
             self.stdout.write(self.style.SUCCESS(
                 f"\nNote Chunks:\n"
-                f"- Successfully processed: {processed_chunks}\n"
-                f"- Skipped (already had chunks): {skipped_existing_chunks}\n"
-                f"- Failed: {failed_chunks}"
+                f"- Successfully processed: {total_processed_chunks}\n"
+                f"- Skipped (already had chunks): {total_skipped_existing_chunks}\n"
+                # RTL skips for chunks are included in the `total_skipped_rtl` count
+                f"- Failed: {total_failed_chunks}"
             ))
-    
-    def _process_note(self, note, chunks_only, embeddings_only, force, 
-                     index, total, processed_embeddings, processed_chunks,
-                     skipped_hasRTL, skipped_existing_embeddings, 
-                     skipped_existing_chunks, failed_embeddings, failed_chunks,
-                     existing_embedding_ids=None, existing_chunk_note_ids=None):
-        """Process a single note and return updated counters"""
-        
-        self.stdout.write(f"Processing {index}/{total}: Note {note.id}")
-        
+
+    def _process_single_note_logic(self, note, chunks_only, embeddings_only, force,
+                                   has_embedding, has_chunks, note_has_rtl,
+                                   current_index_display, total_display): # For logging
+        """Processes a single note and returns a dictionary of counters."""
+        single_note_counters = {
+            'processed_embeddings': 0, 'processed_chunks': 0,
+            'skipped_rtl': 0,
+            'skipped_existing_embeddings': 0, 'skipped_existing_chunks': 0,
+            'failed_embeddings': 0, 'failed_chunks': 0
+        }
+
+        # Log prefix for this note, can be enhanced if part of a batch
+        log_prefix = f"({current_index_display}/{total_display}) Note {note.id}:"
+        self.stdout.write(f"Processing {log_prefix}")
+
+        # If note is RTL, skip both embedding and chunks processing for this note
+        if note_has_rtl:
+            single_note_counters['skipped_rtl'] += 1
+            if not chunks_only:
+                 self.stdout.write(f"  {log_prefix} Skipping embedding (RTL characters found)")
+            if not embeddings_only:
+                 self.stdout.write(f"  {log_prefix} Skipping chunks (RTL characters found)")
+            return single_note_counters # Early exit for RTL notes
+
         # Process note embeddings
         if not chunks_only:
             try:
-                # Check if embedding already exists
-                has_embedding = False
-                if existing_embedding_ids is not None:
-                    has_embedding = note.id in existing_embedding_ids
-                else:
-                    has_embedding = NoteEmbedding.objects.filter(note_id=note.id).exists()
-                
                 if has_embedding and not force:
-                    skipped_existing_embeddings += 1
-                    self.stdout.write(f"  - Skipping embedding (already exists)")
-                elif NoteEmbedding.hasRTL(note.text):
-                    self.stdout.write(f"  - Skipping embedding (RTL characters found)")
-                    skipped_hasRTL += 1
+                    single_note_counters['skipped_existing_embeddings'] += 1
+                    self.stdout.write(f"  {log_prefix} Skipping embedding (already exists)")
                 else:
-                    # Create embedding using the class method
+                    if force and has_embedding:
+                        NoteEmbedding.objects.filter(note_id=note.id).delete()
+                        self.stdout.write(f"  {log_prefix} Deleted existing embedding (force mode)")
+                    
                     embedding = NoteEmbedding.create_for_note(note)
                     if embedding:
-                        processed_embeddings += 1
-                        self.stdout.write(f"  - Created embedding for note {note.id}")
+                        single_note_counters['processed_embeddings'] += 1
+                        self.stdout.write(f"  {log_prefix} Created embedding")
                     else:
-                        skipped_hasRTL += 1
-                        self.stdout.write(f"  - Skipping embedding (unable to create)")
+                        # This case means create_for_note returned None for a non-RTL note
+                        # (e.g. content became empty after cleaning).
+                        single_note_counters['failed_embeddings'] += 1 
+                        self.stdout.write(f"  {log_prefix} Failed to create embedding (unable to create, non-RTL)")
             except Exception as e:
-                failed_embeddings += 1
+                single_note_counters['failed_embeddings'] += 1
                 self.stdout.write(self.style.ERROR(
-                    f"  - Failed to process embedding for note {note.id}: {str(e)}\n"
+                    f"  {log_prefix} Failed to process embedding: {str(e)}\n"
                     f"    Traceback: {traceback.format_exc()}"
                 ))
         
-        # Process note chunks
+        # Process note chunks (only if not RTL)
         if not embeddings_only:
             try:
-                # Check if chunks already exist
-                has_chunks = False
-                if existing_chunk_note_ids is not None:
-                    has_chunks = note.id in existing_chunk_note_ids
-                else:
-                    has_chunks = NoteChunk.objects.filter(note_id=note.id).exists()
-                
                 if has_chunks and not force:
-                    skipped_existing_chunks += 1
-                    self.stdout.write(f"  - Skipping chunks (already exist)")
-                elif NoteEmbedding.hasRTL(note.text):
-                    self.stdout.write(f"  - Skipping chunks (RTL characters found)")
-                    # We're using the same check as embeddings
+                    single_note_counters['skipped_existing_chunks'] += 1
+                    self.stdout.write(f"  {log_prefix} Skipping chunks (already exist)")
                 else:
-                    # Delete existing chunks if force is True
                     if force and has_chunks:
-                        existing_chunks = NoteChunk.objects.filter(note_id=note.id)
-                        num_chunks = existing_chunks.count()
-                        self.stdout.write(f"  - Deleting {num_chunks} existing chunks")
-                        existing_chunks.delete()
+                        existing_chunks_qs = NoteChunk.objects.filter(note_id=note.id)
+                        num_deleted = existing_chunks_qs.count()
+                        existing_chunks_qs.delete()
+                        self.stdout.write(f"  {log_prefix} Deleted {num_deleted} existing chunks (force mode)")
                     
                     # Generate new chunks
-                    chunks = note.split_into_chunks()
-                    self.stdout.write(f"  - Generated {len(chunks)} chunks for note {note.id}")
+                    # Assuming note.split_into_chunks() creates NoteChunk instances (possibly unsaved or saved without embedding)
+                    # And chunk.create_embedding() calculates and saves the embedding for the chunk.
+                    # This part needs to be transactional if split_into_chunks or create_embedding saves.
+                    # The entire _process_single_note_logic is called within a transaction.
                     
-                    # Create embeddings for each chunk only if there's more than one chunk
-                    if len(chunks) > 1:
-                        for chunk in chunks:
-                            chunk.create_embedding()
-                        self.stdout.write(f"  - Created embeddings for all chunks of note {note.id}")
-                    else:
-                        self.stdout.write(f"  - Skipping chunk embeddings (single chunk note)")
+                    chunk_instances = note.split_into_chunks() # This should return NoteChunk instances
+                    self.stdout.write(f"  {log_prefix} Generated {len(chunk_instances)} chunks")
                     
-                    processed_chunks += 1
+                    if len(chunk_instances) > 1:
+                        for chunk_obj in chunk_instances:
+                            chunk_obj.create_embedding() # This method should save the chunk with its embedding
+                        self.stdout.write(f"  {log_prefix} Created embeddings for all {len(chunk_instances)} chunks")
+                    elif len(chunk_instances) == 1:
+                        # If there's only one chunk, it might not need its own embedding if it's same as note.
+                        # Original code skipped embedding for single chunk notes.
+                        # We still save the chunk itself if split_into_chunks does so.
+                        # Let's assume split_into_chunks saves the chunk text, and create_embedding adds vector.
+                        # This matches original logic.
+                        if chunk_instances[0].pk is None : # If split_into_chunks returns unsaved objects
+                             chunk_instances[0].save()
+                        self.stdout.write(f"  {log_prefix} Skipping chunk embeddings (single chunk note)")
+                    else: # No chunks generated
+                        self.stdout.write(f"  {log_prefix} No chunks generated")
+
+                    single_note_counters['processed_chunks'] += 1 # Count if chunking process was run
             except Exception as e:
-                failed_chunks += 1
+                single_note_counters['failed_chunks'] += 1
                 self.stdout.write(self.style.ERROR(
-                    f"  - Failed to process chunks for note {note.id}: {str(e)}\n"
+                    f"  {log_prefix} Failed to process chunks for note: {str(e)}\n"
                     f"    Traceback: {traceback.format_exc()}"
                 ))
         
-        # Return updated counters
-        return {
-            'processed_embeddings': processed_embeddings,
-            'processed_chunks': processed_chunks,
-            'skipped_hasRTL': skipped_hasRTL,
-            'skipped_existing_embeddings': skipped_existing_embeddings,
-            'skipped_existing_chunks': skipped_existing_chunks,
-            'failed_embeddings': failed_embeddings,
-            'failed_chunks': failed_chunks
+        return single_note_counters
+
+    def _process_batch(self, batch_ids, chunks_only, embeddings_only, force, 
+                       batch_num, total_batches, overall_start_index, total_notes_count):
+        """Processes a batch of notes and returns aggregated counters for the batch."""
+        batch_counters = {
+            'processed_embeddings': 0, 'processed_chunks': 0,
+            'skipped_rtl': 0,
+            'skipped_existing_embeddings': 0, 'skipped_existing_chunks': 0,
+            'failed_embeddings': 0, 'failed_chunks': 0
         }
+        
+        self.stdout.write(f"Processing batch {batch_num}/{total_batches} (Notes {overall_start_index + 1} to {overall_start_index + len(batch_ids)} of {total_notes_count})")
+        
+        # Load the batch of notes
+        batch_notes = LocalMessage.objects.filter(id__in=batch_ids).order_by('id') # Order for consistent logging if desired
+        
+        with transaction.atomic():
+            # Pre-fetch existing embeddings and chunks for this batch to reduce queries inside loop
+            existing_embedding_ids_batch = set()
+            if not chunks_only: # Only fetch if we care about embeddings
+                existing_embedding_ids_batch = set(NoteEmbedding.objects.filter(
+                    note_id__in=batch_ids
+                ).values_list('note_id', flat=True))
+            
+            existing_chunk_note_ids_batch = set()
+            if not embeddings_only: # Only fetch if we care about chunks
+                existing_chunk_note_ids_batch = set(NoteChunk.objects.filter(
+                    note_id__in=batch_ids
+                ).values_list('note_id', flat=True).distinct())
+
+            # Pre-calculate RTL status for notes in the batch
+            # This avoids calling NoteEmbedding.hasRTL repeatedly for the same text
+            note_rtl_status_map = {note.id: NoteEmbedding.hasRTL(note.text) for note in batch_notes}
+            
+            for i, note in enumerate(batch_notes):
+                current_overall_index = overall_start_index + i + 1 # 1-indexed for display
+
+                has_embedding_for_note = note.id in existing_embedding_ids_batch
+                has_chunks_for_note = note.id in existing_chunk_note_ids_batch
+                current_note_has_rtl = note_rtl_status_map[note.id]
+                
+                note_counters = self._process_single_note_logic(
+                    note, 
+                    chunks_only, 
+                    embeddings_only, 
+                    force,
+                    has_embedding_for_note,
+                    has_chunks_for_note,
+                    current_note_has_rtl,
+                    current_overall_index, # Pass overall index for logging
+                    total_notes_count      # Pass total notes for logging
+                )
+                
+                # Aggregate counters from this note
+                for key in batch_counters:
+                    batch_counters[key] += note_counters.get(key, 0)
+        
+        # Optional: short delay after a batch if needed, though ThreadPoolExecutor manages concurrency
+        # time.sleep(0.1) 
+        return batch_counters
