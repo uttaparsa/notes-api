@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import LocalMessage, NoteChunk, NoteEmbedding
+from ..models import LocalMessage, NoteChunk, NoteEmbedding, Link # Added Link
 from ..serializers import SimilarNoteSerializer
 import logging
 
@@ -16,51 +16,55 @@ class SimilarNotesView(APIView):
         note = get_object_or_404(LocalMessage, id=note_id)
         
         # Get query parameters
-        mode = request.query_params.get('mode', 'all')  # Options: 'notes', 'chunks', 'all'
-        limit = int(request.query_params.get('limit', 5))
+        limit = int(request.query_params.get('limit', 4))
         
         try:
             results = []
             
-            # Find similar notes if mode is 'notes' or 'all'
-            if mode in ['notes', 'all']:
-                # Ensure embedding exists for this note
-                embedding_exists = NoteEmbedding.objects.filter(note_id=note.id).exists()
-                
-                if not embedding_exists:
-                    # Create embedding if it doesn't exist
-                    try:
-                        NoteEmbedding.create_for_note(note)
-                    except Exception as e:
-                        logger.error(f"Error creating embedding for note {note_id}: {str(e)}")
-                        if mode == 'notes':
-                            return Response(
-                                {'error': 'Could not create embedding for this note.'},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                            )
-                
-                # Get similar notes based on embeddings
-                similar_notes_results = NoteEmbedding.find_similar_notes(note_id, limit=limit)
-                
-                # Process and format results
-                for result in similar_notes_results:
-                    try:
-                        similar_note = LocalMessage.objects.get(id=result['note_id'])
-                        distance = float(result['distance'])
-                        sim_score = self._calculate_similarity_score(distance)
-                        # Only include notes with reasonable similarity
-                        if sim_score >= 0.65:
-                            results.append({
-                                'id': similar_note.id,
-                                'text': similar_note.text,
-                                'similarity_score': sim_score,
-                                'distance': distance,
-                                'is_full_note': True,
-                                'created_at': similar_note.created_at,
-                                'updated_at': similar_note.updated_at
-                            })
-                    except LocalMessage.DoesNotExist:
+            # Ensure embedding exists for this note
+            embedding_exists = NoteEmbedding.objects.filter(note_id=note.id).exists()
+            
+            if not embedding_exists:
+                # Create embedding if it doesn't exist
+                try:
+                    NoteEmbedding.create_for_note(note)
+                except Exception as e:
+                    logger.error(f"Error creating embedding for note {note_id}: {str(e)}")
+
+            # Get IDs of notes that link to the current note (backlinks)
+            backlink_ids = set(Link.objects.filter(dest_message_id=note_id).values_list('source_message_id', flat=True))
+
+            # Fetch more items to account for filtering out backlinks and ensure we can meet the limit
+            # Add a small buffer (e.g., 5) in case many top similar notes are backlinks
+            effective_limit = limit + len(backlink_ids) 
+
+            # Get similar notes based on embeddings
+            similar_notes_results = NoteEmbedding.find_similar_notes(note_id, limit=effective_limit)
+            
+            # Process and format results
+            for result in similar_notes_results:
+                try:
+                    similar_note_id = result['note_id']
+                    # Exclude if the similar note is the note itself or if it's a backlink
+                    if similar_note_id == note.id or similar_note_id in backlink_ids:
                         continue
+
+                    similar_note = LocalMessage.objects.get(id=similar_note_id)
+                    distance = float(result['distance'])
+                    sim_score = self._calculate_similarity_score(distance)
+                    # Only include notes with reasonable similarity
+                    if sim_score >= 0.65:
+                        results.append({
+                            'id': similar_note.id,
+                            'text': similar_note.text,
+                            'similarity_score': sim_score,
+                            'distance': distance,
+                            'is_full_note': True,
+                            'created_at': similar_note.created_at,
+                            'updated_at': similar_note.updated_at
+                        })
+                except LocalMessage.DoesNotExist:
+                    continue
             
             # Sort by similarity score (higher score is better)
             results.sort(key=lambda x: x['similarity_score'], reverse=True)

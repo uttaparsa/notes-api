@@ -122,11 +122,11 @@ export const DisplayRenderer = ({
 const createCompactRenderers = () => {
   return {
     h1: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h2: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h3: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h4: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h5: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h6: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h2: ({ children }) => <span style={{ fontWeight: '500' }}>{children}</span>,
+    h3: ({ children }) => <span style={{ fontWeight: '400' }}>{children}</span>,
+    h4: ({ children }) => <span style={{ fontWeight: '300' }}>{children}</span>,
+    h5: ({ children }) => <span style={{ fontWeight: '200' }}>{children}</span>,
+    h6: ({ children }) => <span style={{ fontWeight: '100' }}>{children}</span>,
   };
 };
 
