@@ -62,8 +62,8 @@ class SimilarNotesView(APIView):
                     except LocalMessage.DoesNotExist:
                         continue
             
-            # Sort by similarity score (lower distance is better)
-            results.sort(key=lambda x: x['similarity_score'])
+            # Sort by similarity score (higher score is better)
+            results.sort(key=lambda x: x['similarity_score'], reverse=True)
             
             # Limit to requested number
             results = results[:limit]
@@ -92,31 +92,20 @@ class SimilarNotesView(APIView):
         # Get optional parameters
         limit = int(request.data.get('limit', 3))
         exclude_note_id = request.data.get('exclude_note_id')
-        mode = request.data.get('mode', 'all')
         
         if exclude_note_id:
             exclude_note_id = int(exclude_note_id)
         
         try:
-            results = []
+            all_found_items = self._find_similars_by_text(
+                text=text,
+                limit_per_type=limit, # This is the desired count for each type
+                exclude_note_id=exclude_note_id
+            )
             
-            # If mode is 'chunks' or 'all', search for similar chunks
-            if mode in ['chunks', 'all']:
-                chunk_results = self._find_similar_chunks_by_text(
-                    text=text,
-                    limit=limit * 2,  # Get more than we need so we can filter
-                    exclude_note_id=exclude_note_id
-                )
-                
-                if mode == 'chunks':
-                    results = chunk_results
-                else:
-                    results.extend(chunk_results)
-            
-            
-            # Sort by similarity and limit results
-            results.sort(key=lambda x: x['similarity_score'])
-            results = results[:limit]
+            # Sort by similarity (higher score is better) and limit results
+            all_found_items.sort(key=lambda x: x['similarity_score'], reverse=True)
+            results = all_found_items[:limit] # Apply final limit
             
             # Serialize
             serializer = SimilarNoteSerializer(results, many=True)
@@ -134,111 +123,88 @@ class SimilarNotesView(APIView):
         max_distance = 4.0
         return max(0, 1 - (distance / max_distance))
     
-    def _find_similar_chunks_for_note(self, note_id, limit=3):
-        """Helper method to find similar chunks for a note"""
-        # Get chunks from the current note
-        note_chunks = NoteChunk.objects.filter(note_id=note_id)
-        if not note_chunks.exists():
-            # Try to create chunks for this note
-            try:
-                note = LocalMessage.objects.get(id=note_id)
-                note_chunks = note.split_into_chunks()
-                
-                # Create embeddings for new chunks
-                for chunk in note_chunks:
-                    chunk.create_embedding()
-            except Exception as e:
-                logger.error(f"Error creating chunks for note {note_id}: {str(e)}")
-                return []
-        
-        results = []
-        note_ids_added = set()
-        
-        # For each chunk, find similar chunks from other notes
-        for chunk in note_chunks:
-            chunk_results = NoteChunk.find_similar_chunks(
-                chunk_text=chunk.chunk_text,
-                limit=2,
-                exclude_note_id=note_id
-            )
-            
-            for chunk_result in chunk_results:
-                result_note_id = chunk_result.get('note_id')
-                distance = float(chunk_result.get('distance'))
-                
-                # Only add if we have good similarity and haven't added this note yet
-                if self._calculate_similarity_score(distance) >= 0.7 and result_note_id not in note_ids_added:
-                    try:
-                        parent_note = LocalMessage.objects.get(id=result_note_id)
-                        
-                        results.append({
-                            'id': result_note_id,
-                            'text': chunk_result.get('chunk_text'),
-                            'similarity_score': distance,
-                            'is_full_note': False,
-                            'chunk_index': chunk_result.get('chunk_index'),
-                            'created_at': parent_note.created_at,
-                            'updated_at': parent_note.updated_at
-                        })
-                        
-                        note_ids_added.add(result_note_id)
-                        
-                        # Stop once we have enough results
-                        if len(results) >= limit:
-                            break
-                    except LocalMessage.DoesNotExist:
-                        continue
-            
-            # Stop once we have enough results
-            if len(results) >= limit:
-                break
-        
-        return results
     
-    def _find_similar_chunks_by_text(self, text, limit=3, exclude_note_id=None):
-        """Helper method to find similar chunks for arbitrary text"""
+    def _find_similars_by_text(self, text, limit_per_type, exclude_note_id=None): # Removed mode parameter
+        """Helper method to find similar chunks and/or notes for arbitrary text"""
+        all_results = []
+        # Keep track of note IDs added to avoid duplicates from different sources (chunks vs full notes)
+        # or multiple chunks from the same note.
+        added_note_ids = set()
+
+        # Find similar chunks
         try:
-            # Search for similar chunks
-            similar_chunks = NoteChunk.find_similar_chunks(
+            # Fetch more chunks than limit_per_type to allow for filtering by score and parent note uniqueness
+            raw_similar_chunks = NoteChunk.find_similar_chunks(
                 chunk_text=text,
-                limit=limit * 2,  # Get more than we need so we can filter
+                limit=limit_per_type * 3, # Fetch more to filter effectively
                 exclude_note_id=exclude_note_id
             )
             
-            # Process and format results
-            results = []
-            note_ids_added = set()
-            
-            for chunk in similar_chunks:
-                note_id = chunk.get('note_id')
-                distance = float(chunk.get('distance'))
-                
-                # Only include chunks with good similarity
-                if self._calculate_similarity_score(distance) >= 0.65 and note_id not in note_ids_added:
+            chunks_count = 0
+            for chunk_data in raw_similar_chunks:
+                note_id = chunk_data.get('note_id')
+                distance = float(chunk_data.get('distance'))
+                sim_score = self._calculate_similarity_score(distance)
+
+                if sim_score >= 0.65 and note_id not in added_note_ids:
                     try:
-                        # Get the parent note
                         parent_note = LocalMessage.objects.get(id=note_id)
-                        
-                        results.append({
+                        all_results.append({
                             'id': note_id,
-                            'text': chunk.get('chunk_text'),
-                            'similarity_score': distance,
+                            'text': chunk_data.get('chunk_text'), # Chunk text
+                            'similarity_score': sim_score,
+                            'distance': distance,
                             'is_full_note': False,
-                            'chunk_index': chunk.get('chunk_index'),
+                            'chunk_index': chunk_data.get('chunk_index'),
                             'created_at': parent_note.created_at,
                             'updated_at': parent_note.updated_at
                         })
-                        
-                        note_ids_added.add(note_id)
-                        
-                        # Stop once we have enough results
-                        if len(results) >= limit:
-                            break
+                        added_note_ids.add(note_id)
+                        chunks_count += 1
+                        if chunks_count >= limit_per_type:
+                            break 
                     except LocalMessage.DoesNotExist:
                         continue
-            
-            return results
-            
         except Exception as e:
-            logger.error(f"Error finding similar chunks for text: {str(e)}")
-            return []
+            logger.error(f"Error finding similar chunks for text '{text[:50]}...': {str(e)}")
+
+        # Find similar notes (full documents)
+        try:
+            text_embedding = NoteEmbedding.get_embedding(text)
+            if text_embedding: # Proceed if embedding was successful
+                similar_notes_data = NoteEmbedding.find_similar_notes_by_embedding(
+                    text_embedding,
+                    limit=limit_per_type, 
+                    exclude_note_id=exclude_note_id
+                )
+
+                notes_count = 0
+                for note_data in similar_notes_data:
+                    note_id = note_data['note_id']
+                    distance = float(note_data['distance'])
+                    sim_score = self._calculate_similarity_score(distance)
+
+                    if sim_score >= 0.65 and note_id not in added_note_ids:
+                        try:
+                            similar_note = LocalMessage.objects.get(id=note_id)
+                            all_results.append({
+                                'id': similar_note.id,
+                                'text': similar_note.text, # Full note text
+                                'similarity_score': sim_score,
+                                'distance': distance,
+                                'is_full_note': True,
+                                'created_at': similar_note.created_at,
+                                'updated_at': similar_note.updated_at
+                            })
+                            added_note_ids.add(note_id)
+                            notes_count += 1
+                            if notes_count >= limit_per_type:
+                                break
+                        except LocalMessage.DoesNotExist:
+                            continue
+            else:
+                logger.info(f"Could not get embedding for text '{text[:50]}...', skipping note-level similarity search.")
+        except Exception as e:
+            logger.error(f"Error finding similar notes for text '{text[:50]}...': {str(e)}")
+            
+        return all_results

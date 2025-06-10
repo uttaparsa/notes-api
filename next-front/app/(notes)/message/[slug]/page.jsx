@@ -152,6 +152,7 @@ const SingleNoteView = () => {
                     <div className="list-group-item list-group-item-action border-start border-3" 
                          style={{ borderLeftColor: '#6c757d' }}>
                       <div className="small">
+                        
                         {link.source_message.text.length > 40 ? link.source_message.text.slice(0, 40) + '...' : link.source_message.text}
                       </div>
                     </div>

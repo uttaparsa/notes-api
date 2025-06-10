@@ -148,9 +148,9 @@ const MarginSimilarNotes = () => {
                     <div className={styles.resultItem}>
                       <div className={styles.resultText}>
                         <ReactMarkdown>
-            {result.text || `Note #${result.id}`}
-          </ReactMarkdown>
-                        
+                    {result.text || `Note #${result.id}`}
+                  </ReactMarkdown>
+                                
                       </div>
                       <div className={styles.resultMeta}>
                         <Badge 

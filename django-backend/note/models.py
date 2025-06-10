@@ -326,6 +326,43 @@ class NoteEmbedding(models.Model):
         db.close()
         return results
 
+    @classmethod
+    def find_similar_notes_by_embedding(cls, text_embedding, limit=5, exclude_note_id=None):
+        """Find similar notes based on a given text embedding."""
+        if text_embedding is None:
+            return []
+
+        db_path = cls.get_embedding_db_path()
+        db = sqlite3.connect(db_path)
+        db.enable_load_extension(True)
+        sqlite_vec.load(db)
+        cursor = db.cursor()
+
+        query_params = [json.dumps(text_embedding)]
+        
+        base_query = """
+            SELECT rowid, distance
+            FROM note_embeddings_vec
+            WHERE embedding MATCH ?1
+        """
+        
+        if exclude_note_id is not None:
+            base_query += " AND rowid != ?2"
+            query_params.append(exclude_note_id)
+            base_query += " AND k = ?3" # k is limit
+            query_params.append(limit)
+        else:
+            base_query += " AND k = ?2" # k is limit
+            query_params.append(limit)
+            
+        cursor.execute(base_query, query_params)
+        
+        results = [{'note_id': row[0], 'distance': row[1]} 
+                   for row in cursor.fetchall()]
+        
+        db.close()
+        return results
+
 
 # New model for storing note chunks and their embeddings
 class NoteChunk(models.Model):
@@ -504,29 +541,3 @@ class NoteChunk(models.Model):
             logger.error(f"Failed to find similar chunks: {str(e)}")
             return []
     
-    @staticmethod
-    def find_similar_chunks_for_note(note_id, limit=10):
-        """Find chunks similar to each chunk in the given note"""
-        # Get all chunks for this note
-        note_chunks = NoteChunk.objects.filter(note_id=note_id)
-        
-        # For each chunk, find similar chunks
-        results = []
-        for chunk in note_chunks:
-            similar_chunks = NoteChunk.find_similar_chunks(
-                chunk.chunk_text,
-                limit=limit,
-                exclude_note_id=note_id
-            )
-            
-            if similar_chunks:
-                results.append({
-                    'source_chunk': {
-                        'note_id': note_id,
-                        'chunk_index': chunk.chunk_index,
-                        'chunk_text': chunk.chunk_text
-                    },
-                    'similar_chunks': similar_chunks
-                })
-        
-        return results
