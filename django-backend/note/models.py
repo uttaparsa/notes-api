@@ -173,6 +173,57 @@ class LocalMessage(models.Model):
         # Create new chunks
         return self.split_into_chunks()
 
+    def delete(self, *args, **kwargs):
+        note_id_to_delete = self.id
+
+        # Get database path for vector embeddings
+        db_path = NoteEmbedding.get_embedding_db_path()
+        
+        try:
+            db = sqlite3.connect(db_path)
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            cursor = db.cursor()
+
+            # 1. Delete main note's embedding from note_embeddings_vec
+            cursor.execute(
+                "DELETE FROM note_embeddings_vec WHERE rowid = ?",
+                [note_id_to_delete]
+            )
+
+            # 2. Delete NoteChunk embeddings from note_chunk_embeddings_vec
+            # Retrieve all chunks for this note to get their chunk_index
+            chunks_to_delete = NoteChunk.objects.filter(note_id=note_id_to_delete)
+            for chunk in chunks_to_delete:
+                chunk_rowid = (chunk.note_id * 10000) + chunk.chunk_index
+                cursor.execute(
+                    "DELETE FROM note_chunk_embeddings_vec WHERE rowid = ?",
+                    [chunk_rowid]
+                )
+            
+            db.commit()
+        except sqlite3.Error as e:
+            # Log error or handle as needed
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error deleting embeddings from vector DB for note {note_id_to_delete}: {e}")
+            # Depending on policy, you might re-raise or allow deletion of Django objects to proceed
+        finally:
+            if 'db' in locals() and db:
+                db.close()
+
+        # 3. Delete NoteEmbedding Django model instance
+        NoteEmbedding.objects.filter(note_id=note_id_to_delete).delete()
+
+        # 4. Delete NoteChunk Django model instances
+        # This will also be handled by the loop above if we delete them one by one,
+        # but a bulk delete is more efficient.
+        NoteChunk.objects.filter(note_id=note_id_to_delete).delete()
+        
+        # 5. Call the superclass's delete method
+        super(LocalMessage, self).delete(*args, **kwargs)
+
+
 class Link(models.Model):
     source_message = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='dest_links')
     dest_message = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='source_links')
@@ -542,4 +593,3 @@ class NoteChunk(models.Model):
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to find similar chunks: {str(e)}")
             return []
-    
