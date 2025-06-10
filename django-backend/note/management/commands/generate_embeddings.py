@@ -50,7 +50,7 @@ class Command(BaseCommand):
         force = kwargs.get('force', False)
         specific_note_id = kwargs.get('note_id')
         batch_size = kwargs.get('batch_size', 50)
-        max_workers = kwargs.get('max_workers', 5)
+        max_workers = kwargs.get('max_workers', 2)
         
         # Setup vector tables
         if not embeddings_only:

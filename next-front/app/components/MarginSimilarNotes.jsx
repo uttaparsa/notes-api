@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from 'react-bootstrap';
 import Link from 'next/link';
 import styles from './MarginSimilarNotes.module.css';
+import ReactMarkdown from "react-markdown";
 
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';
@@ -146,7 +147,10 @@ const MarginSimilarNotes = () => {
                   >
                     <div className={styles.resultItem}>
                       <div className={styles.resultText}>
-                        {result.text || `Note #${result.id}`}
+                        <ReactMarkdown>
+            {result.text || `Note #${result.id}`}
+          </ReactMarkdown>
+                        
                       </div>
                       <div className={styles.resultMeta}>
                         <Badge 

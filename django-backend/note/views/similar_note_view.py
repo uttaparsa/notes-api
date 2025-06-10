@@ -52,7 +52,7 @@ class SimilarNotesView(APIView):
                         if sim_score >= 0.65:
                             results.append({
                                 'id': similar_note.id,
-                                'text': similar_note.text[:200] + ('...' if len(similar_note.text) > 200 else ''),
+                                'text': similar_note.text,
                                 'similarity_score': sim_score,
                                 'distance': distance,
                                 'is_full_note': True,
@@ -61,28 +61,6 @@ class SimilarNotesView(APIView):
                             })
                     except LocalMessage.DoesNotExist:
                         continue
-            
-            # Find similar chunks if mode is 'chunks' or 'all' and we need more results
-            if mode in ['chunks', 'all'] and (mode == 'chunks' or len(results) < limit):
-                chunk_results = self._find_similar_chunks_for_note(
-                    note_id,
-                    limit=limit - len(results) if mode == 'all' else limit
-                )
-                
-                if mode == 'chunks':
-                    results = chunk_results
-                else:
-                    # Add unique chunk results (avoid duplicate notes)
-                    note_ids_added = {r['id'] for r in results}
-                    for chunk_result in chunk_results:
-                        note_id = chunk_result.get('id')
-                        if note_id not in note_ids_added:
-                            results.append(chunk_result)
-                            note_ids_added.add(note_id)
-                            
-                            # Stop once we have enough results
-                            if len(results) >= limit:
-                                break
             
             # Sort by similarity score (lower distance is better)
             results.sort(key=lambda x: x['similarity_score'])
@@ -114,7 +92,7 @@ class SimilarNotesView(APIView):
         # Get optional parameters
         limit = int(request.data.get('limit', 3))
         exclude_note_id = request.data.get('exclude_note_id')
-        mode = request.data.get('mode', 'chunks')  # Options: 'notes', 'chunks', 'all'
+        mode = request.data.get('mode', 'all')
         
         if exclude_note_id:
             exclude_note_id = int(exclude_note_id)
@@ -135,12 +113,6 @@ class SimilarNotesView(APIView):
                 else:
                     results.extend(chunk_results)
             
-            # If mode is 'notes' or 'all', also find similar full notes
-            if mode in ['notes', 'all']:
-                # This would require implementing a method to find similar notes by text
-                # For now, we'll just use our chunk results and add a placeholder for future implementation
-                if mode == 'notes' and not results:
-                    logger.warning("Finding similar notes by text is not yet implemented")
             
             # Sort by similarity and limit results
             results.sort(key=lambda x: x['similarity_score'])

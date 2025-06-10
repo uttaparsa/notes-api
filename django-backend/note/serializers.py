@@ -146,7 +146,7 @@ class SimilarNoteSerializer(serializers.Serializer):
         representation['similarity_score'] = max(0, 1 - (representation['similarity_score'] / max_distance))
         
         # Truncate text if needed (adjustable length)
-        max_length = 200  # Adjust this value as needed
+        max_length = 1000  # Adjust this value as needed
         if len(representation['text']) > max_length:
             representation['text'] = representation['text'][:max_length] + '...'
         
