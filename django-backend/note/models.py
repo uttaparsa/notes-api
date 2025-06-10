@@ -416,6 +416,25 @@ class NoteEmbedding(models.Model):
         db.close()
         return results
 
+    @staticmethod
+    def find_similar_notes_by_text(text, limit=5, exclude_note_id=None):
+        """Find similar notes based on a given text."""
+        try:
+            # Generate embedding for the input text
+            text_embedding = NoteEmbedding.get_embedding(text)
+            
+            # Use the existing method to find similar notes by embedding
+            return NoteEmbedding.find_similar_notes_by_embedding(
+                text_embedding=text_embedding,
+                limit=limit,
+                exclude_note_id=exclude_note_id
+            )
+        except Exception as e:
+            # Log the error and return empty list
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to find similar notes by text: {str(e)}")
+            return []
 
 # New model for storing note chunks and their embeddings
 class NoteChunk(models.Model):
