@@ -118,6 +118,8 @@ class LocalMessage(models.Model):
             ("##", "Header 2"),
             ("###", "Header 3"),
             ("####", "Header 4"),
+            ("#####", "Header 5"),
+            ("######", "Header 6"),
         ]
         
         # First split by markdown headers

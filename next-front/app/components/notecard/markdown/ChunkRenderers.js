@@ -49,7 +49,6 @@ export const DisplayRenderer = ({
 
       return chunks.map((chunk, index) => {
         const chunkTextContent = chunk.chunk_text || chunk.text || "";
-        const processedChunkText = processTextForHashtags(chunkTextContent);
 
         return (
           <HoverableSimilarChunks
@@ -64,7 +63,7 @@ export const DisplayRenderer = ({
               remarkPlugins={[remarkGfm]}
               className={`${isRTL(chunkTextContent) ? styles.rtlMarkdown : ''} ${styles.chunkMarkdownContent}`}
             >
-              {processedChunkText}
+              {chunkTextContent}
             </ReactMarkdown>
           </HoverableSimilarChunks>
         );
