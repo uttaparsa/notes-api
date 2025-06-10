@@ -126,7 +126,7 @@ const MarginSimilarNotes = () => {
     >
       <div className={styles.marginBubble}>
         <div className={styles.marginBubbleHeader}>
-          <small>Similar content</small>
+          <small>Similar thoughts</small>
           <button 
             className={`btn btn-sm ${isPinned ? 'btn-primary' : 'btn-outline-secondary'}`}
             onClick={() => setIsPinned(!isPinned)}
