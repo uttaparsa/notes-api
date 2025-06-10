@@ -9,6 +9,7 @@ import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
+import ReactMarkdown from "react-markdown";
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
@@ -152,8 +153,9 @@ const SingleNoteView = () => {
                     <div className="list-group-item list-group-item-action border-start border-3" 
                          style={{ borderLeftColor: '#6c757d' }}>
                       <div className="small">
-                        
-                        {link.source_message.text.length > 40 ? link.source_message.text.slice(0, 40) + '...' : link.source_message.text}
+                         <ReactMarkdown>
+                           {link.source_message.text }
+</ReactMarkdown>
                       </div>
                     </div>
                   </Link>
@@ -175,7 +177,9 @@ const SingleNoteView = () => {
                          }}>
                       <div className="d-flex flex-column">
                         <div className="small">
-                          {similarNote.text.length > 40 ? similarNote.text.slice(0, 40) + '...' : similarNote.text}
+                            <ReactMarkdown>
+                           {similarNote.text }
+                  </ReactMarkdown>
                         </div>
                         <div className="d-flex justify-content-end mt-1">
                           <small 

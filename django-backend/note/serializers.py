@@ -5,7 +5,7 @@ import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
     def truncate_text(self, value):
-        max_length = 25  # Replace this with your desired length
+        max_length = 40  # Replace this with your desired length
         if len(value) > max_length:
             return value[:max_length] + '...'  # Truncate and add ellipsis
         return value
@@ -20,6 +20,8 @@ class NoteShortViewSerializer(serializers.ModelSerializer):
 
 class LinkSerializer(serializers.ModelSerializer):
     source_message =  NoteShortViewSerializer(many=False, read_only=True)
+
+    
     class Meta:
         model = Link
         fields = '__all__'
@@ -146,7 +148,7 @@ class SimilarNoteSerializer(serializers.Serializer):
         representation['similarity_score'] = max(0, 1 - (representation['similarity_score'] / max_distance))
         
         # Truncate text if needed (adjustable length)
-        max_length = 1000  # Adjust this value as needed
+        max_length = 200  # Adjust this value as needed
         if len(representation['text']) > max_length:
             representation['text'] = representation['text'][:max_length] + '...'
         
