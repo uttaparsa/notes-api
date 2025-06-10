@@ -121,12 +121,12 @@ export const DisplayRenderer = ({
 // Create compact renderers for headers to be same size as text
 const createCompactRenderers = () => {
   return {
-    h1: ({ children }) => <span>{children}</span>,
-    h2: ({ children }) => <span>{children}</span>,
-    h3: ({ children }) => <span>{children}</span>,
-    h4: ({ children }) => <span>{children}</span>,
-    h5: ({ children }) => <span>{children}</span>,
-    h6: ({ children }) => <span>{children}</span>,
+    h1: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h2: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h3: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h4: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h5: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h6: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
   };
 };
 
