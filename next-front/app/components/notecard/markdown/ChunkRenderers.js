@@ -117,3 +117,36 @@ export const DisplayRenderer = ({
     </span>
   );
 };
+
+// Create compact renderers for headers to be same size as text
+const createCompactRenderers = () => {
+  return {
+    h1: ({ children }) => <span>{children}</span>,
+    h2: ({ children }) => <span>{children}</span>,
+    h3: ({ children }) => <span>{children}</span>,
+    h4: ({ children }) => <span>{children}</span>,
+    h5: ({ children }) => <span>{children}</span>,
+    h6: ({ children }) => <span>{children}</span>,
+  };
+};
+
+/**
+ * Compact Markdown Renderer - Renders markdown with headers as normal text size
+ * Useful for sidebars, similar notes, and linked notes displays
+ */
+export const CompactMarkdownRenderer = ({ children, className = '', ...props }) => {
+  const text = children || '';
+  const processedText = processTextForHashtags(text);
+  const compactRenderers = createCompactRenderers();
+
+  return (
+    <ReactMarkdown 
+      components={compactRenderers}
+      remarkPlugins={[remarkGfm]}
+      className={className}
+      {...props}
+    >
+      {processedText}
+    </ReactMarkdown>
+  );
+};

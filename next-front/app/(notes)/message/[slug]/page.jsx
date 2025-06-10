@@ -6,10 +6,10 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/notecard/NoteCard';
 import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
+import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/ChunkRenderers';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
-import ReactMarkdown from "react-markdown";
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
@@ -153,9 +153,9 @@ const SingleNoteView = () => {
                     <div className="list-group-item list-group-item-action border-start border-3" 
                          style={{ borderLeftColor: '#6c757d' }}>
                       <div className="small">
-                         <ReactMarkdown>
-                           {link.source_message.text }
-</ReactMarkdown>
+                        <CompactMarkdownRenderer>
+                          {link.source_message.text}
+                        </CompactMarkdownRenderer>
                       </div>
                     </div>
                   </Link>
@@ -177,9 +177,9 @@ const SingleNoteView = () => {
                          }}>
                       <div className="d-flex flex-column">
                         <div className="small">
-                            <ReactMarkdown>
-                           {similarNote.text }
-                  </ReactMarkdown>
+                          <CompactMarkdownRenderer>
+                            {similarNote.text}
+                          </CompactMarkdownRenderer>
                         </div>
                         <div className="d-flex justify-content-end mt-1">
                           <small 
