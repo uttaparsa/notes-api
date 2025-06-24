@@ -125,7 +125,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         <div className="row">
           <div className="col-sm-1">
             <Dropdown>
-              <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic"></Dropdown.Toggle>
+              <Dropdown.Toggle variant="outline-secondary" ></Dropdown.Toggle>
               <Dropdown.Menu>
                 {!hideEdits && <Dropdown.Item onClick={() => setShowMoveModal(true)}>Move</Dropdown.Item>}
                 <Dropdown.Divider />

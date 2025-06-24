@@ -9,6 +9,7 @@ const SendButton = ({ onClick, uploading, loading, className }) => {
             className={`mr-2 ml-1 ${className || ''}`} 
             disabled={uploading || loading}
             onClick={onClick}
+            id="send-button"
         >
             {loading ? (
                 <Spinner
