@@ -149,17 +149,18 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'logfile': {
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'data/django.log',
         },
         'console': {
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['logfile', 'console'],
-            'level': 'INFO',
         },
     },
 }
