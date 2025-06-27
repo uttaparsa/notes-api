@@ -71,6 +71,9 @@ class SimilarNotesView(APIView):
             
             # Limit to requested number
             results = results[:limit]
+
+            logger.info(f"results:  {results}")
+            logger.info(f"backlink_ids:  {backlink_ids}")
             
             # Serialize and return
             serializer = SimilarNoteSerializer(results, many=True)
@@ -213,8 +216,7 @@ class SimilarNotesView(APIView):
         except Exception as e:
             logger.error(f"Error finding similar notes for text '{text[:50]}...': {str(e)}")
             
-        print(f"Found {len(all_results)} total similar items for text '{text[:50]}...'")
-        print("results:", all_results)
+        logger.info(f"results:  {all_results}")
         # sort all results by distance (lower is better)
         all_results.sort(key=lambda x: x['distance'])
         return all_results
