@@ -108,7 +108,7 @@ class SimilarNotesView(APIView):
             )
             
             # Sort by similarity (higher score is better) and limit results
-            all_found_items.sort(key=lambda x: x['similarity_score'], reverse=True)
+            all_found_items.sort(key=lambda x: x['distance'])
             results = all_found_items[:limit] # Apply final limit
             
             # Serialize
