@@ -66,8 +66,8 @@ class SimilarNotesView(APIView):
                 except LocalMessage.DoesNotExist:
                     continue
             
-            # Sort by similarity score (higher score is better)
-            results.sort(key=lambda x: x['similarity_score'], reverse=True)
+            # Sort by distance (lower score is better)
+            results.sort(key=lambda x: x['distance'])
             
             # Limit to requested number
             results = results[:limit]
@@ -202,6 +202,8 @@ class SimilarNotesView(APIView):
                             })
                             added_note_ids.add(note_id)
                             notes_count += 1
+
+                            
                             if notes_count >= limit_per_type:
                                 break
                         except LocalMessage.DoesNotExist:
@@ -211,4 +213,6 @@ class SimilarNotesView(APIView):
         except Exception as e:
             logger.error(f"Error finding similar notes for text '{text[:50]}...': {str(e)}")
             
+        # sort all results by distance (lower is better)
+        all_results.sort(key=lambda x: x['distance'])
         return all_results
