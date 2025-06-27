@@ -144,7 +144,7 @@ DATABASE_ROUTERS = [
     'note.router.EmbeddingRouter'
                     ]
 
-LOGGING = {                                                                                                                 
+LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
@@ -161,7 +161,20 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['logfile', 'console'],
+            'level': 'INFO',  # Add this line
+            'propagate': False,  # Add this line
         },
+        # Add a specific logger for your app
+        'note': {
+            'handlers': ['console', 'logfile'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+    # Add root logger configuration
+    'root': {
+        'level': 'INFO',
+        'handlers': ['console'],
     },
 }
 

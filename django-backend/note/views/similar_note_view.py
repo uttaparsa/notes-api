@@ -6,7 +6,7 @@ from ..models import LocalMessage, NoteChunk, NoteEmbedding, Link # Added Link
 from ..serializers import SimilarNoteSerializer
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("note")
 
 class SimilarNotesView(APIView):
     """View for finding similar notes based on note ID or text input"""
