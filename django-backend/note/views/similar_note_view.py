@@ -213,6 +213,8 @@ class SimilarNotesView(APIView):
         except Exception as e:
             logger.error(f"Error finding similar notes for text '{text[:50]}...': {str(e)}")
             
+        print(f"Found {len(all_results)} total similar items for text '{text[:50]}...'")
+        print("results:", all_results)
         # sort all results by distance (lower is better)
         all_results.sort(key=lambda x: x['distance'])
         return all_results
