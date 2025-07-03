@@ -14,7 +14,7 @@ class DateBasedPagination(PageNumberPagination):
             archived_lists = LocalMessageList.objects.filter(archived=True)  # get archive list to ignore it
             selected_date = date(*map(int, request.GET.get("date").split('-')))
             print(f"selected date is {selected_date}")
-            queryset = paginator.object_list.exclude(list__in=archived_lists).order_by('-pinned', '-created_at')\
+            queryset = paginator.object_list.exclude(list__in=archived_lists).order_by('-importance', '-created_at')\
                 .filter(Q(created_at__gt=selected_date) | Q(pinned=True))
             page_number = queryset.count() // self.page_size + 1
             print(f"page_number is {page_number}, page_size = {self.page_size}")
