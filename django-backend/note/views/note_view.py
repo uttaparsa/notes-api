@@ -309,7 +309,7 @@ class NoteView(GenericAPIView, ListModelMixin):
         slug = self.kwargs.get('slug')
         
         # Base queryset with ordering
-        base_queryset = LocalMessage.objects.order_by('-importance', '-updated_at')
+        base_queryset = LocalMessage.objects.order_by('-importance', '-created_at')
         
         if not slug:
             return LocalMessage.objects.none()
