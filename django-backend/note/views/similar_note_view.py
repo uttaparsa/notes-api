@@ -218,5 +218,4 @@ class SimilarNotesView(APIView):
             
         logger.info(f"results:  {all_results}")
         # sort all results by distance (lower is better)
-        all_results.sort(key=lambda x: x['distance'])
         return all_results

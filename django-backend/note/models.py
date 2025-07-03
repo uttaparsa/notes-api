@@ -80,7 +80,7 @@ import re
 class LocalMessage(models.Model):
     text = models.TextField(blank=True)
     list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, default=1)
-    pinned = models.BooleanField(default=False)
+    importance = models.IntegerField(default=0)
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

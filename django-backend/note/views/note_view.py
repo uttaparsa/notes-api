@@ -258,7 +258,8 @@ class PinMessageView(APIView):
 
     def get(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.pinned = True
+        if item.importance < 4:
+            item.importance += 1
         item.save()
         return Response("1", status=status.HTTP_200_OK)
 
@@ -267,7 +268,8 @@ class UnPinMessageView(APIView):
 
     def get(self, request, **kwargs):
         item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.pinned = False
+        if item.importance > 0:
+            item.importance -= 1
         item.save()
         return Response("1", status=status.HTTP_200_OK)
     
@@ -307,7 +309,7 @@ class NoteView(GenericAPIView, ListModelMixin):
         slug = self.kwargs.get('slug')
         
         # Base queryset with ordering
-        base_queryset = LocalMessage.objects.order_by('-pinned', '-created_at')
+        base_queryset = LocalMessage.objects.order_by('-importance', '-updated_at')
         
         if not slug:
             return LocalMessage.objects.none()
@@ -338,6 +340,11 @@ class NoteView(GenericAPIView, ListModelMixin):
             
             # Save the note
             note = serializer.save(list=lst)
+
+            # if note text contains #pin, set importance to 1
+            if '#pin' in note.text:
+                note.importance = 1
+                note.save()
             
             # Create initial revision using RevisionService
             RevisionService.update_or_create_revision(note.id, note.text)
