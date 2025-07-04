@@ -238,7 +238,7 @@ const EditNoteModal = ({
 </svg>
                                     </Button>
                                 )}
-                                {note.importance > 1 && (
+                                {note.importance > 0 && (
                                     <Button
                                         variant="outline-primary"
                                         className="mr-2"
