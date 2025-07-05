@@ -96,6 +96,22 @@ export const createCustomRenderers = (
       const encodedSrc = safeUrlEncode(props.src);
       return <ResponsiveImage {...props} src={encodedSrc} />;
     },
+    td: (props) => {
+      // add padding to table cells
+      return (
+        <td {...props} style={{ padding: '0px 10px' }}>
+          {props.children}
+        </td>
+      );
+    },
+    th: (props) => {
+      // add padding to table header cells
+      return (
+        <th {...props} style={{ padding: '0px 10px' }}>
+          {props.children}
+        </th>
+      );
+    }
   };
 
   if (similarityModeEnabled) {
