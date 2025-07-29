@@ -92,11 +92,17 @@ export default function NoteListPage({ params }) {
 
 
   const addNewNote = (note) => {
-    setNotes(prevNotes => sortNotesList([note, ...prevNotes]));
+    // Add note at top initially (unsorted)
+    setNotes(prevNotes => [note, ...prevNotes]);
     setNewNoteId(note.id);
     
-    // Clear the newNoteId after animation completes
-    setTimeout(() => setNewNoteId(null), 1200);
+    // Sort notes after entrance animation completes
+    setTimeout(() => {
+      setNotes(prevNotes => sortNotesList(prevNotes));
+    }, 1000); // Extended from 600ms to 1000ms
+    
+    // Clear the newNoteId after all animations complete
+    setTimeout(() => setNewNoteId(null), 2000); // Extended from 1200ms to 2000ms
   };
 
 

@@ -18,19 +18,30 @@ export default function NoteList({
 }) {
   const noteRefs = useRef({});
   const [animatingNotes, setAnimatingNotes] = useState(new Set());
+  const [sortingNotes, setSortingNotes] = useState(new Set());
 
   useEffect(() => {
     if (newNoteId) {
       setAnimatingNotes(prev => new Set([...prev, newNoteId]));
       
-      // Remove animation after it completes
+      // After entrance animation, trigger sorting animation
       setTimeout(() => {
         setAnimatingNotes(prev => {
           const newSet = new Set(prev);
           newSet.delete(newNoteId);
           return newSet;
         });
-      }, 1000);
+        setSortingNotes(prev => new Set([...prev, newNoteId]));
+      }, 1000); // Extended from 600ms to 1000ms
+
+      // Remove sorting animation after it completes
+      setTimeout(() => {
+        setSortingNotes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(newNoteId);
+          return newSet;
+        });
+      }, 2000); // Extended from 1200ms to 2000ms
     }
   }, [newNoteId]);
 
@@ -139,18 +150,36 @@ export default function NoteList({
     }
   };
 
+  // Sort notes but keep new note at top during entrance animation
+  const displayNotes = React.useMemo(() => {
+    if (animatingNotes.size === 0) {
+      return notes; // Normal sorted order
+    }
+    
+    const newNote = notes.find(note => animatingNotes.has(note.id));
+    const otherNotes = notes.filter(note => !animatingNotes.has(note.id));
+    
+    return newNote ? [newNote, ...otherNotes] : notes;
+  }, [notes, animatingNotes]);
+
   return (
     <div>
       <div className="mt-1 d-flex row justify-content-center">
         {!isBusy ? (
           <div className="col-xl-12 d-flex flex-vertical flex-column">
-            {notes.map(note => (
+            {displayNotes.map(note => (
               <div 
                 key={note.id} 
                 id="notesListt"
-                className={animatingNotes.has(note.id) ? 'new-note-animation' : ''}
+                className={`${animatingNotes.has(note.id) ? 'new-note-animation' : ''} ${sortingNotes.has(note.id) ? 'sorting-animation' : ''}`}
                 style={{
-                  animation: animatingNotes.has(note.id) ? 'slideInFromTop 0.6s cubic-bezier(0.4, 0, 0.2, 1), highlightNew 1s ease-out' : 'none',
+                  animation: animatingNotes.has(note.id) 
+                    ? 'slideInFromTop 1s cubic-bezier(0.4, 0, 0.2, 1), highlightNew 1.5s ease-out' 
+                    : 'none',
+                  transition: sortingNotes.has(note.id) ? 'all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
+                  transform: sortingNotes.has(note.id) ? 'scale(1.02) translateY(-5px)' : 'none',
+                  boxShadow: sortingNotes.has(note.id) ? '0 8px 25px rgba(13, 110, 253, 0.15)' : 'none',
+                  zIndex: sortingNotes.has(note.id) ? 10 : 'auto',
                 }}
               >
                 {(showHidden || !note.archived) && (
@@ -211,6 +240,40 @@ export default function NoteList({
         .new-note-animation {
           border-radius: 8px;
           overflow: hidden;
+        }
+
+        .sorting-animation {
+          transform-origin: center;
+          position: relative;
+          border-radius: 8px;
+          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0.02) 100%);
+        }
+
+        .sorting-animation::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(13, 110, 253, 0.1), transparent);
+          animation: shimmer 1.2s ease-in-out;
+          border-radius: 8px;
+          pointer-events: none;
+        }
+
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(100%);
+            opacity: 0;
+          }
         }
       `}</style>
     </div>
