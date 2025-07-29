@@ -5,6 +5,7 @@ import { Spinner } from 'react-bootstrap';
 import NoteCard from './notecard/NoteCard';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
+import styles from './NoteList.module.css';
 
 export default function NoteList({ 
   notes, 
@@ -31,7 +32,12 @@ export default function NoteList({
           newSet.delete(newNoteId);
           return newSet;
         });
-        setSortingNotes(prev => new Set([...prev, newNoteId]));
+
+        // Only trigger sorting animation if the note is not already at the top.
+        const newNoteIndex = notes.findIndex(note => note.id === newNoteId);
+        if (newNoteIndex > 0) {
+          setSortingNotes(prev => new Set([...prev, newNoteId]));
+        }
       }, 1000); // Extended from 600ms to 1000ms
 
       // Remove sorting animation after it completes
@@ -43,7 +49,7 @@ export default function NoteList({
         });
       }, 2000); // Extended from 1200ms to 2000ms
     }
-  }, [newNoteId]);
+  }, [newNoteId, notes]);
 
   const handlePinUpdate = async (note, pinned) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Updating note' }));
@@ -171,10 +177,10 @@ export default function NoteList({
               <div 
                 key={note.id} 
                 id="notesListt"
-                className={`${animatingNotes.has(note.id) ? 'new-note-animation' : ''} ${sortingNotes.has(note.id) ? 'sorting-animation' : ''}`}
+                className={`${animatingNotes.has(note.id) ? styles.newNoteAnimation : ''} ${sortingNotes.has(note.id) ? styles.sortingAnimation : ''}`}
                 style={{
                   animation: animatingNotes.has(note.id) 
-                    ? 'slideInFromTop 1s cubic-bezier(0.4, 0, 0.2, 1), highlightNew 1.5s ease-out' 
+                    ? `${styles.slideInFromTop} 1s cubic-bezier(0.4, 0, 0.2, 1), ${styles.highlightNew} 1.5s ease-out` 
                     : 'none',
                   transition: sortingNotes.has(note.id) ? 'all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
                   transform: sortingNotes.has(note.id) ? 'scale(1.02) translateY(-5px)' : 'none',
@@ -214,68 +220,6 @@ export default function NoteList({
       <br className="my-5" />
       <br className="my-5" />
       <br className="my-5" />
-      <style jsx>{`
-        @keyframes slideInFromTop {
-          0% {
-            opacity: 0;
-            transform: translateY(-30px) scale(0.95);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        
-        @keyframes highlightNew {
-          0% {
-            background-color: rgba(13, 110, 253, 0.1);
-            box-shadow: 0 0 20px rgba(13, 110, 253, 0.3);
-          }
-          100% {
-            background-color: transparent;
-            box-shadow: none;
-          }
-        }
-        
-        .new-note-animation {
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .sorting-animation {
-          transform-origin: center;
-          position: relative;
-          border-radius: 8px;
-          background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0.02) 100%);
-        }
-
-        .sorting-animation::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(13, 110, 253, 0.1), transparent);
-          animation: shimmer 1.2s ease-in-out;
-          border-radius: 8px;
-          pointer-events: none;
-        }
-
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-            opacity: 0;
-          }
-          50% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-      `}</style>
     </div>
   );
 }

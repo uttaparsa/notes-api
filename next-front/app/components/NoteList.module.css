@@ -1,0 +1,60 @@
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes highlightNew {
+  0% {
+    background-color: rgba(13, 110, 253, 0.1);
+    box-shadow: 0 0 20px rgba(13, 110, 253, 0.3);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.newNoteAnimation {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sortingAnimation {
+  transform-origin: center;
+  position: relative;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(13, 110, 253, 0.05) 0%, rgba(13, 110, 253, 0.02) 100%);
+}
+
+.sortingAnimation::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(13, 110, 253, 0.1), transparent);
+  animation: shimmer 1.2s ease-in-out;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
