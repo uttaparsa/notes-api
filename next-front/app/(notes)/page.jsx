@@ -9,6 +9,7 @@ import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 import SearchBar from '../components/SearchBar';
 import PaginationComponent from '../components/PaginationComponent';
+import { sortNotesList } from './noteUtils';
 
 export default function NotesPage() {
   const router = useRouter();
@@ -96,17 +97,6 @@ export default function NotesPage() {
     setTimeout(() => setNewNoteId(null), 1200);
   };
 
-  const sortNotesList = (notesList) => {
-    return [...notesList].sort((a, b) => {
-      if (a.pinned === b.pinned) {
-        if (a.archived === b.archived) {
-          return new Date(b.created_at) - new Date(a.created_at);
-        }
-        return a.archived > b.archived ? 1 : -1;
-      }
-      return a.pinned < b.pinned ? 1 : -1;
-    });
-  };
 
   const handleSearch = useCallback((newSearchText, newListSlugs) => {
     let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;

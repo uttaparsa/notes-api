@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from 'react-bootstrap';
 import Link from 'next/link';
 import styles from './MarginSimilarNotes.module.css';
-import { CompactMarkdownRenderer } from './notecard/markdown/ChunkRenderers';
+import { CompactMarkdownRenderer } from './notecard/markdown/MarkdownRenderers';
 
 // Custom event names for margin communication
 const SHOW_SIMILAR_EVENT = 'showSimilarInMargin';

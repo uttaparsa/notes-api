@@ -8,7 +8,8 @@ import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
 import HoverableSimilarChunks from '../HoverableSimilarChunks'; // Import HoverableSimilarChunks
-
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 // Helper to extract text from ReactMarkdown children
 const getNodeText = (childrenInput) => {
@@ -145,4 +146,71 @@ export const createCustomRenderers = (
   }
 
   return baseRenderers;
+};
+
+
+
+// Create compact renderers for headers to be same size as text
+const createCompactRenderers = () => {
+  return {
+    h1: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
+    h2: ({ children }) => <span style={{ fontWeight: '500' }}>{children}</span>,
+    h3: ({ children }) => <span style={{ fontWeight: '400' }}>{children}</span>,
+    h4: ({ children }) => <span style={{ fontWeight: '300' }}>{children}</span>,
+    h5: ({ children }) => <span style={{ fontWeight: '200' }}>{children}</span>,
+    h6: ({ children }) => <span style={{ fontWeight: '100' }}>{children}</span>,
+    img: (props) => {
+          const encodedSrc = safeUrlEncode(props.src);
+          return <ResponsiveImage {...props} src={encodedSrc} />;
+    },
+  };
+};
+
+// Helper function to process text for hashtags
+export const processTextForHashtagsAndHyphens = (text) => {
+  if (!text) return "";
+  // Split by code blocks and process only non-code parts
+  const parts = text.split(/(```[\s\S]*?```)/);
+  const processed = parts.map((part, index) => {
+    // Even indices are non-code blocks
+    if (index % 2 === 0) {
+      // Use negative lookbehind to avoid matching hashtags in URLs
+      return part.replace(
+        /(?<!https?:\/\/[^\s]*)#(\w+)/g,
+        (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
+      );
+    }
+    // Odd indices are code blocks - leave unchanged
+    return part;
+  });
+  let result = processed.join('')
+  result = result.replace(/^\s*[-—]+\s*$/gm, '');
+
+  return result;
+};
+
+
+/**
+ * Compact Markdown Renderer - Renders markdown with headers as normal text size
+ * Useful for sidebars, similar notes, and linked notes displays
+ */
+export const CompactMarkdownRenderer = ({ children, className = '', ...props }) => {
+  const text = children || '';
+  const processedText = processTextForHashtagsAndHyphens(text);
+  const compactRenderers = createCompactRenderers();
+
+  return (
+    <div style={{maxHeight: '80px', overflow: 'hidden'}}>
+    <ReactMarkdown 
+      components={compactRenderers}
+      remarkPlugins={[remarkGfm]}
+      className={className}
+      {...props}
+
+    >
+      {processedText}
+    </ReactMarkdown>
+    </div>
+
+  );
 };

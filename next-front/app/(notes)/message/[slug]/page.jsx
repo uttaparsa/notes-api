@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/notecard/NoteCard';
 import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
-import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/ChunkRenderers';
+import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/MarkdownRenderers';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';

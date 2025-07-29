@@ -3,28 +3,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
-import { createCustomRenderers } from './MarkdownRenderers';
-import HoverableSimilarChunks from '../HoverableSimilarChunks'; // Import HoverableSimilarChunks
+import { createCustomRenderers, processTextForHashtagsAndHyphens } from './MarkdownRenderers';
+import HoverableSimilarChunks from '../HoverableSimilarChunks';
 
-// Helper function to process text for hashtags
-const processTextForHashtags = (text) => {
-  if (!text) return "";
-  // Split by code blocks and process only non-code parts
-  const parts = text.split(/(```[\s\S]*?```)/);
-  const processed = parts.map((part, index) => {
-    // Even indices are non-code blocks
-    if (index % 2 === 0) {
-      // Use negative lookbehind to avoid matching hashtags in URLs
-      return part.replace(
-        /(?<!https?:\/\/[^\s]*)#(\w+)/g,
-        (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`
-      );
-    }
-    // Odd indices are code blocks - leave unchanged
-    return part;
-  });
-  return processed.join('');
-};
 
 /**
  * Standard Display Renderer - Renders markdown with proper formatting
@@ -49,7 +30,7 @@ export const DisplayRenderer = ({
 
       return chunks.map((chunk, index) => {
         const chunkTextContent = chunk.chunk_text || chunk.text || "";
-
+        const textToDiplay = processTextForHashtagsAndHyphens(chunkTextContent);
         return (
           <HoverableSimilarChunks
             key={index}
@@ -63,7 +44,7 @@ export const DisplayRenderer = ({
               remarkPlugins={[remarkGfm]}
               className={`${isRTL(chunkTextContent) ? styles.rtlMarkdown : ''} ${styles.chunkMarkdownContent}`}
             >
-              {chunkTextContent}
+              {textToDiplay}
             </ReactMarkdown>
           </HoverableSimilarChunks>
         );
@@ -82,7 +63,7 @@ export const DisplayRenderer = ({
         ? note.text
         : note.text.substring(0, 1000);
       
-      textToRender = processTextForHashtags(textToRender);
+      textToRender = processTextForHashtagsAndHyphens(textToRender);
 
       return (
         <>
@@ -117,35 +98,3 @@ export const DisplayRenderer = ({
   );
 };
 
-// Create compact renderers for headers to be same size as text
-const createCompactRenderers = () => {
-  return {
-    h1: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
-    h2: ({ children }) => <span style={{ fontWeight: '500' }}>{children}</span>,
-    h3: ({ children }) => <span style={{ fontWeight: '400' }}>{children}</span>,
-    h4: ({ children }) => <span style={{ fontWeight: '300' }}>{children}</span>,
-    h5: ({ children }) => <span style={{ fontWeight: '200' }}>{children}</span>,
-    h6: ({ children }) => <span style={{ fontWeight: '100' }}>{children}</span>,
-  };
-};
-
-/**
- * Compact Markdown Renderer - Renders markdown with headers as normal text size
- * Useful for sidebars, similar notes, and linked notes displays
- */
-export const CompactMarkdownRenderer = ({ children, className = '', ...props }) => {
-  const text = children || '';
-  const processedText = processTextForHashtags(text);
-  const compactRenderers = createCompactRenderers();
-
-  return (
-    <ReactMarkdown 
-      components={compactRenderers}
-      remarkPlugins={[remarkGfm]}
-      className={className}
-      {...props}
-    >
-      {processedText}
-    </ReactMarkdown>
-  );
-};
