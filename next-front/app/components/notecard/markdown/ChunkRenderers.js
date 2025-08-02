@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
-import { createCustomRenderers, processTextForHashtags } from './MarkdownRenderers';
+import { createCustomRenderers, processTextForHashtags, removeHyphens } from './MarkdownRenderers';
 import HoverableSimilarChunks from '../HoverableSimilarChunks';
 
 
@@ -30,7 +30,7 @@ export const DisplayRenderer = ({
 
       return chunks.map((chunk, index) => {
         const chunkTextContent = chunk.chunk_text || chunk.text || "";
-        const textToDiplay = processTextForHashtags(chunkTextContent);
+        const textToDiplay = removeHyphens(processTextForHashtags(chunkTextContent));
         return (
           <HoverableSimilarChunks
             key={index}

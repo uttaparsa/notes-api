@@ -167,7 +167,7 @@ const createCompactRenderers = () => {
 };
 
 
-const removeHyphens = (text) => {
+export const removeHyphens = (text) => {
   if (!text) return "";
   // Remove hyphens that are not part of a word (e.g., in URLs)
   return text.replace(/(?<!\w)-|-(?!\w)/g, '');
