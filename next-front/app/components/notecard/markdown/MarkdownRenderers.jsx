@@ -166,8 +166,16 @@ const createCompactRenderers = () => {
   };
 };
 
+
+const removeHyphens = (text) => {
+  if (!text) return "";
+  // Remove hyphens that are not part of a word (e.g., in URLs)
+  return text.replace(/(?<!\w)-|-(?!\w)/g, '');
+}
+
+
 // Helper function to process text for hashtags
-export const processTextForHashtagsAndHyphens = (text) => {
+export const processTextForHashtags = (text) => {
   if (!text) return "";
   // Split by code blocks and process only non-code parts
   const parts = text.split(/(```[\s\S]*?```)/);
@@ -183,11 +191,11 @@ export const processTextForHashtagsAndHyphens = (text) => {
     // Odd indices are code blocks - leave unchanged
     return part;
   });
-  let result = processed.join('')
-  result = result.replace(/^\s*[-—]+\s*$/gm, '');
 
-  return result;
+  return processed.join('');
 };
+
+
 
 
 /**
@@ -196,7 +204,7 @@ export const processTextForHashtagsAndHyphens = (text) => {
  */
 export const CompactMarkdownRenderer = ({ children, className = '', ...props }) => {
   const text = children || '';
-  const processedText = processTextForHashtagsAndHyphens(text);
+  const processedText = removeHyphens(processTextForHashtags(text));
   const compactRenderers = createCompactRenderers();
 
   return (

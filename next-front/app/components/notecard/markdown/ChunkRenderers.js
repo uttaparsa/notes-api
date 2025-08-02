@@ -30,7 +30,7 @@ export const DisplayRenderer = ({
 
       return chunks.map((chunk, index) => {
         const chunkTextContent = chunk.chunk_text || chunk.text || "";
-        const textToDiplay = processTextForHashtagsAndHyphens(chunkTextContent);
+        const textToDiplay = processTextForHashtags(chunkTextContent);
         return (
           <HoverableSimilarChunks
             key={index}
@@ -63,7 +63,7 @@ export const DisplayRenderer = ({
         ? note.text
         : note.text.substring(0, 1000);
       
-      textToRender = processTextForHashtagsAndHyphens(textToRender);
+      textToRender = processTextForHashtags(textToRender);
 
       return (
         <>
