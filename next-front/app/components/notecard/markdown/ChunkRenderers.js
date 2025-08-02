@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
-import { createCustomRenderers, processTextForHashtagsAndHyphens } from './MarkdownRenderers';
+import { createCustomRenderers, processTextForHashtags } from './MarkdownRenderers';
 import HoverableSimilarChunks from '../HoverableSimilarChunks';
 
 
