@@ -15,7 +15,7 @@ class DateBasedPagination(PageNumberPagination):
             selected_date = date(*map(int, request.GET.get("date").split('-')))
             print(f"selected date is {selected_date}")
             queryset = paginator.object_list.exclude(list__in=archived_lists).order_by('-importance', '-created_at')\
-                .filter(Q(created_at__gt=selected_date) | Q(pinned=True))
+                .filter(Q(created_at__gt=selected_date) | Q(importance__gt=1))
             page_number = queryset.count() // self.page_size + 1
             print(f"page_number is {page_number}, page_size = {self.page_size}")
 

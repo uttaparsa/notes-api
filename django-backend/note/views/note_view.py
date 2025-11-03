@@ -340,11 +340,6 @@ class NoteView(GenericAPIView, ListModelMixin):
             
             # Save the note
             note = serializer.save(list=lst)
-
-            # if note text contains #pin, set importance to 1
-            if '#pin' in note.text:
-                note.importance = 1
-                note.save()
             
             # Create initial revision using RevisionService
             RevisionService.update_or_create_revision(note.id, note.text)
