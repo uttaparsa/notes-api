@@ -11,8 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { AuthContext, ToastContext, ModalContext } from './_layout';
-// import { fetchWithAuth } from '../lib/api';
-// import { handleApiError } from '../utils/errorHandler';
+import { fetchWithAuth } from '../lib/api';
+import { useRouter } from 'expo-router';
 
 // Utility function to sort notes
 const sortNotesList = (notes) => {
@@ -23,6 +23,7 @@ export default function HomePage() {
   const { isAuthenticated } = useContext(AuthContext);
   const showToast = useContext(ToastContext);
   const { setShowModal, setModalTitle } = useContext(ModalContext);
+  const router = useRouter();
   
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -47,54 +48,28 @@ export default function HomePage() {
   const getRecords = async (selectedDate = null) => {
     setIsBusy(true);
     try {
-      // TODO: Implement actual API call
-      // let url = `/api/note/${listSlug}/`;
-      // const params = new URLSearchParams({
-      //   page: currentPage,
-      //   ...(selectedDate && { date: selectedDate }),
-      // });
-      // 
-      // const response = await fetchWithAuth(`${url}?${params}`);
-      // if (!response.ok) throw new Error('Failed to fetch notes');
-      // const data = await response.json();
-      // 
-      // setNotes(data.results.map(note => ({
-      //   ...note,
-      //   created_date: Date.parse(note.created_date)
-      // })));
-      // setTotalCount(data.count);
-
-      // Temporary mock data
-      setTimeout(() => {
-        const mockNotes = [
-          {
-            id: 1,
-            message: 'First note example',
-            created_date: Date.now() - 1000000,
-            hidden: false,
-          },
-          {
-            id: 2,
-            message: 'Second note example',
-            created_date: Date.now() - 2000000,
-            hidden: false,
-          },
-          {
-            id: 3,
-            message: 'Hidden note example',
-            created_date: Date.now() - 3000000,
-            hidden: true,
-          },
-        ];
-        
-        setNotes(mockNotes);
-        setTotalCount(mockNotes.length);
-        setIsBusy(false);
-      }, 500);
+      let url = `/api/note/${listSlug}/`;
+      const params = new URLSearchParams({
+        page: currentPage,
+        per_page: perPage,
+        ...(selectedDate && { date: selectedDate }),
+        ...(showHidden && { show_hidden: 'true' }),
+      });
+      
+      const response = await fetchWithAuth(`${url}?${params}`, {}, 5000, router);
+      if (!response.ok) throw new Error('Failed to fetch notes');
+      
+      const data = await response.json();
+      
+      setNotes(data.results.map(note => ({
+        ...note,
+        created_date: Date.parse(note.created_date)
+      })));
+      setTotalCount(data.count);
+      setIsBusy(false);
     } catch (err) {
       console.error(`Error: ${err}`);
-      // handleApiError(err);
-      showToast('Error', 'Failed to fetch notes', 3000, 'error');
+      showToast('Error', err.message || 'Failed to fetch notes', 3000, 'error');
       setIsBusy(false);
     }
   };
@@ -106,28 +81,40 @@ export default function HomePage() {
   }, []);
 
   const updateNote = async (noteId, updates) => {
-    setNotes(prevNotes =>
-      prevNotes.map(note =>
-        note.id === noteId ? { ...note, ...updates } : note
-      )
-    );
+    try {
+      const response = await fetchWithAuth(`/api/note/${noteId}/`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }, 5000, router);
+      
+      if (!response.ok) throw new Error('Failed to update note');
+      
+      setNotes(prevNotes =>
+        prevNotes.map(note =>
+          note.id === noteId ? { ...note, ...updates } : note
+        )
+      );
+      showToast('Success', 'Note updated', 2000, 'success');
+    } catch (err) {
+      console.error('Update error:', err);
+      showToast('Error', err.message || 'Failed to update note', 3000, 'error');
+    }
   };
 
   const deleteNote = async (noteId) => {
-    // TODO: Implement actual delete API call
-    // try {
-    //   const response = await fetchWithAuth(`/api/note/${noteId}/`, {
-    //     method: 'DELETE',
-    //   });
-    //   if (!response.ok) throw new Error('Failed to delete note');
-    //   setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
-    //   showToast('Success', 'Note deleted', 2000, 'success');
-    // } catch (err) {
-    //   handleApiError(err);
-    // }
-    
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
-    showToast('Success', 'Note deleted', 2000, 'success');
+    try {
+      const response = await fetchWithAuth(`/api/note/${noteId}/`, {
+        method: 'DELETE',
+      }, 5000, router);
+      
+      if (!response.ok) throw new Error('Failed to delete note');
+      
+      setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+      showToast('Success', 'Note deleted', 2000, 'success');
+    } catch (err) {
+      console.error('Delete error:', err);
+      showToast('Error', err.message || 'Failed to delete note', 3000, 'error');
+    }
   };
 
   const addNewNote = async () => {
@@ -136,51 +123,47 @@ export default function HomePage() {
       return;
     }
 
-    // TODO: Implement actual create API call
-    // try {
-    //   const response = await fetchWithAuth('/api/note/', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ message: messageInput, list_slug: listSlug }),
-    //   });
-    //   if (!response.ok) throw new Error('Failed to create note');
-    //   const note = await response.json();
-    //   // Add note and sort
-    //   setNotes(prevNotes => [note, ...prevNotes]);
-    //   setNewNoteId(note.id);
-    //   setTimeout(() => {
-    //     setNotes(prevNotes => sortNotesList(prevNotes));
-    //   }, 1000);
-    //   setTimeout(() => setNewNoteId(null), 2000);
-    //   setMessageInput('');
-    //   showToast('Success', 'Note created', 2000, 'success');
-    // } catch (err) {
-    //   handleApiError(err);
-    // }
-
-    // Temporary mock
-    const newNote = {
-      id: Date.now(),
-      message: messageInput,
-      created_date: Date.now(),
-      hidden: false,
-    };
-    
-    setNotes(prevNotes => [newNote, ...prevNotes]);
-    setNewNoteId(newNote.id);
-    setTimeout(() => {
-      setNotes(prevNotes => sortNotesList(prevNotes));
-    }, 1000);
-    setTimeout(() => setNewNoteId(null), 2000);
-    setMessageInput('');
-    showToast('Success', 'Note created', 2000, 'success');
+    try {
+      const response = await fetchWithAuth('/api/note/', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          message: messageInput, 
+          list_slug: listSlug 
+        }),
+      }, 5000, router);
+      
+      if (!response.ok) throw new Error('Failed to create note');
+      
+      const note = await response.json();
+      const noteWithDate = {
+        ...note,
+        created_date: Date.parse(note.created_date)
+      };
+      
+      setNotes(prevNotes => [noteWithDate, ...prevNotes]);
+      setNewNoteId(note.id);
+      
+      setTimeout(() => {
+        setNotes(prevNotes => sortNotesList(prevNotes));
+      }, 1000);
+      setTimeout(() => setNewNoteId(null), 2000);
+      
+      setMessageInput('');
+      setTotalCount(prev => prev + 1);
+      showToast('Success', 'Note created', 2000, 'success');
+    } catch (err) {
+      console.error('Create error:', err);
+      showToast('Error', err.message || 'Failed to create note', 3000, 'error');
+    }
   };
 
   const handleSearch = () => {
-    // TODO: Implement search navigation
-    // Navigation to search screen with query params
-    console.log('Search:', searchText);
-    showToast('Info', 'Search feature coming soon', 2000, 'info');
+    if (!searchText.trim()) {
+      showToast('Info', 'Please enter a search query', 2000, 'info');
+      return;
+    }
+    // TODO: Navigate to search screen or implement inline search
+    router.push(`/search?q=${encodeURIComponent(searchText)}`);
   };
 
   const filteredNotes = notes.filter(note => 

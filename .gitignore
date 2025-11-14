@@ -12,23 +12,6 @@ nuxt-front/node_modules/
 
 nuxt-front/.nuxt/
 
-notes-react-native/node_modules/
-notes-react-native/.expo/
-notes-react-native/.expo-shared/
-notes-react-native/dist/
-notes-react-native/npm-debug.*
-notes-react-native/yarn-error.log
-notes-react-native/yarn.lock
-notes-react-native/package-lock.json
-notes-react-native/*.jks
-notes-react-native/*.p8
-notes-react-native/*.p12
-notes-react-native/*.key
-notes-react-native/*.mobileprovision
-notes-react-native/*.orig.*
-notes-react-native/web-build/
-notes-react-native/android/
-notes-react-native/ios/
 
 *.zip
 

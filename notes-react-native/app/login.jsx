@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AuthContext } from './_layout';
+import { login } from '../lib/auth';
 
 export default function LoginScreen() {
   const [loginInfo, setLoginInfo] = useState({
@@ -39,29 +40,13 @@ export default function LoginScreen() {
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual login API call
-      // const data = await login(loginInfo.username, loginInfo.password);
-      // await AsyncStorage.setItem('accessToken', data.access);
-      // await AsyncStorage.setItem('refreshToken', data.refresh);
-      // setIsAuthenticated(true);
-      // router.push('/');
-      
-      // Temporary mock login
-      setTimeout(() => {
-        if (loginInfo.username && loginInfo.password) {
-          // Mock successful login
-          console.log('Login successful');
-          setIsAuthenticated(true);
-          router.replace('/');
-        } else {
-          setErrorMessage('Invalid login');
-        }
-        setIsLoading(false);
-      }, 1000);
-      
+      await login(loginInfo.username, loginInfo.password);
+      setIsAuthenticated(true);
+      router.replace('/');
     } catch (error) {
       console.error('Error logging in:', error);
-      setErrorMessage('Invalid login');
+      setErrorMessage(error.message || 'Invalid login credentials');
+    } finally {
       setIsLoading(false);
     }
   };
