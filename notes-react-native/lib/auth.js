@@ -20,6 +20,8 @@ export async function login(username, password) {
     });
 
     if (!response.ok) {
+      console.log(response);
+      
       throw new Error('Login failed');
     }
 

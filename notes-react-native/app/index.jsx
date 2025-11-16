@@ -2,17 +2,15 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
-  RefreshControl,
   TextInput,
   Switch,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { AuthContext, ToastContext, ModalContext } from './_layout';
 import { fetchWithAuth } from '../lib/api';
 import { useRouter } from 'expo-router';
+import NoteList from '../components/NoteList';
 
 // Utility function to sort notes
 const sortNotesList = (notes) => {
@@ -227,45 +225,15 @@ export default function HomePage() {
       </View>
 
       {/* Notes List */}
-      <ScrollView
-        style={styles.notesList}
-        refreshControl={
-          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
-        }
-      >
-        {isBusy ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-          </View>
-        ) : filteredNotes.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No notes found</Text>
-          </View>
-        ) : (
-          filteredNotes.map(note => (
-            <View
-              key={note.id}
-              style={[
-                styles.noteCard,
-                newNoteId === note.id && styles.noteCardNew,
-              ]}
-            >
-              <Text style={styles.noteMessage}>{note.message}</Text>
-              <View style={styles.noteFooter}>
-                <Text style={styles.noteDate}>
-                  {new Date(note.created_date).toLocaleString()}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => deleteNote(note.id)}
-                  style={styles.deleteButton}
-                >
-                  <Text style={styles.deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      <NoteList
+        notes={notes}
+        isBusy={isBusy}
+        showHidden={showHidden}
+        onDeleteNote={deleteNote}
+        newNoteId={newNoteId}
+        isRefreshing={isRefreshing}
+        onRefresh={onRefresh}
+      />
 
       {/* Pagination Controls */}
       <View style={styles.paginationControls}>
@@ -371,64 +339,6 @@ const styles = StyleSheet.create({
     padding: 8,
     marginLeft: 12,
     fontSize: 14,
-  },
-  notesList: {
-    flex: 1,
-    padding: 12,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-  },
-  noteCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  noteCardNew: {
-    borderColor: '#007AFF',
-    borderWidth: 2,
-  },
-  noteMessage: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 12,
-  },
-  noteFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  noteDate: {
-    fontSize: 12,
-    color: '#666',
-  },
-  deleteButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  deleteButtonText: {
-    color: '#DC3545',
-    fontSize: 14,
-    fontWeight: '600',
   },
   paginationControls: {
     flexDirection: 'row',
