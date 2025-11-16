@@ -3,20 +3,75 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   Switch,
   TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { AuthContext, ToastContext, ModalContext } from './_layout';
 import { fetchWithAuth } from '../lib/api';
 import { useRouter } from 'expo-router';
-import NoteList from '../components/NoteList';
+import NoteCard from '../components/notecard/NoteCard';
 import MessageInput from '../components/MessageInput';
 import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
 
-// Utility function to sort notes
-const sortNotesList = (notes) => {
-  return [...notes].sort((a, b) => b.created_at - a.created_at);
+// Utility function to format date as YYYY-MM-DD
+const formatDate = (date) => {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Utility function to format date for display
+const formatDateDisplay = (dateString) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  if (formatDate(date) === formatDate(today)) {
+    return 'Today';
+  } else if (formatDate(date) === formatDate(yesterday)) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  }
+};
+
+// Group notes by date
+const groupNotesByDate = (notes) => {
+  const grouped = {};
+  notes.forEach(note => {
+    const dateKey = formatDate(note.created_at);
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(note);
+  });
+  return grouped;
+};
+
+// Convert grouped notes to flat list with headers
+const createFlatListData = (notes) => {
+  const grouped = groupNotesByDate(notes);
+  const flatData = [];
+  
+  Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+    flatData.push({ type: 'date', date });
+    grouped[date].forEach(note => {
+      flatData.push({ type: 'note', data: note });
+    });
+  });
+  
+  return flatData;
 };
 
 export default function HomePage() {
@@ -26,32 +81,50 @@ export default function HomePage() {
   const router = useRouter();
   
   const [notes, setNotes] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const [flatListData, setFlatListData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [isBusy, setIsBusy] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
-  const [searchText, setSearchText] = useState('');
   const [newNoteId, setNewNoteId] = useState(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   
   const perPage = 20;
   const listSlug = 'All';
 
   useEffect(() => {
     if (isAuthenticated) {
-      getRecords();
+      resetAndFetch();
     }
-  }, [currentPage, showHidden, isAuthenticated]);
+  }, [showHidden, isAuthenticated]);
 
-  const getRecords = async (selectedDate = null) => {
-    setIsBusy(true);
+  useEffect(() => {
+    setFlatListData(createFlatListData(notes));
+  }, [notes]);
+
+  const resetAndFetch = async () => {
+    setCurrentPage(1);
+    setHasMore(true);
+    setNotes([]);
+    await getRecords(1, true);
+  };
+
+  const getRecords = async (page = currentPage, reset = false, targetDate = null) => {
+    if (reset) {
+      setIsBusy(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+    
     try {
       let url = `/api/note/${listSlug}/`;
       const params = new URLSearchParams({
-        page: currentPage,
+        page: page,
         per_page: perPage,
-        ...(selectedDate && { date: selectedDate }),
+        ...(targetDate && { date: targetDate }),
         ...(showHidden && { show_hidden: 'true' }),
       });
       
@@ -60,43 +133,36 @@ export default function HomePage() {
       
       const data = await response.json();
       
-      setNotes(data.results.map(note => ({
-        ...note,
-        created_date: Date.parse(note.created_at)
-      })));
-      setTotalCount(data.count);
+      const newNotes = data.results;
+      
+      if (reset) {
+        setNotes(newNotes);
+      } else {
+        setNotes(prev => [...prev, ...newNotes]);
+      }
+      
+      setHasMore(data.next !== null);
       setIsBusy(false);
+      setIsLoadingMore(false);
     } catch (err) {
       console.error(`Error: ${err}`);
       showToast('Error', err.message || 'Failed to fetch notes', 3000, 'error');
       setIsBusy(false);
+      setIsLoadingMore(false);
     }
   };
 
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await getRecords();
+    await resetAndFetch();
     setIsRefreshing(false);
-  }, []);
+  }, [showHidden]);
 
-  const updateNote = async (noteId, updates) => {
-    try {
-      const response = await fetchWithAuth(`/api/note/${noteId}/`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates),
-      }, 5000, router);
-      
-      if (!response.ok) throw new Error('Failed to update note');
-      
-      setNotes(prevNotes =>
-        prevNotes.map(note =>
-          note.id === noteId ? { ...note, ...updates } : note
-        )
-      );
-      showToast('Success', 'Note updated', 2000, 'success');
-    } catch (err) {
-      console.error('Update error:', err);
-      showToast('Error', err.message || 'Failed to update note', 3000, 'error');
+  const loadMore = () => {
+    if (!isLoadingMore && hasMore && !isBusy) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      getRecords(nextPage, false);
     }
   };
 
@@ -134,20 +200,12 @@ export default function HomePage() {
       if (!response.ok) throw new Error('Failed to create note');
       
       const note = await response.json();
-      const noteWithDate = {
-        ...note,
-        created_date: Date.parse(note.created_at)
-      };
       
-      setNotes(prevNotes => [noteWithDate, ...prevNotes]);
+      setNotes(prevNotes => [note, ...prevNotes]);
       setNewNoteId(note.id);
       
-      setTimeout(() => {
-        setNotes(prevNotes => sortNotesList(prevNotes));
-      }, 1000);
       setTimeout(() => setNewNoteId(null), 2000);
       
-      setTotalCount(prev => prev + 1);
       showToast('Success', 'Note created', 2000, 'success');
     } catch (err) {
       console.error('Create error:', err);
@@ -156,46 +214,61 @@ export default function HomePage() {
     }
   };
 
-  // const handleSearch = () => {
-  //   if (!searchText.trim()) {
-  //     showToast('Info', 'Please enter a search query', 2000, 'info');
-  //     return;
-  //   }
-  //   // TODO: Navigate to search screen or implement inline search
-  //   router.push(`/search?q=${encodeURIComponent(searchText)}`);
-  // };
+  const handleDatePress = () => {
+    setShowDatePicker(true);
+  };
 
-  const filteredNotes = notes.filter(note => 
-    showHidden || !note.hidden
-  );
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+      const dateString = formatDate(date);
+      setCurrentPage(1);
+      setHasMore(true);
+      setNotes([]);
+      getRecords(1, true, dateString);
+    }
+  };
 
-  const totalPages = Math.ceil(totalCount / perPage);
+  const renderItem = ({ item }) => {
+    if (item.type === 'date') {
+      return (
+        <TouchableOpacity
+          style={styles.dateHeader}
+          onPress={handleDatePress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.dateHeaderText}>{formatDateDisplay(item.date)}</Text>
+          <Text style={styles.dateHeaderIcon}>📅</Text>
+        </TouchableOpacity>
+      );
+    }
+    
+    return (
+      <NoteCard
+        note={item.data}
+        onDelete={deleteNote}
+        isNew={newNoteId === item.data.id}
+      />
+    );
+  };
+
+  const renderFooter = () => {
+    if (!isLoadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.buttonPrimary} />
+      </View>
+    );
+  };
+
+  const filteredFlatListData = flatListData.filter(item => {
+    if (item.type === 'date') return true;
+    return showHidden || !item.data.archived;
+  });
 
   return (
     <View style={styles.container}>
-      {/* Search Bar - Commented out until search functionality is implemented */}
-      {/* <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search notes..."
-          placeholderTextColor="#999"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
-      </View> */}
-
-      {/* Pagination Info */}
-      <View style={styles.paginationInfo}>
-        <Text style={styles.paginationText}>
-          Page {currentPage} of {totalPages} • {totalCount} total notes
-        </Text>
-      </View>
-
       {/* Filters */}
       <View style={styles.filtersContainer}>
         <View style={styles.filterRow}>
@@ -207,55 +280,38 @@ export default function HomePage() {
             thumbColor={showHidden ? '#007AFF' : '#F3F4F6'}
           />
         </View>
-        
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Filter by date:</Text>
-          <TextInput
-            style={styles.dateInput}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor="#999"
-            value={date}
-            onChangeText={(text) => {
-              setDate(text);
-              if (text.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                getRecords(text);
-              }
-            }}
-          />
-        </View>
       </View>
 
       {/* Notes List */}
-      <NoteList
-        notes={notes}
-        isBusy={isBusy}
-        showHidden={showHidden}
-        onDeleteNote={deleteNote}
-        newNoteId={newNoteId}
-        isRefreshing={isRefreshing}
-        onRefresh={onRefresh}
-      />
+      {isBusy ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.buttonPrimary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredFlatListData}
+          renderItem={renderItem}
+          keyExtractor={(item, index) => 
+            item.type === 'date' ? `date-${item.date}` : `note-${item.data.id}`
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
 
-      {/* Pagination Controls */}
-      <View style={styles.paginationControls}>
-        <TouchableOpacity
-          style={[styles.pageButton, currentPage === 1 && styles.pageButtonDisabled]}
-          onPress={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-          disabled={currentPage === 1}
-        >
-          <Text style={styles.pageButtonText}>Previous</Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.pageNumber}>{currentPage}</Text>
-        
-        <TouchableOpacity
-          style={[styles.pageButton, currentPage === totalPages && styles.pageButtonDisabled]}
-          onPress={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-          disabled={currentPage === totalPages}
-        >
-          <Text style={styles.pageButtonText}>Next</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Date Picker */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+        />
+      )}
 
       {/* Message Input FAB */}
       <MessageInput onSend={addNewNote} listSlug={listSlug} />
@@ -267,18 +323,6 @@ const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
   },
-  paginationInfo: {
-    backgroundColor: colors.backgroundSecondary,
-    padding: spacing.sm,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
-  },
-  paginationText: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.regular,
-  },
   filtersContainer: {
     backgroundColor: colors.white,
     padding: spacing.md,
@@ -289,53 +333,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
   },
   filterLabel: {
     fontSize: typography.fontSize.sm,
     color: colors.textPrimary,
     fontWeight: typography.fontWeight.medium,
   },
-  dateInput: {
-    flex: 1,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+  listContent: {
     padding: spacing.md,
-    marginLeft: spacing.md,
-    fontSize: typography.fontSize.sm,
-    color: colors.textPrimary,
   },
-  paginationControls: {
+  dateHeader: {
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
-  pageButton: {
-    backgroundColor: colors.buttonPrimary,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...shadows.sm,
-  },
-  pageButtonDisabled: {
-    backgroundColor: colors.buttonDisabled,
-    ...shadows.sm,
-  },
-  pageButtonText: {
-    color: colors.white,
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.sm,
+  dateHeaderText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
     letterSpacing: typography.letterSpacing.wide,
+    textTransform: 'uppercase',
   },
-  pageNumber: {
+  dateHeaderIcon: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
+  },
+  loadingContainer: {
+    ...commonStyles.loadingContainer,
+  },
+  footerLoader: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
   },
 });

@@ -11,7 +11,7 @@ export default function NoteCard({ note, onDelete, isNew = false }) {
     <View style={[styles.noteCard, isNew && styles.noteCardNew]}>
       <Markdown style={markdownStyles}>{note.text}</Markdown>
       <View style={styles.noteFooter}>
-        <Text style={styles.noteDate}>{formatDate(note.created_date)}</Text>
+        <Text style={styles.noteDate}>{formatDate(note.created_at)}</Text>
         <TouchableOpacity onPress={() => onDelete(note.id)} style={styles.deleteButton}>
           <Text style={styles.deleteButtonText}>Delete</Text>
         </TouchableOpacity>

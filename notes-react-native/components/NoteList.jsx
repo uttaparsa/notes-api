@@ -1,5 +1,6 @@
+// This component is now deprecated for the home page but kept for compatibility
 import React from 'react';
-import { View, ScrollView, StyleSheet, ActivityIndicator, Text, RefreshControl } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import NoteCard from './notecard/NoteCard';
 
 export default function NoteList({ 
@@ -30,27 +31,30 @@ export default function NoteList({
   }
 
   return (
-    <ScrollView
+    <FlatList
+      data={filteredNotes}
+      renderItem={({ item }) => (
+        <NoteCard
+          note={item}
+          onDelete={onDeleteNote}
+          isNew={newNoteId === item.id}
+        />
+      )}
+      keyExtractor={(item) => item.id.toString()}
       style={styles.notesList}
+      contentContainerStyle={styles.notesListContent}
       refreshControl={
         <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
       }
-    >
-      {filteredNotes.map(note => (
-        <NoteCard
-          key={note.id}
-          note={note}
-          onDelete={onDeleteNote}
-          isNew={newNoteId === note.id}
-        />
-      ))}
-    </ScrollView>
+    />
   );
 }
 
 const styles = StyleSheet.create({
   notesList: {
     flex: 1,
+  },
+  notesListContent: {
     padding: 12,
   },
   loadingContainer: {
