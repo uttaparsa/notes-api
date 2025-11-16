@@ -16,7 +16,7 @@ import { colors, typography, spacing, borderRadius, shadows, commonStyles } from
 
 // Utility function to sort notes
 const sortNotesList = (notes) => {
-  return [...notes].sort((a, b) => b.created_date - a.created_date);
+  return [...notes].sort((a, b) => b.created_at - a.created_at);
 };
 
 export default function HomePage() {
@@ -62,7 +62,7 @@ export default function HomePage() {
       
       setNotes(data.results.map(note => ({
         ...note,
-        created_date: Date.parse(note.created_date)
+        created_date: Date.parse(note.created_at)
       })));
       setTotalCount(data.count);
       setIsBusy(false);
@@ -136,7 +136,7 @@ export default function HomePage() {
       const note = await response.json();
       const noteWithDate = {
         ...note,
-        created_date: Date.parse(note.created_date)
+        created_date: Date.parse(note.created_at)
       };
       
       setNotes(prevNotes => [noteWithDate, ...prevNotes]);
