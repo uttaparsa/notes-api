@@ -4,6 +4,7 @@ import { useRouter, useSegments, Slot } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavbar from '../components/BottomNavbar';
 import Toast from '../components/Toast';
+import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
 
 export const NoteListContext = createContext([]);
 export const ModalContext = createContext({});
@@ -165,20 +166,19 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
+    ...commonStyles.container,
   },
   content: {
     flex: 1,
   },
   loadingScreen: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...commonStyles.loadingContainer,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    marginTop: spacing.lg,
+    fontSize: typography.fontSize.base,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.regular,
   },
   modalOverlay: {
     flex: 1,
@@ -187,27 +187,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.xl,
     minWidth: 250,
     minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...shadows.lg,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 20,
-    color: '#333',
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    marginBottom: spacing.lg,
+    color: colors.textPrimary,
+    letterSpacing: typography.letterSpacing.tight,
   },
   spinner: {
     transform: [{ scale: 1.5 }],
