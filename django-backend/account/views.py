@@ -69,6 +69,7 @@ def serve_csrf_cookie(request):
     return response
 
 
+
 def send_login_notification(user, device_name, ip_address):
     subject = "New Login Notification"
     message = (
@@ -89,46 +90,54 @@ def send_login_notification(user, device_name, ip_address):
     )
 
 
+import threading
+
+def send_login_notification_async(user, device_name, ip_address):
+    thread = threading.Thread(
+        target=send_login_notification,
+        args=(user, device_name, ip_address),
+        daemon=True
+    )
+    thread.start()
+
+
 @authentication_classes([BasicAuthentication]) 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(request, username=username, password=password)
 
-            # Capture device information
-            user_agent = request.META.get('HTTP_USER_AGENT', '')
-            # get ip behind proxy
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+    if user is not None:
+        login(request, user)
 
-            device_name = request.data.get('device_name', 'Unknown Device')
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
 
-            # get current session object
-            related_session_key = request.session.session_key
+        device_name = request.data.get('device_name', 'Unknown Device')
 
-            if related_session_key:
+        related_session_key = request.session.session_key
 
-                # Store the session
-                UserSession.objects.get_or_create(
-                    user=user,
-                    session_id=related_session_key,
-                    device_name=device_name,
-                    user_agent=user_agent,
-                    ip_address=ip_address,
-                    last_activity=timezone.now(),
-                )
+        if related_session_key:
+            UserSession.objects.get_or_create(
+                user=user,
+                session_id=related_session_key,
+                device_name=device_name,
+                user_agent=user_agent,
+                ip_address=ip_address,
+                last_activity=timezone.now(),
+            )
 
-            # Send login notification email
-            if not settings.DEBUG:
-                send_login_notification(user, device_name, ip_address)
+        if not settings.DEBUG:
+            send_login_notification_async(user, device_name, ip_address)
 
-            return JsonResponse({'message': 'Login successful'})
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=400)
+        return JsonResponse({'message': 'Login successful'})
+
+    else:
+        return JsonResponse({'error': 'Invalid credentials'}, status=400)
+
 
 
         
