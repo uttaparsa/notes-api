@@ -11,6 +11,7 @@ import { AuthContext, ToastContext, ModalContext } from './_layout';
 import { fetchWithAuth } from '../lib/api';
 import { useRouter } from 'expo-router';
 import NoteList from '../components/NoteList';
+import MessageInput from '../components/MessageInput';
 import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
 
 // Utility function to sort notes
@@ -33,7 +34,6 @@ export default function HomePage() {
   const [showHidden, setShowHidden] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [newNoteId, setNewNoteId] = useState(null);
-  const [messageInput, setMessageInput] = useState('');
   
   const perPage = 20;
   const listSlug = 'All';
@@ -116,8 +116,8 @@ export default function HomePage() {
     }
   };
 
-  const addNewNote = async () => {
-    if (!messageInput.trim()) {
+  const addNewNote = async (message) => {
+    if (!message.trim()) {
       showToast('Error', 'Please enter a message', 2000, 'error');
       return;
     }
@@ -126,7 +126,7 @@ export default function HomePage() {
       const response = await fetchWithAuth('/api/note/', {
         method: 'POST',
         body: JSON.stringify({ 
-          message: messageInput, 
+          text: message,
           list_slug: listSlug 
         }),
       }, 5000, router);
@@ -147,12 +147,12 @@ export default function HomePage() {
       }, 1000);
       setTimeout(() => setNewNoteId(null), 2000);
       
-      setMessageInput('');
       setTotalCount(prev => prev + 1);
       showToast('Success', 'Note created', 2000, 'success');
     } catch (err) {
       console.error('Create error:', err);
       showToast('Error', err.message || 'Failed to create note', 3000, 'error');
+      throw err;
     }
   };
 
@@ -257,21 +257,8 @@ export default function HomePage() {
         </TouchableOpacity>
       </View>
 
-      {/* Message Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.messageInput}
-          placeholder="Enter your note..."
-          placeholderTextColor="#999"
-          value={messageInput}
-          onChangeText={setMessageInput}
-          multiline
-          numberOfLines={2}
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={addNewNote}>
-          <Text style={styles.sendButtonText}>Add Note</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Message Input FAB */}
+      <MessageInput onSend={addNewNote} listSlug={listSlug} />
     </View>
   );
 }
@@ -350,35 +337,5 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.base,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
-  },
-  inputContainer: {
-    backgroundColor: colors.white,
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-  },
-  messageInput: {
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    fontSize: typography.fontSize.base,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-    minHeight: 60,
-  },
-  sendButton: {
-    backgroundColor: colors.buttonPrimary,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    alignItems: 'center',
-    ...shadows.lg,
-  },
-  sendButtonText: {
-    color: colors.white,
-    fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    letterSpacing: typography.letterSpacing.wide,
   },
 });

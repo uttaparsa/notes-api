@@ -23,9 +23,10 @@ export default function ListPage() {
   const [noteLists, setNoteLists] = useState([]);
   const [isBusy, setIsBusy] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showActionsModal, setShowActionsModal] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [selectedList, setSelectedList] = useState(null);
+  const [renameMode, setRenameMode] = useState(false);
   const [renameListName, setRenameListName] = useState('');
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function ListPage() {
           l.id === list.id ? { ...l, show_in_feed: !l.show_in_feed } : l
         )
       );
+      showToast('Success', 'List updated', 2000, 'success');
     } catch (err) {
       console.error('Error updating list:', err);
       showToast('Error', err.message || 'Failed to update list', 3000, 'error');
@@ -76,6 +78,7 @@ export default function ListPage() {
       if (!response.ok) throw new Error('Failed to archive list');
       
       await fetchNoteLists();
+      setShowActionsModal(false);
       showToast('Success', 'List archived', 2000, 'success');
     } catch (err) {
       console.error('Error archiving list:', err);
@@ -89,6 +92,7 @@ export default function ListPage() {
       if (!response.ok) throw new Error('Failed to unarchive list');
       
       await fetchNoteLists();
+      setShowActionsModal(false);
       showToast('Success', 'List unarchived', 2000, 'success');
     } catch (err) {
       console.error('Error unarchiving list:', err);
@@ -135,7 +139,8 @@ export default function ListPage() {
       if (!response.ok) throw new Error('Failed to rename list');
       
       await fetchNoteLists();
-      setShowRenameModal(false);
+      setShowActionsModal(false);
+      setRenameMode(false);
       setRenameListName('');
       showToast('Success', 'List renamed', 2000, 'success');
     } catch (err) {
@@ -144,64 +149,69 @@ export default function ListPage() {
     }
   };
 
-  const openRenameModal = (list) => {
+  const openActionsModal = (list) => {
     setSelectedList(list);
     setRenameListName(list.name);
-    setShowRenameModal(true);
+    setRenameMode(false);
+    setShowActionsModal(true);
   };
 
-  const renderListItem = ({ item, index }) => {
-    const showDivider = index > 0 && 
-      index < noteLists.length - 1 && 
-      item.archived !== noteLists[index - 1].archived;
+  const renderListItem = ({ item }) => {
+    const isArchived = item.archived;
+    const isInFeed = item.show_in_feed;
 
     return (
-      <>
-        {showDivider && <View style={styles.divider} />}
-        <View style={styles.listItem}>
-          <TouchableOpacity
-            style={styles.listItemContent}
-            onPress={() => router.push(`/list/${item.slug}`)}
-          >
-            <Text style={styles.listName}>{item.name}</Text>
-            
-            <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Show in feed</Text>
-              <Switch
-                value={item.show_in_feed}
-                onValueChange={() => toggleShowInFeed(item)}
-                trackColor={{ false: '#D1D5DB', true: '#93C5FD' }}
-                thumbColor={item.show_in_feed ? '#007AFF' : '#F3F4F6'}
-              />
+      <View style={styles.listItem}>
+        <TouchableOpacity
+          style={styles.listItemMain}
+          onPress={() => router.push(`/list/${item.slug}`)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.listItemLeft}>
+            <Text style={[styles.listName, isArchived && styles.listNameArchived]}>
+              {item.name}
+            </Text>
+            <View style={styles.statusContainer}>
+              {isArchived && (
+                <View style={[styles.statusBadge, styles.statusBadgeArchived]}>
+                  <Text style={styles.statusBadgeText}>📦 Archived</Text>
+                </View>
+              )}
+              {isInFeed && !isArchived && (
+                <View style={[styles.statusBadge, styles.statusBadgeActive]}>
+                  <Text style={styles.statusBadgeText}>👁️ In Feed</Text>
+                </View>
+              )}
             </View>
-          </TouchableOpacity>
-
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity
-              style={[styles.button, item.archived ? styles.buttonSuccess : styles.buttonWarning]}
-              onPress={() => item.archived ? unArchiveTopic(item.id) : archiveTopic(item.id)}
-            >
-              <Text style={styles.buttonText}>
-                {item.archived ? 'Unarchive' : 'Archive'}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={[styles.button, styles.buttonPrimary]}
-              onPress={() => openRenameModal(item)}
-            >
-              <Text style={styles.buttonText}>Rename</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </>
+          
+          <TouchableOpacity
+            style={styles.moreButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              openActionsModal(item);
+            }}
+          >
+            <Text style={styles.moreButtonText}>⋯</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     );
   };
+
+  const renderSectionHeader = (title) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{title}</Text>
+    </View>
+  );
+
+  const activeLists = noteLists.filter(list => !list.archived);
+  const archivedLists = noteLists.filter(list => list.archived);
 
   if (isBusy) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.buttonPrimary} />
       </View>
     );
   }
@@ -209,17 +219,28 @@ export default function ListPage() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={noteLists}
-        renderItem={renderListItem}
-        keyExtractor={(item) => item.id.toString()}
+        data={[
+          { type: 'header', title: 'Active Lists' },
+          ...activeLists.map(list => ({ ...list, type: 'item' })),
+          ...(archivedLists.length > 0 ? [{ type: 'header', title: 'Archived' }] : []),
+          ...archivedLists.map(list => ({ ...list, type: 'item' })),
+        ]}
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return renderSectionHeader(item.title);
+          }
+          return renderListItem({ item });
+        }}
+        keyExtractor={(item, index) => item.type === 'header' ? `header-${index}` : item.id.toString()}
         contentContainerStyle={styles.listContainer}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
       <TouchableOpacity
         style={styles.createButton}
         onPress={() => setShowModal(true)}
       >
-        <Text style={styles.createButtonText}>Create New List</Text>
+        <Text style={styles.createButtonText}>+ New List</Text>
       </TouchableOpacity>
 
       {/* Create List Modal */}
@@ -234,10 +255,11 @@ export default function ListPage() {
             <Text style={styles.modalTitle}>Create New List</Text>
             <TextInput
               style={styles.modalInput}
-              placeholder="Enter list name"
+              placeholder="List name"
               placeholderTextColor="#999"
               value={newListName}
               onChangeText={setNewListName}
+              autoFocus
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -257,39 +279,112 @@ export default function ListPage() {
         </View>
       </Modal>
 
-      {/* Rename List Modal */}
+      {/* Actions Modal */}
       <Modal
-        visible={showRenameModal}
+        visible={showActionsModal}
         transparent
         animationType="slide"
-        onRequestClose={() => setShowRenameModal(false)}
+        onRequestClose={() => {
+          setShowActionsModal(false);
+          setRenameMode(false);
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Rename List</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter new list name"
-              placeholderTextColor="#999"
-              value={renameListName}
-              onChangeText={setRenameListName}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
-                onPress={() => setShowRenameModal(false)}
-              >
-                <Text style={styles.modalButtonTextCancel}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={renameList}
-              >
-                <Text style={styles.modalButtonTextConfirm}>Rename</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1}
+          onPress={() => {
+            setShowActionsModal(false);
+            setRenameMode(false);
+          }}
+        >
+          <TouchableOpacity 
+            style={styles.actionsModalContent}
+            activeOpacity={1}
+          >
+            {renameMode ? (
+              <>
+                <Text style={styles.actionsModalTitle}>Rename List</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="New list name"
+                  placeholderTextColor="#999"
+                  value={renameListName}
+                  onChangeText={setRenameListName}
+                  autoFocus
+                />
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => setRenameMode(false)}
+                  >
+                    <Text style={styles.modalButtonTextCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonConfirm]}
+                    onPress={renameList}
+                  >
+                    <Text style={styles.modalButtonTextConfirm}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.actionsModalTitle}>{selectedList?.name}</Text>
+                
+                <View style={styles.actionsList}>
+                  <TouchableOpacity
+                    style={styles.actionItem}
+                    onPress={() => setRenameMode(true)}
+                  >
+                    <Text style={styles.actionItemIcon}>✏️</Text>
+                    <Text style={styles.actionItemText}>Rename</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.actionItemDivider} />
+
+                  <View style={styles.actionItem}>
+                    <Text style={styles.actionItemIcon}>👁️</Text>
+                    <Text style={styles.actionItemText}>Show in Feed</Text>
+                    <Switch
+                      value={selectedList?.show_in_feed}
+                      onValueChange={() => toggleShowInFeed(selectedList)}
+                      trackColor={{ false: colors.switchInactive, true: colors.switchActive }}
+                      thumbColor={colors.white}
+                    />
+                  </View>
+
+                  <View style={styles.actionItemDivider} />
+
+                  <TouchableOpacity
+                    style={styles.actionItem}
+                    onPress={() => 
+                      selectedList?.archived 
+                        ? unArchiveTopic(selectedList.id)
+                        : archiveTopic(selectedList.id)
+                    }
+                  >
+                    <Text style={styles.actionItemIcon}>
+                      {selectedList?.archived ? '📂' : '📦'}
+                    </Text>
+                    <Text style={[
+                      styles.actionItemText,
+                      selectedList?.archived && styles.actionItemTextWarning
+                    ]}>
+                      {selectedList?.archived ? 'Unarchive' : 'Archive'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowActionsModal(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </View>
   );
@@ -303,68 +398,82 @@ const styles = StyleSheet.create({
     ...commonStyles.loadingContainer,
   },
   listContainer: {
-    padding: spacing.md,
+    paddingBottom: 100,
+  },
+  sectionHeader: {
+    backgroundColor: colors.backgroundSecondary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  sectionHeaderText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.semibold,
+    color: colors.textSecondary,
+    letterSpacing: typography.letterSpacing.wide,
+    textTransform: 'uppercase',
   },
   listItem: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.sm,
   },
-  listItemContent: {
-    marginBottom: spacing.md,
-  },
-  listName: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-    letterSpacing: typography.letterSpacing.tight,
-  },
-  switchContainer: {
+  listItemMain: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
   },
-  switchLabel: {
-    fontSize: typography.fontSize.sm,
+  listItemLeft: {
+    flex: 1,
+  },
+  listName: {
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.medium,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  listNameArchived: {
     color: colors.textSecondary,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  statusBadgeActive: {
+    backgroundColor: '#E3F2FD',
+  },
+  statusBadgeArchived: {
+    backgroundColor: '#F5F5F5',
+  },
+  statusBadgeText: {
+    fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  moreButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
-  button: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    ...shadows.sm,
-  },
-  buttonPrimary: {
-    backgroundColor: colors.buttonPrimary,
-  },
-  buttonWarning: {
-    backgroundColor: colors.warning,
-  },
-  buttonSuccess: {
-    backgroundColor: colors.success,
-  },
-  buttonText: {
-    color: colors.white,
-    fontSize: typography.fontSize.sm,
+  moreButtonText: {
+    fontSize: 24,
+    color: colors.textSecondary,
     fontWeight: typography.fontWeight.bold,
-    letterSpacing: typography.letterSpacing.wide,
   },
-  divider: {
-    ...commonStyles.divider,
+  separator: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginLeft: spacing.lg,
   },
   createButton: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
     backgroundColor: colors.buttonPrimary,
-    margin: spacing.lg,
     padding: spacing.lg,
     borderRadius: borderRadius.md,
     alignItems: 'center',
@@ -379,23 +488,32 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: colors.white,
-    borderRadius: borderRadius.md,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
     padding: spacing.xl,
-    width: '80%',
-    maxWidth: 400,
-    ...shadows.lg,
+  },
+  actionsModalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: borderRadius.lg,
+    borderTopRightRadius: borderRadius.lg,
+    padding: spacing.xl,
   },
   modalTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.textPrimary,
     marginBottom: spacing.lg,
-    letterSpacing: typography.letterSpacing.tight,
+  },
+  actionsModalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
   },
   modalInput: {
     backgroundColor: colors.backgroundSecondary,
@@ -424,17 +542,51 @@ const styles = StyleSheet.create({
   },
   modalButtonConfirm: {
     backgroundColor: colors.buttonPrimary,
-    ...shadows.sm,
   },
   modalButtonTextCancel: {
     color: colors.textPrimary,
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
+    fontWeight: typography.fontWeight.semibold,
   },
   modalButtonTextConfirm: {
     color: colors.white,
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.bold,
-    letterSpacing: typography.letterSpacing.wide,
+    fontWeight: typography.fontWeight.semibold,
+  },
+  actionsList: {
+    marginBottom: spacing.lg,
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  actionItemIcon: {
+    fontSize: 20,
+  },
+  actionItemText: {
+    flex: 1,
+    fontSize: typography.fontSize.base,
+    color: colors.textPrimary,
+    fontWeight: typography.fontWeight.medium,
+  },
+  actionItemTextWarning: {
+    color: colors.warning,
+  },
+  actionItemDivider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+  },
+  closeButton: {
+    backgroundColor: colors.backgroundSecondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: colors.textPrimary,
+    fontSize: typography.fontSize.base,
+    fontWeight: typography.fontWeight.semibold,
   },
 });
