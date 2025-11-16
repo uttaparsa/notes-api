@@ -6,7 +6,7 @@ const API_BASE_URL = 'https://notes.astute-cat.shop'; // Configure this
 
 export async function login(username, password) {
   try {
-    // First, get CSRF token if needed (some backends provide this via a GET endpoint)
+    // First, get CSRF token if needed
     const csrfToken = await getCSRFToken();
     
     const response = await fetch(`${API_BASE_URL}/api/account/login/`, {
@@ -15,14 +15,13 @@ export async function login(username, password) {
         'X-CSRFToken': csrfToken,
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Still include this
+      credentials: 'include',
       body: JSON.stringify({ username, password }),
     });
 
     if (!response.ok) {
-      console.log(response);
-      
-      throw new Error('Login failed');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Login failed');
     }
 
     // Extract and store session/CSRF tokens from response
@@ -35,6 +34,14 @@ export async function login(username, password) {
     const csrfFromResponse = response.headers.get('x-csrftoken');
     if (csrfFromResponse) {
       await AsyncStorage.setItem('csrftoken', csrfFromResponse);
+    }
+
+    // Verify tokens were stored
+    const storedSession = await AsyncStorage.getItem('sessionid');
+    const storedCsrf = await AsyncStorage.getItem('csrftoken');
+    
+    if (!storedSession || !storedCsrf) {
+      throw new Error('Failed to store session data');
     }
 
     return response;

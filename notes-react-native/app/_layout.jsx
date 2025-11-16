@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Modal, ActivityIndicator, Text } from 'react-native';
 import { useRouter, useSegments, Slot } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavbar from '../components/BottomNavbar';
 import Toast from '../components/Toast';
 
@@ -64,15 +65,20 @@ export default function RootLayout() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // TODO: Check authentication with AsyncStorage
-      // const accessToken = await AsyncStorage.getItem('accessToken');
-      // setIsAuthenticated(!!accessToken);
-      // if (accessToken) {
-      //   getLists();
-      // }
-      
-      // Temporary mock - start logged out
-      setIsAuthenticated(false);
+      try {
+        const sessionId = await AsyncStorage.getItem('sessionid');
+        const csrfToken = await AsyncStorage.getItem('csrftoken');
+        
+        // User is authenticated if both tokens exist
+        if (sessionId && csrfToken) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
+      }
     };
     
     checkAuth();
