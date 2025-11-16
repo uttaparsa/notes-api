@@ -1,5 +1,5 @@
 "use client"
-import UsernameInput from '../components/UsernameInput'; // Adjusted path based on component location
+import UsernameInput from '../UsernameInput'; // Adjusted path based on component location
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '../lib/auth';
