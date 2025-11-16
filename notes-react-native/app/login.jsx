@@ -61,14 +61,16 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.formContainer}>
-          <Text style={styles.title}>Login to your account</Text>
-          
+          <Text style={styles.title}>Welcome Back</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
+
           {/* Username Input */}
           <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Username</Text>
             <TextInput
               style={styles.input}
-              placeholder="Username"
-              placeholderTextColor="#999"
+              placeholder="Enter your username"
+              placeholderTextColor="#A0A0A0"
               value={loginInfo.username}
               onChangeText={(text) => setLoginInfo({ ...loginInfo, username: text })}
               autoCapitalize="none"
@@ -79,10 +81,11 @@ export default function LoginScreen() {
 
           {/* Password Input */}
           <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Password</Text>
             <TextInput
               style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#999"
+              placeholder="Enter your password"
+              placeholderTextColor="#A0A0A0"
               value={loginInfo.password}
               onChangeText={(text) => setLoginInfo({ ...loginInfo, password: text })}
               secureTextEntry
@@ -96,7 +99,9 @@ export default function LoginScreen() {
 
           {/* Error Message */}
           {errorMessage ? (
-            <Text style={styles.errorText}>{errorMessage}</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
           ) : null}
 
           {/* Sign In Button */}
@@ -111,8 +116,13 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Divider */}
-          <View style={styles.divider} />
+          {/* Sign Up Link */}
+          <View style={styles.signupContainer}>
+            <Text style={styles.signupText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/signup')}>
+              <Text style={styles.signupLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -122,7 +132,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     flexGrow: 1,
@@ -130,61 +140,97 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF',
+    width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#6B6B6B',
+    marginBottom: 40,
+    textAlign: 'center',
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1.5,
+    borderColor: '#E5E5E5',
     borderRadius: 12,
-    padding: 24,
+    padding: 16,
+    fontSize: 16,
+    color: '#1A1A1A',
+    fontWeight: '400',
+  },
+  button: {
+    backgroundColor: '#1A1A1A',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#F8F9FA',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonDisabled: {
-    backgroundColor: '#A0C4E8',
+    backgroundColor: '#B0B0B0',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  errorContainer: {
+    backgroundColor: '#FFF5F5',
+    borderLeftWidth: 3,
+    borderLeftColor: '#DC3545',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
   },
   errorText: {
     color: '#DC3545',
     fontSize: 14,
-    marginTop: 8,
-    marginBottom: 8,
+    fontWeight: '500',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#E0E0E0',
+  signupContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 24,
+  },
+  signupText: {
+    fontSize: 15,
+    color: '#6B6B6B',
+    fontWeight: '400',
+  },
+  signupLink: {
+    fontSize: 15,
+    color: '#1A1A1A',
+    fontWeight: '700',
   },
 });
