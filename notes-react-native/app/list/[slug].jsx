@@ -7,21 +7,21 @@ import {
   Switch,
   TouchableOpacity,
 } from 'react-native';
-import { AuthContext, ToastContext, ModalContext } from './_layout';
-import { fetchWithAuth } from '../lib/api';
-import { useRouter } from 'expo-router';
-import NoteList from '../components/NoteList';
+import { AuthContext, ToastContext } from '../_layout';
+import { fetchWithAuth } from '../../lib/api';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import NoteList from '../../components/NoteList';
 
 // Utility function to sort notes
 const sortNotesList = (notes) => {
   return [...notes].sort((a, b) => b.created_date - a.created_date);
 };
 
-export default function HomePage() {
+export default function ListSlugPage() {
   const { isAuthenticated } = useContext(AuthContext);
   const showToast = useContext(ToastContext);
-  const { setShowModal, setModalTitle } = useContext(ModalContext);
   const router = useRouter();
+  const { slug } = useLocalSearchParams();
   
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -30,23 +30,21 @@ export default function HomePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
-  const [searchText, setSearchText] = useState('');
   const [newNoteId, setNewNoteId] = useState(null);
   const [messageInput, setMessageInput] = useState('');
   
   const perPage = 20;
-  const listSlug = 'All';
 
   useEffect(() => {
     if (isAuthenticated) {
       getRecords();
     }
-  }, [currentPage, showHidden, isAuthenticated]);
+  }, [currentPage, showHidden, isAuthenticated, slug]);
 
   const getRecords = async (selectedDate = null) => {
     setIsBusy(true);
     try {
-      let url = `/api/note/${listSlug}/`;
+      let url = `/api/note/${slug}/`;
       const params = new URLSearchParams({
         page: currentPage,
         per_page: perPage,
@@ -126,7 +124,7 @@ export default function HomePage() {
         method: 'POST',
         body: JSON.stringify({ 
           message: messageInput, 
-          list_slug: listSlug 
+          list_slug: slug 
         }),
       }, 5000, router);
       
@@ -155,35 +153,23 @@ export default function HomePage() {
     }
   };
 
-  // const handleSearch = () => {
-  //   if (!searchText.trim()) {
-  //     showToast('Info', 'Please enter a search query', 2000, 'info');
-  //     return;
-  //   }
-  //   // TODO: Navigate to search screen or implement inline search
-  //   router.push(`/search?q=${encodeURIComponent(searchText)}`);
-  // };
-
-  const filteredNotes = notes.filter(note => 
-    showHidden || !note.hidden
-  );
-
   const totalPages = Math.ceil(totalCount / perPage);
 
   return (
     <View style={styles.container}>
-      {/* Search Bar - Commented out until search functionality is implemented */}
+      {/* List Title */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>List: {slug}</Text>
+      </View>
+
+      {/* Search Bar - Commented out until implemented */}
       {/* <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
           placeholder="Search notes..."
           placeholderTextColor="#999"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
         />
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+        <TouchableOpacity style={styles.searchButton}>
           <Text style={styles.searchButtonText}>Search</Text>
         </TouchableOpacity>
       </View> */}
@@ -280,30 +266,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  searchInput: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginRight: 8,
-  },
-  searchButton: {
+  headerContainer: {
     backgroundColor: '#007AFF',
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+    padding: 16,
+    alignItems: 'center',
   },
-  searchButtonText: {
-    color: '#FFFFFF',
+  headerTitle: {
+    fontSize: 20,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   paginationInfo: {
     backgroundColor: '#FFFFFF',

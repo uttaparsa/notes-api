@@ -10,7 +10,7 @@ export default function BottomNavbar({ onLogout }) {
 
   const navItems = [
     { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/lists', label: 'Lists', icon: '📋' },
+    { path: '/list', label: 'Lists', icon: '📋' },
     { path: '/search', label: 'Search', icon: '🔍' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
   ];
