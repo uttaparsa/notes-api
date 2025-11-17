@@ -2,13 +2,42 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 
+// Importance color mapping
+const getImportanceColor = (importance) => {
+  switch (importance) {
+    case 4: return '#DC3545'; // Critical - Red
+    case 3: return '#FD7E14'; // High - Orange
+    case 2: return '#FFC107'; // Medium - Yellow
+    case 1: return '#17A2B8'; // Low - Cyan
+    default: return '#6C757D'; // Normal - Gray
+  }
+};
+
 export default function NoteCard({ note, onDelete, isNew = false }) {
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
 
+  const importance = note.importance || 0;
+  const importanceColor = getImportanceColor(importance);
+  const showImportance = importance > 0;
+
   return (
-    <View style={[styles.noteCard, isNew && styles.noteCardNew]}>
+    <View style={[
+      styles.noteCard, 
+      isNew && styles.noteCardNew,
+      showImportance && {
+        borderLeftWidth: 4,
+        borderLeftColor: importanceColor,
+        shadowColor: importanceColor,
+        shadowOpacity: 0.3,
+      }
+    ]}>
+      {showImportance && (
+        <View style={[styles.importanceBadge, { backgroundColor: importanceColor }]}>
+          <Text style={styles.importanceBadgeText}>{importance}</Text>
+        </View>
+      )}
       <Markdown style={markdownStyles}>{note.text}</Markdown>
       <View style={styles.noteFooter}>
         <Text style={styles.noteDate}>{formatDate(note.created_at)}</Text>
@@ -35,6 +64,21 @@ const styles = StyleSheet.create({
   noteCardNew: {
     borderColor: '#007AFF',
     borderWidth: 2,
+  },
+  importanceBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  importanceBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   noteFooter: {
     flexDirection: 'row',

@@ -27,13 +27,40 @@ const groupNotesByDate = (notes) => {
 
 // Convert grouped notes to flat list with headers
 const createFlatListData = (notes) => {
-  const grouped = groupNotesByDate(notes);
+  // Group by importance first, then by date
+  const importanceGroups = {};
+  
+  notes.forEach(note => {
+    const importance = note.importance || 0;
+    if (!importanceGroups[importance]) {
+      importanceGroups[importance] = {};
+    }
+    
+    const dateKey = formatDate(note.created_at);
+    if (!importanceGroups[importance][dateKey]) {
+      importanceGroups[importance][dateKey] = [];
+    }
+    importanceGroups[importance][dateKey].push(note);
+  });
+  
   const flatData = [];
   
-  Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
-    flatData.push({ type: 'date', date });
-    grouped[date].forEach(note => {
-      flatData.push({ type: 'note', data: note });
+  // Sort importance levels (4 to 0)
+  const sortedImportanceLevels = Object.keys(importanceGroups)
+    .map(Number)
+    .sort((a, b) => b - a);
+  
+  sortedImportanceLevels.forEach(importance => {
+    // Add dates and notes for this importance level
+    const dates = importanceGroups[importance];
+    Object.keys(dates).sort((a, b) => new Date(b) - new Date(a)).forEach(date => {
+      // Only add date header for non-important notes (importance 0)
+      if (importance === 0) {
+        flatData.push({ type: 'date', date, importance });
+      }
+      dates[date].forEach(note => {
+        flatData.push({ type: 'note', data: note });
+      });
     });
   });
   
@@ -194,7 +221,7 @@ export const useNoteList = (listSlug, perPage = 20) => {
 
   const filteredFlatListData = flatListData.filter(item => {
     if (item.type === 'date') return true;
-    return showHidden || !item.data.archived;
+    return showHidden || !item.archived;
   });
 
   return {
