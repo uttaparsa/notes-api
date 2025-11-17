@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useNoteList } from '../../hooks/useNoteList';
-import NoteList from '../../components/NoteList';
-import MessageInput from '../../components/MessageInput';
-import { colors, typography, spacing, shadows, commonStyles } from '../../styles/theme';
+import { useNoteList } from '../../../hooks/useNoteList';
+import NoteList from '../../../components/NoteList';
+import MessageInput from '../../../components/MessageInput';
+import { colors, typography, spacing, shadows, commonStyles } from '../../../styles/theme';
 
 export default function ListSlugPage() {
   const { slug } = useLocalSearchParams();

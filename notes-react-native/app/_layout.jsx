@@ -2,7 +2,6 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Modal, ActivityIndicator, Text } from 'react-native';
 import { useRouter, useSegments, Slot } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import BottomNavbar from '../components/BottomNavbar';
 import Toast from '../components/Toast';
 import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -26,17 +25,6 @@ export default function RootLayout() {
   });
   const router = useRouter();
   const segments = useSegments();
-
-  const handleLogout = useCallback(async () => {
-    // TODO: Implement logout
-    // await logout();
-    // await AsyncStorage.removeItem('accessToken');
-    // await AsyncStorage.removeItem('refreshToken');
-    
-    // Temporary mock
-    setIsAuthenticated(false);
-    console.log('Logout called');
-  }, []);
 
   const getLists = useCallback(async () => {
     // TODO: Fetch note lists from backend
@@ -124,15 +112,7 @@ export default function RootLayout() {
           <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
             <ToastContext.Provider value={showToast}>
               <View style={styles.container}>
-                {/* Main content area - Slot renders the current route */}
-                <View style={styles.content}>
-                  <Slot />
-                </View>
-
-                {/* Bottom Navigation */}
-                {isAuthenticated && (
-                  <BottomNavbar onLogout={handleLogout} />
-                )}
+                <Slot />
 
                 {/* Loading Modal */}
                 <Modal
@@ -170,9 +150,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   container: {
     ...commonStyles.container,
-  },
-  content: {
-    flex: 1,
   },
   loadingScreen: {
     ...commonStyles.loadingContainer,

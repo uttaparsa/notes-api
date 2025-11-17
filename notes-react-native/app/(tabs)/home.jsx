@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import { View, Text, StyleSheet, Switch, KeyboardAvoidingView, Platform } from 'react-native';
-import { ModalContext } from './_layout';
-import { useNoteList } from '../hooks/useNoteList';
-import NoteList from '../components/NoteList';
-import MessageInput from '../components/MessageInput';
-import { colors, typography, spacing, commonStyles } from '../styles/theme';
+import { ModalContext } from '../_layout';
+import { useNoteList } from '../../hooks/useNoteList';
+import NoteList from '../../components/NoteList';
+import MessageInput from '../../components/MessageInput';
+import { colors, typography, spacing, commonStyles } from '../../styles/theme';
 
 export default function HomePage() {
   const { setShowModal, setModalTitle } = useContext(ModalContext);

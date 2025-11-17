@@ -10,10 +10,10 @@ import {
   Switch,
   ActivityIndicator,
 } from 'react-native';
-import { AuthContext, ToastContext } from '../_layout';
-import { fetchWithAuth } from '../../lib/api';
+import { AuthContext, ToastContext } from '../../_layout';
+import { fetchWithAuth } from '../../../lib/api';
 import { useRouter } from 'expo-router';
-import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../../styles/theme';
+import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../../../styles/theme';
 
 export default function ListPage() {
   const { isAuthenticated } = useContext(AuthContext);

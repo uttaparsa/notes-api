@@ -9,7 +9,7 @@ export default function BottomNavbar({ onLogout }) {
   const isActive = (path) => pathname === path;
 
   const navItems = [
-    { path: '/', label: 'Home', icon: '🏠' },
+    { path: '/home', label: 'Home', icon: '🏠' },
     { path: '/list', label: 'Lists', icon: '📋' },
     { path: '/search', label: 'Search', icon: '🔍' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
