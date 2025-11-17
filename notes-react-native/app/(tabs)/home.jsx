@@ -31,7 +31,7 @@ export default function HomePage() {
   return (
     <View style={styles.container}>
       {/* Filters */}
-      <View style={styles.filtersContainer}>
+      {/* <View style={styles.filtersContainer}>
         <View style={styles.filterRow}>
           <Text style={styles.filterLabel}>Show Hidden</Text>
           <Switch
@@ -41,7 +41,7 @@ export default function HomePage() {
             thumbColor={showHidden ? '#007AFF' : '#F3F4F6'}
           />
         </View>
-      </View>
+      </View> */}
 
       {/* Notes List */}
       <NoteList
