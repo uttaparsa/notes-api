@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { NoteListContext } from '../(notes)/layout';
+import { NoteListContext } from '../../(notes)/layout';
 import { Form, Button, InputGroup } from 'react-bootstrap';
 
 export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All' }) {

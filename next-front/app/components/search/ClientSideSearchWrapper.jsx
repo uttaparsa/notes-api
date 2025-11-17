@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormCheck, Row, Col } from 'react-bootstrap';
-import NoteList from './NoteList';
+import NoteList from '../NoteList';
 import SearchBar from './SearchBar';
-import PaginationComponent from './PaginationComponent';
-import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
+import PaginationComponent from '../PaginationComponent';
+import { fetchWithAuth } from '../../lib/api';
+import { handleApiError } from '../../utils/errorHandler';
 
 export default function ClientSideSearchWrapper() {
   const [notes, setNotes] = useState([]);

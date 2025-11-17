@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Form, FormCheck , Row, Col} from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
-import SearchBar from '../../../components/SearchBar';
+import SearchBar from '../../../components/search/SearchBar';
 import PaginationComponent from '../../../components/PaginationComponent';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
