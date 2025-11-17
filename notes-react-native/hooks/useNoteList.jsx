@@ -157,7 +157,7 @@ export const useNoteList = (listSlug, perPage = 20) => {
 
   const deleteNote = async (noteId) => {
     try {
-      const response = await fetchWithAuth(`/api/note/${noteId}/`, {
+      const response = await fetchWithAuth(`/api/note/message/${noteId}/`, {
         method: 'DELETE',
       }, 5000, router);
       
