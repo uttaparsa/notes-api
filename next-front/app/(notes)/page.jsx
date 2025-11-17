@@ -7,7 +7,7 @@ import NoteList from "../components/NoteList";
 import MessageInput from '../components/MessageInput';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
-import SearchBar from '../components/SearchBar';
+import SearchBar from '../components/search/SearchBar';
 import PaginationComponent from '../components/PaginationComponent';
 import { sortNotesList } from './noteUtils';
 
