@@ -16,9 +16,31 @@ export default function MessageInput({ onSend, listSlug = null }) {
   const [text, setText] = useState('');
   const [isExpanded, setIsExpanded] = useState(false);
   const [justSent, setJustSent] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const slideAnim = useRef(new Animated.Value(300)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const textInputRef = useRef(null);
+
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        setKeyboardOffset(e.endCoordinates.height);
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (e) => {
+        setKeyboardOffset(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (isExpanded) {
@@ -100,6 +122,7 @@ export default function MessageInput({ onSend, listSlug = null }) {
           {
             transform: [{ scale: scaleAnim }],
             backgroundColor: justSent ? colors.success : colors.buttonPrimary,
+            bottom: spacing.xl + keyboardOffset,
           },
         ]}
       >
@@ -127,6 +150,7 @@ export default function MessageInput({ onSend, listSlug = null }) {
           styles.expandedContainer,
           {
             transform: [{ translateY: slideAnim }],
+            bottom: spacing.xl + keyboardOffset,
           },
         ]}
       >
@@ -208,7 +232,6 @@ export default function MessageInput({ onSend, listSlug = null }) {
 const styles = StyleSheet.create({
   fabContainer: {
     position: 'absolute',
-    bottom: spacing.xl,
     right: spacing.xl,
     borderRadius: 30,
     ...shadows.lg,
@@ -222,7 +245,6 @@ const styles = StyleSheet.create({
   },
   expandedContainer: {
     position: 'absolute',
-    bottom: spacing.xl,
     left: spacing.xl,
     right: spacing.xl,
     zIndex: 1000,

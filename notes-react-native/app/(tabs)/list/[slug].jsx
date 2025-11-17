@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, Switch } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useNoteList } from '../../../hooks/useNoteList';
 import NoteList from '../../../components/NoteList';
@@ -28,11 +28,7 @@ export default function ListSlugPage() {
   } = useNoteList(slug);
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
+    <View style={styles.container}>
       {/* List Title */}
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>{slug}</Text>
@@ -69,7 +65,7 @@ export default function ListSlugPage() {
 
       {/* Message Input FAB */}
       <MessageInput onSend={addNewNote} listSlug={slug} />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
