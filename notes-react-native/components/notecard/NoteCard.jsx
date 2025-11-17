@@ -26,7 +26,7 @@ export default function NoteCard({ note, isNew = false }) {
   const showImportance = importance > 0;
 
   const handlePress = () => {
-    router.push(`/(tabs)/list/note/${note.id}`);
+    router.push(`/note/${note.id}`);
   };
 
   return (
