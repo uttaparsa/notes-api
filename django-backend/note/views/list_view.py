@@ -56,3 +56,14 @@ class UnArchiveMessageListView(APIView):
             return Response("1", status=status.HTTP_200_OK)
         except LocalMessageList.DoesNotExist:
             return Response({"error": "LocalMessageList not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class DeleteMessageListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            item = LocalMessageList.objects.get(pk=pk)
+            item.delete()
+            return Response({"message": "List deleted successfully"}, status=status.HTTP_200_OK)
+        except LocalMessageList.DoesNotExist:
+            return Response({"error": "LocalMessageList not found"}, status=status.HTTP_404_NOT_FOUND)

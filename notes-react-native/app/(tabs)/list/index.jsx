@@ -149,6 +149,23 @@ export default function ListPage() {
     }
   };
 
+  const deleteList = async () => {
+    try {
+      const response = await fetchWithAuth(`/api/note/list/${selectedList.id}/delete/`, {
+        method: 'DELETE',
+      }, 5000, router);
+      
+      if (!response.ok) throw new Error('Failed to delete list');
+      
+      await fetchNoteLists();
+      setShowActionsModal(false);
+      showToast('Success', 'List deleted', 2000, 'success');
+    } catch (err) {
+      console.error('Error deleting list:', err);
+      showToast('Error', err.message || 'Failed to delete list', 3000, 'error');
+    }
+  };
+
   const openActionsModal = (list) => {
     setSelectedList(list);
     setRenameListName(list.name);
@@ -373,6 +390,18 @@ export default function ListPage() {
                       {selectedList?.archived ? 'Unarchive' : 'Archive'}
                     </Text>
                   </TouchableOpacity>
+
+                  <View style={styles.actionItemDivider} />
+
+                  <TouchableOpacity
+                    style={styles.actionItem}
+                    onPress={deleteList}
+                  >
+                    <Text style={styles.actionItemIcon}>🗑️</Text>
+                    <Text style={[styles.actionItemText, styles.actionItemTextDanger]}>
+                      Delete List
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
@@ -573,6 +602,9 @@ const styles = StyleSheet.create({
   },
   actionItemTextWarning: {
     color: colors.warning,
+  },
+  actionItemTextDanger: {
+    color: colors.error,
   },
   actionItemDivider: {
     height: 1,
