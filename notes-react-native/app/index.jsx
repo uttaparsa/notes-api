@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { ModalContext } from './_layout';
 import { useNoteList } from '../hooks/useNoteList';
 import NoteList from '../components/NoteList';
@@ -29,7 +29,11 @@ export default function HomePage() {
   } = useNoteList(listSlug);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       {/* Filters */}
       <View style={styles.filtersContainer}>
         <View style={styles.filterRow}>
@@ -61,7 +65,7 @@ export default function HomePage() {
 
       {/* Message Input FAB */}
       <MessageInput onSend={addNewNote} listSlug={listSlug} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

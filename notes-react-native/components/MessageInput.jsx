@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
@@ -122,92 +121,87 @@ export default function MessageInput({ onSend, listSlug = null }) {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <Animated.View
-          style={[
-            styles.expandedContainer,
-            {
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <View style={styles.card}>
-            <View style={styles.header}>
-              <View style={styles.headerTitle}>
-                <View style={[styles.indicator, justSent && styles.indicatorSuccess]} />
-              </View>
-              <TouchableOpacity
-                onPress={handleCollapse}
-                disabled={!!text.trim()}
-                style={styles.minimizeButton}
-              >
-                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M5 12H19"
-                    stroke={text.trim() ? colors.textTertiary : colors.textPrimary}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <Animated.View
+        style={[
+          styles.expandedContainer,
+          {
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={styles.card}>
+          <View style={styles.header}>
+            <View style={styles.headerTitle}>
+              <View style={[styles.indicator, justSent && styles.indicatorSuccess]} />
             </View>
-
-            <TextInput
-              ref={textInputRef}
-              style={styles.textInput}
-              placeholder="What's on your mind?"
-              placeholderTextColor={colors.textTertiary}
-              value={text}
-              onChangeText={setText}
-              multiline
-              textAlignVertical="top"
-            />
-
-            <View style={styles.footer}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={handleCancel}
-                disabled={!!text.trim()}
-              >
-                <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M18 6L6 18M6 6L18 18"
-                    stroke={text.trim() ? colors.textTertiary : colors.textPrimary}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.sendButton,
-                  !text.trim() && styles.sendButtonDisabled,
-                ]}
-                onPress={handleSend}
-                disabled={!text.trim()}
-                activeOpacity={0.8}
-              >
-                <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-                    stroke={colors.white}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              onPress={handleCollapse}
+              disabled={!!text.trim()}
+              style={styles.minimizeButton}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M5 12H19"
+                  stroke={text.trim() ? colors.textTertiary : colors.textPrimary}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
           </View>
-        </Animated.View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+
+          <TextInput
+            ref={textInputRef}
+            style={styles.textInput}
+            placeholder="What's on your mind?"
+            placeholderTextColor={colors.textTertiary}
+            value={text}
+            onChangeText={setText}
+            multiline
+            textAlignVertical="top"
+          />
+
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={handleCancel}
+              disabled={!!text.trim()}
+            >
+              <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M18 6L6 18M6 6L18 18"
+                  stroke={text.trim() ? colors.textTertiary : colors.textPrimary}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                styles.sendButton,
+                !text.trim() && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSend}
+              disabled={!text.trim()}
+              activeOpacity={0.8}
+            >
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+                  stroke={colors.white}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
 
