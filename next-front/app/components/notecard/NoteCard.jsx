@@ -119,8 +119,24 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     ));
   };
 
+  // Add function to get importance color
+  const getImportanceColor = (importance) => {
+    if (!importance || importance === 0) return null;
+    if (importance === 4) return '#EF4444'; // Red - highest
+    if (importance === 3) return '#F59E0B'; // Orange
+    if (importance === 2) return '#EAB308'; // Yellow
+    if (importance === 1) return '#3B82F6'; // Blue
+    return null;
+  };
+
+  const importance = note.importance || 0;
+  const importanceColor = getImportanceColor(importance);
+
   return (
-    <div className="card rounded mb-2 border shadow-sm bg-body-tertiary">
+    <div 
+      className="card rounded mb-2 border shadow-sm bg-body-tertiary"
+      style={importanceColor ? { borderLeft: `4px solid ${importanceColor}` } : {}}
+    >
       <div className="card-body pb-1">
         <div className="row">
           <div className="col-sm-1">
@@ -158,7 +174,17 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             </Dropdown>
           </div>
           <div className="col-sm-11 pl-md-1">
-            <h6 className="card-subtitle mb-2 text-primary fw-bold">{note.sender_name}</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="card-subtitle mb-0 text-primary fw-bold">{note.sender_name}</h6>
+              {importance > 0 && (
+                <span 
+                  className="badge rounded-pill fw-bold"
+                  style={{ backgroundColor: importanceColor, color: 'white' }}
+                >
+                  {importance}
+                </span>
+              )}
+            </div>
             
             <NoteTextRenderer 
               note={note} 

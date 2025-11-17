@@ -13,7 +13,7 @@ const getImportanceColor = (importance) => {
   }
 };
 
-export default function NoteCard({ note, onDelete, isNew = false }) {
+export default function NoteCard({ note, isNew = false }) {
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -41,9 +41,6 @@ export default function NoteCard({ note, onDelete, isNew = false }) {
       <Markdown style={markdownStyles}>{note.text}</Markdown>
       <View style={styles.noteFooter}>
         <Text style={styles.noteDate}>{formatDate(note.created_at)}</Text>
-        <TouchableOpacity onPress={() => onDelete(note.id)} style={styles.deleteButton}>
-          <Text style={styles.deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

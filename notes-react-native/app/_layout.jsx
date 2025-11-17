@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BottomNavbar from '../components/BottomNavbar';
 import Toast from '../components/Toast';
 import { colors, typography, spacing, borderRadius, shadows, commonStyles } from '../styles/theme';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export const NoteListContext = createContext([]);
 export const ModalContext = createContext({});
@@ -117,50 +118,52 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
-      <NoteListContext.Provider value={noteLists}>
-        <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
-          <ToastContext.Provider value={showToast}>
-            <View style={styles.container}>
-              {/* Main content area - Slot renders the current route */}
-              <View style={styles.content}>
-                <Slot />
-              </View>
-
-              {/* Bottom Navigation */}
-              {isAuthenticated && (
-                <BottomNavbar onLogout={handleLogout} />
-              )}
-
-              {/* Loading Modal */}
-              <Modal
-                visible={showModal}
-                transparent={true}
-                animationType="fade"
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>{modalTitle}</Text>
-                    <ActivityIndicator size="large" color="#007AFF" style={styles.spinner} />
-                  </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
+        <NoteListContext.Provider value={noteLists}>
+          <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
+            <ToastContext.Provider value={showToast}>
+              <View style={styles.container}>
+                {/* Main content area - Slot renders the current route */}
+                <View style={styles.content}>
+                  <Slot />
                 </View>
-              </Modal>
 
-              {/* Toast Notification */}
-              {toast.show && (
-                <Toast
-                  title={toast.title}
-                  body={toast.body}
-                  duration={toast.duration}
-                  type={toast.type}
-                  onHide={() => setToast(prev => ({ ...prev, show: false }))}
-                />
-              )}
-            </View>
-          </ToastContext.Provider>
-        </ModalContext.Provider>
-      </NoteListContext.Provider>
-    </AuthContext.Provider>
+                {/* Bottom Navigation */}
+                {isAuthenticated && (
+                  <BottomNavbar onLogout={handleLogout} />
+                )}
+
+                {/* Loading Modal */}
+                <Modal
+                  visible={showModal}
+                  transparent={true}
+                  animationType="fade"
+                >
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                      <Text style={styles.modalTitle}>{modalTitle}</Text>
+                      <ActivityIndicator size="large" color="#007AFF" style={styles.spinner} />
+                    </View>
+                  </View>
+                </Modal>
+
+                {/* Toast Notification */}
+                {toast.show && (
+                  <Toast
+                    title={toast.title}
+                    body={toast.body}
+                    duration={toast.duration}
+                    type={toast.type}
+                    onHide={() => setToast(prev => ({ ...prev, show: false }))}
+                  />
+                )}
+              </View>
+            </ToastContext.Provider>
+          </ModalContext.Provider>
+        </NoteListContext.Provider>
+      </AuthContext.Provider>
+    </GestureHandlerRootView>
   );
 }
 
