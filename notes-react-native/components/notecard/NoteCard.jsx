@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import { useRouter } from 'expo-router';
 
 // Importance color mapping
 const getImportanceColor = (importance) => {
@@ -14,6 +15,8 @@ const getImportanceColor = (importance) => {
 };
 
 export default function NoteCard({ note, isNew = false }) {
+  const router = useRouter();
+  
   const formatDate = (timestamp) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -22,27 +25,36 @@ export default function NoteCard({ note, isNew = false }) {
   const importanceColor = getImportanceColor(importance);
   const showImportance = importance > 0;
 
+  const handlePress = () => {
+    router.push(`/(tabs)/list/note/${note.id}`);
+  };
+
   return (
-    <View style={[
-      styles.noteCard, 
-      isNew && styles.noteCardNew,
-      showImportance && {
-        borderLeftWidth: 4,
-        borderLeftColor: importanceColor,
-        shadowColor: importanceColor,
-        shadowOpacity: 0.3,
-      }
-    ]}>
-      {showImportance && (
-        <View style={[styles.importanceBadge, { backgroundColor: importanceColor }]}>
-          <Text style={styles.importanceBadgeText}>{importance}</Text>
+    <TouchableOpacity
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View style={[
+        styles.noteCard, 
+        isNew && styles.noteCardNew,
+        showImportance && {
+          borderLeftWidth: 4,
+          borderLeftColor: importanceColor,
+          shadowColor: importanceColor,
+          shadowOpacity: 0.3,
+        }
+      ]}>
+        {showImportance && (
+          <View style={[styles.importanceBadge, { backgroundColor: importanceColor }]}>
+            <Text style={styles.importanceBadgeText}>{importance}</Text>
+          </View>
+        )}
+        <Markdown style={markdownStyles}>{note.text}</Markdown>
+        <View style={styles.noteFooter}>
+          <Text style={styles.noteDate}>{formatDate(note.created_at)}</Text>
         </View>
-      )}
-      <Markdown style={markdownStyles}>{note.text}</Markdown>
-      <View style={styles.noteFooter}>
-        <Text style={styles.noteDate}>{formatDate(note.created_at)}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

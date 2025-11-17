@@ -117,7 +117,7 @@ export const useNoteList = (listSlug, perPage = 20) => {
         ...(showHidden && { show_hidden: 'true' }),
       });
       
-      const response = await fetchWithAuth(`${url}?${params}`, {}, 5000, router);
+      const response = await fetchWithAuth(`${url}?${params}`, {}, 5000);
       if (!response.ok) throw new Error('Failed to fetch notes');
       
       const data = await response.json();
@@ -159,7 +159,7 @@ export const useNoteList = (listSlug, perPage = 20) => {
     try {
       const response = await fetchWithAuth(`/api/note/message/${noteId}/`, {
         method: 'DELETE',
-      }, 5000, router);
+      }, 5000);
       
       if (!response.ok) throw new Error('Failed to delete note');
       
@@ -184,7 +184,7 @@ export const useNoteList = (listSlug, perPage = 20) => {
           text: message,
           list_slug: listSlug 
         }),
-      }, 5000, router);
+      }, 5000);
       
       if (!response.ok) throw new Error('Failed to create note');
       

@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import NoteCard from './notecard/NoteCard';
 import { colors, typography, spacing, commonStyles } from '../styles/theme';
+import { useRouter } from 'expo-router';
 
 // Utility function to format date for display
 const formatDateDisplay = (dateString) => {
@@ -59,6 +60,7 @@ export default function NoteList({
   onDatePress,
   onDateChange,
 }) {
+  const router = useRouter();
   const [showTip, setShowTip] = useState(false);
 
   useEffect(() => {
@@ -133,11 +135,16 @@ export default function NoteList({
         overshootRight={false}
         friction={2}
       >
-        <NoteCard
-          note={item.data}
-          onDelete={onDeleteNote}
-          isNew={newNoteId === item.data.id}
-        />
+        <TouchableOpacity
+          onPress={() => router.push(`/list/note/${item.id}`)}
+          activeOpacity={0.9}
+        >
+          <NoteCard
+            note={item.data}
+            onDelete={onDeleteNote}
+            isNew={newNoteId === item.data.id}
+          />
+        </TouchableOpacity>
       </Swipeable>
     );
   };

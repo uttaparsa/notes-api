@@ -87,8 +87,11 @@ export default function RootLayout() {
       // Redirect to login if not authenticated
       router.replace('/login');
     } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if authenticated and trying to access login
-      router.replace('/');
+      // Redirect to home tab if authenticated and trying to access login
+      router.replace('/(tabs)/home');
+    } else if (isAuthenticated && segments.length === 0) {
+      // Redirect to home tab if authenticated and at root
+      router.replace('/(tabs)/home');
     } else if (isAuthenticated) {
       // Load lists when authenticated
       getLists();
