@@ -1,12 +1,14 @@
 import { Tabs } from 'expo-router';
 import { colors, typography } from '../../styles/theme';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-function TabIcon({ emoji, focused }) {
+function TabIcon({ name, focused }) {
   return (
-    <Text style={{ fontSize: 24, opacity: focused ? 1 : 0.5 }}>
-      {emoji}
-    </Text>
+    <Ionicons 
+      name={name} 
+      size={24} 
+      color={focused ? colors.buttonPrimary || '#007AFF' : '#666'} 
+    />
   );
 }
 
@@ -51,7 +53,7 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🏠" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? "home" : "home-outline"} focused={focused} />,
           headerTitle: 'Notes Feed',
         }}
       />
@@ -59,7 +61,7 @@ export default function TabsLayout() {
         name="list"
         options={{
           title: 'Lists',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? "list" : "list-outline"} focused={focused} />,
           headerShown: false,
         }}
       />
@@ -67,7 +69,7 @@ export default function TabsLayout() {
         name="search"
         options={{
           title: 'Search',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="🔍" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? "search" : "search-outline"} focused={focused} />,
           headerTitle: 'Search Notes',
         }}
       />
@@ -75,7 +77,7 @@ export default function TabsLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon name={focused ? "settings" : "settings-outline"} focused={focused} />,
           headerTitle: 'Settings',
         }}
       />
