@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_BASE_URL = 'https://notes.astute-cat.shop';
+import { API_URL } from '../config';
 
 export async function fetchWithAuth(url, options = {}, timeout = 5000, navigation) {
   const controller = new AbortController();
@@ -18,7 +17,7 @@ export async function fetchWithAuth(url, options = {}, timeout = 5000, navigatio
       'Cookie': `sessionid=${sessionId}; csrftoken=${csrfToken}`,
     };
 
-    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    const fullUrl = url.startsWith('http') ? url : `${API_URL}${url}`;
 
     const response = await fetch(fullUrl, {
       ...options,

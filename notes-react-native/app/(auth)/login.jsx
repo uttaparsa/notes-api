@@ -11,8 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthContext } from './_layout';
-import { login } from '../lib/auth';
+import { AuthContext } from '../_layout';
+import { login } from '../../lib/auth';
 
 export default function LoginScreen() {
   const [loginInfo, setLoginInfo] = useState({
@@ -42,7 +42,8 @@ export default function LoginScreen() {
     try {
       await login(loginInfo.username, loginInfo.password);
       setIsAuthenticated(true);
-      router.replace('/');
+      // go to home tab under (tabs)
+      router.replace('/(tabs)/home');
     } catch (error) {
       console.error('Error logging in:', error);
       setErrorMessage(error.message || 'Invalid login credentials');

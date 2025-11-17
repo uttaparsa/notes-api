@@ -1,15 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// or use expo-secure-store for more sensitive data:
-// import * as SecureStore from 'expo-secure-store';
-
-const API_BASE_URL = 'https://notes.astute-cat.shop'; // Configure this
+import { API_URL } from '../config';
 
 export async function login(username, password) {
   try {
     // First, get CSRF token if needed
     const csrfToken = await getCSRFToken();
     
-    const response = await fetch(`${API_BASE_URL}/api/account/login/`, {
+    const response = await fetch(`${API_URL}/api/account/login/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': csrfToken,
@@ -56,7 +53,7 @@ export async function logout(navigation) {
     const csrfToken = await AsyncStorage.getItem('csrftoken');
     const sessionId = await AsyncStorage.getItem('sessionid');
 
-    await fetch(`${API_BASE_URL}/api/account/logout/`, {
+    await fetch(`${API_URL}/api/account/logout/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': csrfToken,
@@ -101,7 +98,7 @@ async function getCSRFToken() {
   
   if (!token) {
     // Fetch CSRF token from your backend's CSRF endpoint
-    const response = await fetch(`${API_BASE_URL}/api/account/csrf/`, {
+    const response = await fetch(`${API_URL}/api/account/csrf/`, {
       method: 'GET',
     });
     const setCookieHeader = response.headers.get('set-cookie');
