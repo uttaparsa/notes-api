@@ -177,13 +177,13 @@ class Command(BaseCommand):
         self.stdout.write(f"Processing {log_prefix}")
 
         # If note is RTL, skip both embedding and chunks processing for this note
-        if note_has_rtl:
-            single_note_counters['skipped_rtl'] += 1
-            if not chunks_only:
-                 self.stdout.write(f"  {log_prefix} Skipping embedding (RTL characters found)")
-            if not embeddings_only:
-                 self.stdout.write(f"  {log_prefix} Skipping chunks (RTL characters found)")
-            return single_note_counters # Early exit for RTL notes
+        # if note_has_rtl:
+        #     single_note_counters['skipped_rtl'] += 1
+        #     if not chunks_only:
+        #          self.stdout.write(f"  {log_prefix} Skipping embedding (RTL characters found)")
+        #     if not embeddings_only:
+        #          self.stdout.write(f"  {log_prefix} Skipping chunks (RTL characters found)")
+        #     return single_note_counters # Early exit for RTL notes
 
         # Process note embeddings
         if not chunks_only:
