@@ -8,7 +8,7 @@ export default function page() {
             <LoginFrom />
             <div className="text-center">
                 <Link href="/signup" className="text-decoration-none">
-                    Don't have an account? Sign up
+                    Don&apos;t have an account? Sign up
                 </Link>
             </div>
         </>
