@@ -1,13 +1,13 @@
-import styles from '../login/AuthLayout.module.css';
+import styles from './login/AuthLayout.module.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
-import BootstrapClient from '../../components/BootstrapClient'
+import BootstrapClient from '../components/BootstrapClient'
 
 export const metadata = {
-  title: 'Sign Up',
-  description: 'Create your account',
+  title: 'Authentication',
+  description: 'Login or Sign Up',
 }
 
-export default function SignupLayout({ children }) {
+export default function AuthLayout({ children }) {
   return (
     <html lang="en">
       <body>
