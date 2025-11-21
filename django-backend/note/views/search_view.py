@@ -19,7 +19,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
 
         print(f"list_slugs {list_slugs} query is {query}")
         
-        queryset = LocalMessage.objects.all()
+        queryset = LocalMessage.objects.filter(user=self.request.user)
         
         if query:
             # Handle both 'and' and 'or' conditions
@@ -41,7 +41,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         
         if list_slugs and list_slugs.lower() != 'all':
             slug_list = [slug.strip() for slug in list_slugs.split(',')]
-            lists = LocalMessageList.objects.filter(slug__in=slug_list)
+            lists = LocalMessageList.objects.filter(slug__in=slug_list, user=self.request.user)
             
             if not lists.exists():
                 return LocalMessage.objects.none()

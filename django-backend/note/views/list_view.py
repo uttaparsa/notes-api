@@ -10,20 +10,20 @@ class NoteListView(APIView):
     serializer_class = NoteListSerializer
 
     def get(self, request, format=None):
-        local_messages = [msg for msg in LocalMessageList.objects.all()]
+        local_messages = LocalMessageList.objects.filter(user=request.user)
         serializer = self.serializer_class(local_messages, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, pk):
         try:
-            note_list = LocalMessageList.objects.get(pk=pk)
+            note_list = LocalMessageList.objects.get(pk=pk, user=request.user)
         except LocalMessageList.DoesNotExist:
             return Response({"error": "LocalMessageList not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -38,7 +38,7 @@ class ArchiveMessageListView(APIView):
 
     def get(self, request, pk):
         try:
-            item = LocalMessageList.objects.get(pk=pk)
+            item = LocalMessageList.objects.get(pk=pk, user=request.user)
             item.archived = True
             item.save()
             return Response("1", status=status.HTTP_200_OK)
@@ -50,7 +50,7 @@ class UnArchiveMessageListView(APIView):
 
     def get(self, request, pk):
         try:
-            item = LocalMessageList.objects.get(pk=pk)
+            item = LocalMessageList.objects.get(pk=pk, user=request.user)
             item.archived = False
             item.save()
             return Response("1", status=status.HTTP_200_OK)
@@ -62,7 +62,7 @@ class DeleteMessageListView(APIView):
 
     def delete(self, request, pk):
         try:
-            item = LocalMessageList.objects.get(pk=pk)
+            item = LocalMessageList.objects.get(pk=pk, user=request.user)
             item.delete()
             return Response({"message": "List deleted successfully"}, status=status.HTTP_200_OK)
         except LocalMessageList.DoesNotExist:
