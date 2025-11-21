@@ -168,25 +168,33 @@ class SingleNoteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        serialized = self.serializer_class(
-            LocalMessage.objects.prefetch_related("source_links").get(pk=self.kwargs['note_id'])
-        )
-        return Response(serialized.data, status.HTTP_200_OK)
+        try:
+            note = LocalMessage.objects.prefetch_related("source_links").get(
+                pk=self.kwargs['note_id'],
+                user=request.user
+            )
+            serialized = self.serializer_class(note)
+            return Response(serialized.data, status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        new_text = request.data.get("text")
-        RevisionService.update_note_with_revision(item, new_text)
-        insert_links(item)
-        
-        # Update chunks and schedule async creation of embeddings
-        executor.submit(create_embeddings_async, item.id, new_text)
-        
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
+            new_text = request.data.get("text")
+            RevisionService.update_note_with_revision(item, new_text)
+            insert_links(item)
+            
+            # Update chunks and schedule async creation of embeddings
+            executor.submit(create_embeddings_async, item.id, new_text)
+            
+            return Response("1", status=status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def delete(self, request, **kwargs):
         try:
-            item = LocalMessage.objects.get(pk=kwargs['note_id'])
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
             
             # Initialize file manager and clean up unused files
             file_manager = FileManager()
@@ -216,62 +224,87 @@ class NoteRevisionView(APIView):
     
     def get(self, request, note_id):
         """Get revision history for a note"""
+        # Verify user owns the note
+        try:
+            LocalMessage.objects.get(id=note_id, user=request.user)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
+            
         revisions = NoteRevision.objects.filter(note_id=note_id).order_by('-created_at')
         if not revisions:
             return Response([], status=status.HTTP_200_OK)
         serializer = NoteRevisionSerializer(revisions, many=True)
         return Response(serializer.data)
-    
 
 class MoveMessageView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MoveMessageSerializer
 
     def post(self, request, **kwargs):
-        message = LocalMessage.objects.get(pk=self.kwargs['note_id'])
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            message.list = LocalMessageList.objects.get(pk=serializer.data['list_id'])
-            message.save()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            message = LocalMessage.objects.get(pk=self.kwargs['note_id'], user=request.user)
+            serializer = self.serializer_class(data=request.data)
+            if serializer.is_valid():
+                target_list = LocalMessageList.objects.get(
+                    pk=serializer.data['list_id'],
+                    user=request.user
+                )
+                message.list = target_list
+                message.save()
+                return Response("1", status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except (LocalMessage.DoesNotExist, LocalMessageList.DoesNotExist):
+            return Response({"error": "Note or List not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class ArchiveMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.archived = True
-        item.save()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
+            item.archived = True
+            item.save()
+            return Response("1", status=status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class UnArchiveMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        item.archived = False
-        item.save()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
+            item.archived = False
+            item.save()
+            return Response("1", status=status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class PinMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        if item.importance < 4:
-            item.importance += 1
-        item.save()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
+            if item.importance < 4:
+                item.importance += 1
+            item.save()
+            return Response("1", status=status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class UnPinMessageView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
-        item = LocalMessage.objects.get(pk=kwargs['note_id'])
-        if item.importance > 0:
-            item.importance -= 1
-        item.save()
-        return Response("1", status=status.HTTP_200_OK)
+        try:
+            item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
+            if item.importance > 0:
+                item.importance -= 1
+            item.save()
+            return Response("1", status=status.HTTP_200_OK)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
     
 def insert_links(note: LocalMessage):
     """ extract links from text and insert them as links """
@@ -299,28 +332,34 @@ class NoteView(GenericAPIView, ListModelMixin):
     serializer_class = MessageSerializer
 
     def get_list(self, slug):
-        """Get list by slug or return default list"""
+        """Get list by slug or return None"""
         if not slug:
-            return get_object_or_404(LocalMessageList, id=1)
-        return get_object_or_404(LocalMessageList, slug=slug)
+            # Get user's default list (first list)
+            return LocalMessageList.objects.filter(user=self.request.user).first()
+        return get_object_or_404(LocalMessageList, slug=slug, user=self.request.user)
 
     def get_queryset(self):
         """Get filtered queryset based on slug parameter"""
         slug = self.kwargs.get('slug')
         
-        # Base queryset with ordering
-        base_queryset = LocalMessage.objects.order_by('-importance', '-created_at')
+        # Base queryset with ordering and user filter
+        base_queryset = LocalMessage.objects.filter(user=self.request.user).order_by('-importance', '-created_at')
         
         if not slug:
             return LocalMessage.objects.none()
             
         # Handle "All" slug special case
         if slug == "All":
-            shown_lin = LocalMessageList.objects.filter(show_in_feed=True).values_list('id', flat=True)
+            shown_lin = LocalMessageList.objects.filter(
+                show_in_feed=True,
+                user=self.request.user
+            ).values_list('id', flat=True)
             return base_queryset.filter(list__in=shown_lin)
             
         # Get notes for specific list
         lst = self.get_list(slug)
+        if not lst:
+            return LocalMessage.objects.none()
         return base_queryset.filter(list=lst.id)
 
     def get(self, request, **kwargs):
@@ -337,9 +376,14 @@ class NoteView(GenericAPIView, ListModelMixin):
         try:
             # Get appropriate list
             lst = self.get_list(kwargs.get('slug'))
+            if not lst:
+                return Response(
+                    {"error": "No lists found for user"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             
-            # Save the note
-            note = serializer.save(list=lst)
+            # Save the note with user
+            note = serializer.save(list=lst, user=request.user)
             
             # Create initial revision using RevisionService
             RevisionService.update_or_create_revision(note.id, note.text)
@@ -384,8 +428,7 @@ class NoteChunksView(APIView):
         """
         # Check if the note exists and user has access to it
         try:
-            note = LocalMessage.objects.get(id=note_id)
-            # You might want to add additional access checks here
+            note = LocalMessage.objects.get(id=note_id, user=request.user)
             
             # Get all chunks for this note
             chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')

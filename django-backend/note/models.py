@@ -3,6 +3,7 @@ import random
 
 from django.db import models
 from django.template.defaultfilters import slugify
+from django.contrib.auth.models import User
 
 # from django_resized import ResizedImageField
 from django.utils import timezone
@@ -58,10 +59,14 @@ class NoteRevision(models.Model):
 
 
 class LocalMessageList(models.Model):
-    name = models.CharField(max_length=255, default="", unique=True)
+    name = models.CharField(max_length=255, default="")
     slug = models.SlugField(default="n")
     archived = models.BooleanField(default=False, null=False)
     show_in_feed = models.BooleanField(default=True, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_lists')
+
+    class Meta:
+        unique_together = ('name', 'user')
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
@@ -84,6 +89,7 @@ class LocalMessage(models.Model):
     archived = models.BooleanField(default=False, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     
     def split_into_chunks(self):
         """Split the note content into chunks using hierarchical splitting: first by headers, then by character count"""
