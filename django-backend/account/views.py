@@ -55,7 +55,7 @@ from django.contrib.auth.decorators import login_required
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import UserSession
+from .models import UserSession, EmailConfirmationToken
 
 from django.contrib.sessions.models import Session
 
@@ -141,6 +141,34 @@ def login_view(request):
 
 
 
+def send_confirmation_email(user, token):
+    confirmation_url = f"{settings.FRONTEND_URL}/confirm-email/{token}"
+    subject = "Confirm Your Email Address"
+    message = (
+        f"Hello {user.username},\n\n"
+        f"Thank you for signing up! Please confirm your email address by clicking the link below:\n\n"
+        f"{confirmation_url}\n\n"
+        f"This link will expire in 24 hours.\n\n"
+        f"If you did not create this account, please ignore this email."
+    )
+    
+    send_mail(
+        subject,
+        message,
+        settings.EMAIL_USERNAME,
+        [user.email],
+        fail_silently=False,
+    )
+
+def send_confirmation_email_async(user, token):
+    thread = threading.Thread(
+        target=send_confirmation_email,
+        args=(user, token),
+        daemon=True
+    )
+    thread.start()
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -159,24 +187,61 @@ def signup_view(request):
 
     try:
         with transaction.atomic():
+            # Create user as inactive
             user = User.objects.create_user(
                 username=username,
                 email=email,
-                password=password
+                password=password,
+                is_active=False  # User inactive until email confirmation
             )
             
-            # Import the LocalMessageList model (adjust the import path based on your app structure)
-            from note.models import LocalMessageList
+            # Create confirmation token
+            confirmation_token = EmailConfirmationToken.objects.create(user=user)
             
-            # Create default category for the new user
+            # Send confirmation email
+            if settings.DEBUG:
+                # In debug mode, return token in response for testing
+                return JsonResponse({
+                    'message': 'Signup successful. Please check your email to confirm your account.',
+                    'debug_token': str(confirmation_token.token)
+                })
+            else:
+                send_confirmation_email_async(user, confirmation_token.token)
+
+        return JsonResponse({'message': 'Signup successful. Please check your email to confirm your account.'})
+    except Exception as e:
+        return JsonResponse({'error': f'Signup failed: {str(e)}'}, status=500)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def confirm_email(request, token):
+    try:
+        confirmation = EmailConfirmationToken.objects.get(token=token)
+        
+        if not confirmation.is_valid():
+            return JsonResponse({'error': 'Confirmation link has expired'}, status=400)
+        
+        user = confirmation.user
+        
+        with transaction.atomic():
+            # Activate user
+            user.is_active = True
+            user.save()
+            
+            # Create default category
+            from note.models import LocalMessageList
             LocalMessageList.objects.create(
                 user=user,
                 name='default'
             )
-
-        return JsonResponse({'message': 'Signup successful', 'username': username})
-    except Exception as e:
-        return JsonResponse({'error': f'Signup failed: {str(e)}'}, status=500)
+            
+            # Delete confirmation token
+            confirmation.delete()
+        
+        return JsonResponse({'message': 'Email confirmed successfully. You can now log in.'})
+    
+    except EmailConfirmationToken.DoesNotExist:
+        return JsonResponse({'error': 'Invalid confirmation token'}, status=400)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

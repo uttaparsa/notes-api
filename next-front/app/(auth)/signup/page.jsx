@@ -11,13 +11,20 @@ export default function SignupPage() {
     password: '',
   });
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
 
   const signupUser = async (event) => {
     event.preventDefault();
+    setErrorMessage('');
+    setSuccessMessage('');
+    
     try {
-      await signup(signupInfo.username, signupInfo.email, signupInfo.password);
-      router.push('/login');
+      const response = await signup(signupInfo.username, signupInfo.email, signupInfo.password);
+      setSuccessMessage(response.message || 'Signup successful! Please check your email to confirm your account.');
+      
+      // Clear form
+      setSignupInfo({ username: '', email: '', password: '' });
     } catch (error) {
       console.error('Error signing up:', error);
       setErrorMessage(error.message || 'Signup failed');
@@ -63,7 +70,8 @@ export default function SignupPage() {
         <button type="submit" className="btn btn-primary btn-lg w-100">sign up</button>
       </div>
       <div className="d-flex pt-2 pb-0 mb-0">
-        <span className="text-danger mt-2">{errorMessage}</span>
+        {errorMessage && <span className="text-danger mt-2">{errorMessage}</span>}
+        {successMessage && <span className="text-success mt-2">{successMessage}</span>}
       </div>
       <hr />
       <div className="text-center">
