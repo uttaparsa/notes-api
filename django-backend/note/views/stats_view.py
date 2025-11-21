@@ -59,22 +59,28 @@ class StatsManager:
             {'date': date, 'count': count}
             for date, count in date_counts.items()
         ]
+
 class RevisionStatsView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
+        # Get notes for the authenticated user
+        user_note_ids = LocalMessage.objects.filter(user=request.user).values_list('id', flat=True)
+        
         return Response(
             StatsManager.get_date_range_stats(
-                NoteRevision.objects.all(),
+                NoteRevision.objects.filter(note_id__in=user_note_ids),
                 'created_at'
             )
         )
 
 class NoteStatsView(APIView):
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         return Response(
             StatsManager.get_date_range_stats(
-                LocalMessage.objects.all(),
+                LocalMessage.objects.filter(user=request.user),
                 'created_at'
             )
         )
