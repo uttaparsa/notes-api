@@ -287,7 +287,9 @@ class NoteEmbedding(models.Model):
     def create_for_note(cls, note):
         """Class method to create embedding for a note"""
         try:
-
+            # Check if note contains non-ASCII characters
+            if cls.hasRTL(note.text):
+                return None
                 
             # First delete any existing embedding for this note
             cls.objects.filter(note_id=note.id).delete()
@@ -483,6 +485,9 @@ class NoteChunk(models.Model):
     def create_embedding(self):
         """Create an embedding for this chunk"""
         try:
+            # Check if chunk contains non-ASCII characters
+            if self.hasRTL(self.chunk_text):
+                return None
             
             # Get embedding vector from ollama
             vector = self.get_embedding(self.chunk_text)
