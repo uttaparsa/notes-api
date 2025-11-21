@@ -254,3 +254,7 @@ OLLAMA_EMBEDDING_SIZE = int(os.environ.get("OLLAMA_EMBEDDING_SIZE", "384"))
 
 TIME_ZONE = "America/Regina"
 
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+
+
+
