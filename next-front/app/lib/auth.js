@@ -16,6 +16,25 @@ export async function login(username, password) {
   return response;
 }
 
+export async function signup(username, email, password) {
+  const response = await fetch('/api/account/signup/', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': getCookie('csrftoken'),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, email, password }),
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Signup failed');
+  }
+
+  return response.json();
+}
+
 export function logout() {
   // Make a call to the backend to logout and clear the session
   fetch('/api/account/logout/', {
@@ -30,7 +49,6 @@ export function logout() {
     window.location.href = '/login';
   });
 }
-
 
 // TODO: this is duplicated in api.js
 // Helper function to get the CSRF token from cookies

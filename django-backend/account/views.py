@@ -47,13 +47,14 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from django.db import transaction
 
 
 
 from django.contrib.auth.decorators import login_required
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import UserSession
 
 from django.contrib.sessions.models import Session
@@ -140,9 +141,42 @@ def login_view(request):
 
 
 
-        
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signup_view(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
 
+    if not username or not email or not password:
+        return JsonResponse({'error': 'All fields are required'}, status=400)
 
+    if User.objects.filter(username=username).exists():
+        return JsonResponse({'error': 'Username already exists'}, status=400)
+
+    if User.objects.filter(email=email).exists():
+        return JsonResponse({'error': 'Email already exists'}, status=400)
+
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            
+            # Import the LocalMessageList model (adjust the import path based on your app structure)
+            from note.models import LocalMessageList
+            
+            # Create default category for the new user
+            LocalMessageList.objects.create(
+                user=user,
+                name='default'
+            )
+
+        return JsonResponse({'message': 'Signup successful', 'username': username})
+    except Exception as e:
+        return JsonResponse({'error': f'Signup failed: {str(e)}'}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
