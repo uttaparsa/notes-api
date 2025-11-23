@@ -31,10 +31,10 @@ class LinkSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     source_links = LinkSerializer(many=True, read_only=True)
 
-
     class Meta:
         model = LocalMessage
         fields = "__all__"
+        read_only_fields = ['user']  # Add this line
 
 
 class NoteChunkSerializer(serializers.ModelSerializer):

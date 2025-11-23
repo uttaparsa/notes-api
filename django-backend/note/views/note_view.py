@@ -368,6 +368,7 @@ class NoteView(GenericAPIView, ListModelMixin):
 
     def post(self, request, **kwargs):
         """Create a new note with initial revision"""
+        # Don't include user in the data being validated
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
@@ -382,7 +383,7 @@ class NoteView(GenericAPIView, ListModelMixin):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Save the note with user
+            # Save the note with user - this is correct
             note = serializer.save(list=lst, user=request.user)
             
             # Create initial revision using RevisionService
