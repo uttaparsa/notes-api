@@ -12,13 +12,6 @@ export default function NavbarComponent({ isLoggedIn, onLogout }) {
     document.documentElement.setAttribute('data-bs-theme', storedTheme);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-bs-theme', newTheme);
-  };
-
   return (
     <Navbar className='px-3' bg="primary" variant="dark" expand="lg">
       <Navbar.Brand href="/">Notes</Navbar.Brand>
@@ -37,21 +30,14 @@ export default function NavbarComponent({ isLoggedIn, onLogout }) {
               </Link>
             </Nav.Item>
             <Nav.Item>
-              <Link href="/stats" passHref legacyBehavior>
-                <Nav.Link>Stats</Nav.Link>
+              <Link href="/settings" passHref legacyBehavior>
+                <Nav.Link>Settings</Nav.Link>
               </Link>
             </Nav.Item>
             <Nav.Item>
               <Nav.Link onClick={onLogout}>Logout</Nav.Link>
             </Nav.Item>
           </Nav>
-          <Button 
-            variant="outline-light" 
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </Button>
         </Navbar.Collapse>
       )}
     </Navbar>
