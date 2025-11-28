@@ -7,9 +7,8 @@ import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
-import RevisionHistoryModal from './RevisionHistoryModal';
 import EditNoteModal from './EditNoteModal';
-import NoteTextRenderer from './markdown/NoteTextRenderer'; // New import
+import NoteTextRenderer from './markdown/NoteTextRenderer';
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);
@@ -22,15 +21,12 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
-  // Add similarityModeEnabled state
   const [similarityModeEnabled, setSimilarityModeEnabled] = useState(false);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
 
-  // Add toggleSimilarityMode function
   const toggleSimilarityMode = () => {
     setSimilarityModeEnabled(!similarityModeEnabled);
   };
@@ -132,13 +128,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                 <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
                 <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
                 {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
-                {!hideEdits && (
-                  <Dropdown.Item onClick={() => setShowRevisionModal(true)}>
-                    <span className="d-flex align-items-center">
-                      Revision History
-                    </span>
-                  </Dropdown.Item>
-                )}
+                {/* Remove revision history menu item */}
                 {/* Add Similar Thoughts option when in singleView */}
                 {singleView && (
                   <Dropdown.Item 
@@ -174,7 +164,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         <NoteCardBottomBar note={note}></NoteCardBottomBar>
       </div>
       
-      {/* Existing Modals remain the same */}
       <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Moving note</Modal.Title>
@@ -244,12 +233,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         singleView={singleView}
         showToast={showToast}
         refreshNotes={refreshNotes}
-      />
-
-      <RevisionHistoryModal 
-        show={showRevisionModal}
-        onHide={() => setShowRevisionModal(false)}
-        noteId={note.id}
       />
     </div>
   );

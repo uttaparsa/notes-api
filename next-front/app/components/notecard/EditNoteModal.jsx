@@ -7,10 +7,12 @@ import RtlToggleButton from "../buttons/edit_buttons/RtlToggleButton";
 import PreviewToggleButton from "../buttons/edit_buttons/PreviewToggleButton";
 import PinButton from "../buttons/edit_buttons/PinButton";
 import UnpinButton from "../buttons/edit_buttons/UnpinButton";
+import RevisionHistoryButton from "../buttons/edit_buttons/RevisionHistoryButton";
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import NoteTextRenderer from "./markdown/NoteTextRenderer";
+import RevisionHistoryModal from './RevisionHistoryModal';
 
 const EditNoteModal = ({
     show,
@@ -28,6 +30,7 @@ const EditNoteModal = ({
     const [lastSavedText, setLastSavedText] = useState(editText);
     const editMessageTextAreaRef = useRef(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [showRevisionModal, setShowRevisionModal] = useState(false);
 
     // Reset lastSavedText when modal is opened with new content
     useEffect(() => {
@@ -236,6 +239,7 @@ const EditNoteModal = ({
                                     <Button
                                         variant="outline-secondary"
                                         onClick={hideMessage}
+                                        className="me-2"
                                     >
                                         Hide
                                     </Button>
@@ -243,14 +247,17 @@ const EditNoteModal = ({
                                     <Button
                                         variant="outline-secondary"
                                         onClick={unHideMessage}
+                                        className="me-2"
                                     >
                                         Unhide
                                     </Button>
                                 )}
-                        
                             </>
                         )}
                         
+                        <RevisionHistoryButton
+                            onClick={() => setShowRevisionModal(true)}
+                        />
                     </div>
                     <div>
                         <SaveButton 
@@ -332,6 +339,12 @@ const EditNoteModal = ({
                 </Button>
             </Modal.Footer>
         </Modal>
+
+        <RevisionHistoryModal 
+            show={showRevisionModal}
+            onHide={() => setShowRevisionModal(false)}
+            noteId={note.id}
+        />
         </>
     );
 };
