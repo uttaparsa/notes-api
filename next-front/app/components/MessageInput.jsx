@@ -7,8 +7,8 @@ import { handleApiError } from '../utils/errorHandler';
 import { isRTL } from '../utils/stringUtils';
 import FileUploadComponent from './FileUploadComponent';
 import SendButton from './SendButton';
-import RtlToggleButton from './buttons/RtlToggleButton';
-import PreviewToggleButton from './buttons/PreviewToggleButton';
+import RtlToggleButton from './buttons/edit_buttons/RtlToggleButton';
+import PreviewToggleButton from './buttons/edit_buttons/PreviewToggleButton';
 import NoteTextRenderer from './notecard/markdown/NoteTextRenderer';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
