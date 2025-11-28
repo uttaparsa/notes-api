@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
-import { createCustomRenderers, processTextForHashtags, removeHyphens } from './MarkdownRenderers';
+import { createCustomRenderers, processTextForHashtags, removeHyphens, createHighlightPlugin } from './MarkdownRenderers';
 import HoverableSimilarChunks from '../HoverableSimilarChunks';
 
 
@@ -19,8 +19,16 @@ export const DisplayRenderer = ({
   shouldLoadLinks = true,
   showToast = () => {},
   similarityModeEnabled = false,
-  chunks = [] 
+  chunks = [],
+  highlightStart = null,
+  highlightEnd = null
 }) => {
+
+  // Create the highlight plugin only when indices change
+  const highlightPlugin = useMemo(() => 
+    createHighlightPlugin(highlightStart, highlightEnd), 
+    [highlightStart, highlightEnd]
+  );
 
   const renderContent = () => {
     if (similarityModeEnabled && chunks && chunks.length > 0) {
@@ -41,7 +49,7 @@ export const DisplayRenderer = ({
           >
             <ReactMarkdown
               components={insideChunkRenderers}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, highlightPlugin]}
               className={`${isRTL(chunkTextContent) ? styles.rtlMarkdown : ''} ${styles.chunkMarkdownContent}`}
             >
               {textToDiplay}
@@ -69,7 +77,7 @@ export const DisplayRenderer = ({
         <>
           <ReactMarkdown 
             components={customRenderersForFullNote} 
-            remarkPlugins={[remarkGfm]} 
+            remarkPlugins={[remarkGfm, highlightPlugin]} 
             className={`${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
           >
             {textToRender}

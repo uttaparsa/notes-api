@@ -204,3 +204,15 @@ pre.codeBlock code {
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 0.25rem;
 }
+
+.highlightedText {
+  background-color: rgba(255, 255, 0, 0.4);
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+[data-bs-theme="dark"] .highlightedText {
+  background-color: rgba(255, 215, 0, 0.3);
+  color: #fff;
+}

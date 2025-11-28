@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { fetchWithAuth } from '../../../lib/api';
 
 // Import the new renderer components
@@ -17,6 +18,11 @@ const NoteTextRenderer = ({
   const [chunks, setChunks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Get highlight params from URL
+  const searchParams = useSearchParams();
+  const highlightStart = searchParams ? parseInt(searchParams.get('highlight_start')) : null;
+  const highlightEnd = searchParams ? parseInt(searchParams.get('highlight_end')) : null;
   
   // Effect to fetch chunks from backend when in single view
   useEffect(() => {
@@ -95,6 +101,8 @@ const NoteTextRenderer = ({
         showToast={showToast}
         similarityModeEnabled={similarityModeEnabled}
         chunks={chunks} // Pass chunks to DisplayRenderer
+        highlightStart={!isNaN(highlightStart) ? highlightStart : null}
+        highlightEnd={!isNaN(highlightEnd) ? highlightEnd : null}
       />
       
       {renderDebugChunks()}

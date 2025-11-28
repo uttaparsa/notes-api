@@ -11,6 +11,72 @@ import HoverableSimilarChunks from '../HoverableSimilarChunks'; // Import Hovera
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+// Remark plugin to highlight text based on character indices
+export const createHighlightPlugin = (start, end) => {
+  return () => (tree) => {
+    if (typeof start !== 'number' || typeof end !== 'number' || start >= end) return;
+
+    const visit = (node) => {
+      if (!node.children) return;
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+
+        // We only process text nodes that have position info
+        if (child.type === 'text' && child.position) {
+          const { start: { offset: childStart }, end: { offset: childEnd } } = child.position;
+
+          // Check if this text node overlaps with the highlight range
+          if (childEnd > start && childStart < end) {
+            // Calculate relative indices for the slice
+            const relStart = Math.max(0, start - childStart);
+            const relEnd = Math.min(child.value.length, end - childStart);
+
+            // Safety check
+            if (relStart >= relEnd) continue;
+
+            const before = child.value.slice(0, relStart);
+            const match = child.value.slice(relStart, relEnd);
+            const after = child.value.slice(relEnd);
+
+            const newNodes = [];
+            
+            if (before) {
+              newNodes.push({ type: 'text', value: before });
+            }
+
+            // Insert the highlighted node
+            // We use a custom data structure that remark-rehype converts to <mark>
+            newNodes.push({
+              type: 'element',
+              data: { 
+                hName: 'mark', 
+                hProperties: { className: styles.highlightedText } 
+              },
+              children: [{ type: 'text', value: match }]
+            });
+
+            if (after) {
+              newNodes.push({ type: 'text', value: after });
+            }
+
+            // Replace the original node with the new nodes
+            node.children.splice(i, 1, ...newNodes);
+            
+            // Adjust the loop index since we might have added nodes
+            i += newNodes.length - 1;
+          }
+        } else if (child.children) {
+          // Recursively visit children
+          visit(child);
+        }
+      }
+    };
+
+    visit(tree);
+  };
+};
+
 // Helper to extract text from ReactMarkdown children
 const getNodeText = (childrenInput) => {
   let text = '';
@@ -50,6 +116,7 @@ export const createCustomRenderers = (
     h5: (props) => <h5 {...props} />,
     h6: (props) => <h6 {...props} />,
     li: (props) => <li {...props} />,
+    mark: (props) => <mark className={styles.highlightedText} {...props} />, // Add explicit mark renderer
     blockquote: (props) => {
       const isRTLContent = props.children && 
         typeof props.children === 'string' && 
