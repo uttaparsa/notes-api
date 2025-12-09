@@ -9,6 +9,7 @@ import { handleApiError } from "../../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 import EditNoteModal from './EditNoteModal';
 import NoteTextRenderer from './markdown/NoteTextRenderer';
+import ReminderModal from './ReminderModal';
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);
@@ -22,6 +23,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
   const [similarityModeEnabled, setSimilarityModeEnabled] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
@@ -128,6 +130,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                 <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
                 <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
                 {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
+                {!hideEdits && <Dropdown.Item onClick={() => setShowReminderModal(true)}>Create Reminder</Dropdown.Item>}
                 {singleView && (
                   <Dropdown.Item 
                     onClick={toggleSimilarityMode}
@@ -231,6 +234,13 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
         singleView={singleView}
         showToast={showToast}
         refreshNotes={refreshNotes}
+      />
+      
+      <ReminderModal
+        show={showReminderModal}
+        onHide={() => setShowReminderModal(false)}
+        note={note}
+        showToast={showToast}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, Reminder
 import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
@@ -153,5 +153,28 @@ class SimilarNoteSerializer(serializers.Serializer):
             representation['text'] = representation['text'][:max_length] + '...'
         
         return representation
+
+class ReminderSerializer(serializers.ModelSerializer):
+    note_text = serializers.SerializerMethodField()
+    highlighted_text = serializers.SerializerMethodField()
+    note_url = serializers.SerializerMethodField()
+    
+    def get_note_text(self, obj):
+        return obj.note.text[:100] + '...' if len(obj.note.text) > 100 else obj.note.text
+    
+    def get_highlighted_text(self, obj):
+        return obj.get_highlighted_text()
+    
+    def get_note_url(self, obj):
+        return obj.get_note_url()
+    
+    class Meta:
+        model = Reminder
+        fields = [
+            'id', 'note', 'description', 'highlight_start', 'highlight_end',
+            'scheduled_time', 'frequency', 'is_active', 'last_sent',
+            'created_at', 'updated_at', 'note_text', 'highlighted_text', 'note_url'
+        ]
+        read_only_fields = ['last_sent', 'created_at', 'updated_at']
 
 

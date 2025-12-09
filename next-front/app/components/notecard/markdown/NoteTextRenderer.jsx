@@ -24,6 +24,19 @@ const NoteTextRenderer = ({
   const highlightStart = searchParams ? parseInt(searchParams.get('highlight_start')) : null;
   const highlightEnd = searchParams ? parseInt(searchParams.get('highlight_end')) : null;
   
+  // Add effect to scroll to highlighted text
+  useEffect(() => {
+    if (singleView && !isNaN(highlightStart) && !isNaN(highlightEnd)) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const highlightedElement = document.querySelector('.highlighted-reminder-text');
+        if (highlightedElement) {
+          highlightedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [singleView, highlightStart, highlightEnd]);
+  
   // Effect to fetch chunks from backend when in single view
   useEffect(() => {
     if (singleView && note?.id && similarityModeEnabled) {

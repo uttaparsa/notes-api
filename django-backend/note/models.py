@@ -618,3 +618,45 @@ class NoteChunk(models.Model):
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to find similar chunks: {str(e)}")
             return []
+
+class Reminder(models.Model):
+    FREQUENCY_CHOICES = [
+        ('once', 'Once'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reminders')
+    note = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='reminders')
+    description = models.TextField(blank=True, default='')
+    
+    # Text selection range (character positions)
+    highlight_start = models.IntegerField(null=True, blank=True)
+    highlight_end = models.IntegerField(null=True, blank=True)
+    
+    # Scheduling
+    scheduled_time = models.DateTimeField()
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='once')
+    is_active = models.BooleanField(default=True)
+    last_sent = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'reminders'
+        ordering = ['scheduled_time']
+    
+    def get_note_url(self):
+        """Generate the URL for this reminder"""
+        base_url = f"/message/{self.note.id}"
+        if self.highlight_start is not None and self.highlight_end is not None:
+            return f"{base_url}?highlight_start={self.highlight_start}&highlight_end={self.highlight_end}"
+        return base_url
+    
+    def get_highlighted_text(self):
+        """Get the highlighted portion of the note"""
+        if self.highlight_start is not None and self.highlight_end is not None:
+            return self.note.text[self.highlight_start:self.highlight_end]
+        return self.note.text

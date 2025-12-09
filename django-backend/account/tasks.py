@@ -50,3 +50,101 @@ def test_celery_task():
     """Test task to verify Celery is working"""
     logger.info("Celery test task executed successfully!")
     return "Celery is working!"
+
+@shared_task
+def send_reminder_email(reminder_id):
+    """
+    Send a reminder email for a specific reminder.
+    
+    Args:
+        reminder_id: ID of the reminder to send
+    """
+    from note.models import Reminder
+    from django.utils import timezone
+    from datetime import timedelta
+    from django.conf import settings
+    
+    try:
+        reminder = Reminder.objects.get(id=reminder_id, is_active=True)
+        
+        # Build email content
+        highlighted_text = reminder.get_highlighted_text()
+        note_url = f"{settings.FRONTEND_URL}{reminder.get_note_url()}"
+        
+        subject = f"Reminder: {reminder.description or 'Note Reminder'}"
+        
+        message = f"""
+Hello {reminder.user.username},
+
+This is your reminder:
+
+{reminder.description}
+
+Note excerpt:
+{highlighted_text[:200]}{'...' if len(highlighted_text) > 200 else ''}
+
+View full note: {note_url}
+
+---
+This is an automated reminder from your Notes app.
+"""
+        
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [reminder.user.email],
+            fail_silently=False,
+        )
+        
+        # Update last_sent time
+        reminder.last_sent = timezone.now()
+        
+        # If it's a recurring reminder, schedule the next one
+        if reminder.frequency != 'once':
+            if reminder.frequency == 'daily':
+                next_time = reminder.scheduled_time + timedelta(days=1)
+            elif reminder.frequency == 'weekly':
+                next_time = reminder.scheduled_time + timedelta(weeks=1)
+            elif reminder.frequency == 'monthly':
+                next_time = reminder.scheduled_time + timedelta(days=30)
+            
+            reminder.scheduled_time = next_time
+        else:
+            # Deactivate one-time reminders
+            reminder.is_active = False
+        
+        reminder.save()
+        
+        logger.info(f"Reminder {reminder_id} sent successfully to {reminder.user.email}")
+        return f"Reminder sent to {reminder.user.email}"
+        
+    except Reminder.DoesNotExist:
+        logger.error(f"Reminder {reminder_id} not found or inactive")
+        return f"Reminder {reminder_id} not found"
+    except Exception as exc:
+        logger.error(f"Failed to send reminder {reminder_id}: {str(exc)}")
+        raise
+
+@shared_task
+def check_and_send_reminders():
+    """
+    Periodic task to check for due reminders and send them.
+    Should be scheduled to run every minute or so.
+    """
+    from note.models import Reminder
+    from django.utils import timezone
+    
+    now = timezone.now()
+    due_reminders = Reminder.objects.filter(
+        is_active=True,
+        scheduled_time__lte=now
+    )
+    
+    count = 0
+    for reminder in due_reminders:
+        send_reminder_email.delay(reminder.id)
+        count += 1
+    
+    logger.info(f"Scheduled {count} reminder emails")
+    return f"Scheduled {count} reminders"

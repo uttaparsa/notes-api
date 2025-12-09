@@ -7,9 +7,15 @@ from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessa
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
 from .views.similar_note_view import SimilarNotesView
+from .views.reminder_view import ReminderView, SingleReminderView
 
 
 urlpatterns = [
+        
+    # Reminder endpoints
+    path('reminders/', ReminderView.as_view(), name='reminders'),
+    path('reminders/<int:reminder_id>/', SingleReminderView.as_view(), name='reminder-detail'),
+    
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('files/<path:file_path>', serve_minio_file, name='serve_minio_file'),
     path('list/<int:pk>/archive/', ArchiveMessageListView.as_view(), name='archive-list'),
@@ -33,12 +39,9 @@ urlpatterns = [
     path('message/unarchive/<int:note_id>/', UnArchiveMessageView.as_view(), name='unarchive-message'),
     path('pp/', PublicNoteView.as_view()),
     path('<slug>/', NoteView.as_view()),
-    # In note/urls.py, add:
     path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
     path('stats/revisions/', RevisionStatsView.as_view(), name='revision-stats'),
     path('stats/notes/', NoteStatsView.as_view(), name='note-stats'),
     path('stats/access/', FileAccessStatsView.as_view(), name='file-access'),
-
-
 
 ]

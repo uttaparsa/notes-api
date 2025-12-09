@@ -64,6 +64,16 @@ CELERY_ENABLE_UTC = True
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 
+# Celery Beat schedule
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'check-reminders-every-minute': {
+        'task': 'account.tasks.check_and_send_reminders',
+        'schedule': crontab(minute='*/1'),  # Every minute
+    },
+}
+
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
