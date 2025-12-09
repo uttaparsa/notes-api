@@ -128,8 +128,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                 <Dropdown.Item onClick={() => copyTextToClipboard(note.text)}>Copy</Dropdown.Item>
                 <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
                 {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
-                {/* Remove revision history menu item */}
-                {/* Add Similar Thoughts option when in singleView */}
                 {singleView && (
                   <Dropdown.Item 
                     onClick={toggleSimilarityMode}

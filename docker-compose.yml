@@ -19,6 +19,18 @@ services:
       - app-network
 
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   backend:
     build: django-backend
     command: python manage.py runserver 0.0.0.0:9800
@@ -36,6 +48,32 @@ services:
     networks:
       - app-network
     
+
+  celery_worker:
+    build: django-backend
+    command: celery -A config worker -l info
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./django-backend/data/:/usr/src/app/data/
+    env_file:
+      - django-backend/.env
+    networks:
+      - app-network
+
+  celery_beat:
+    build: django-backend
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./django-backend/data/:/usr/src/app/data/
+    env_file:
+      - django-backend/.env
+    networks:
+      - app-network
 
   frontend:
     build:

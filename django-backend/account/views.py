@@ -30,6 +30,7 @@ from django.contrib.auth.decorators import login_required
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import UserSession, EmailConfirmationToken
+from .tasks import send_email_reminder
 
 from django.contrib.sessions.models import Session
 
@@ -56,24 +57,8 @@ def send_login_notification(user, device_name, ip_address):
     )
     recipient_email = user.email
 
-    send_mail(
-        subject,
-        message,
-        settings.EMAIL_USERNAME,  # Replace with your email
-        [recipient_email],
-        fail_silently=True,
-    )
-
-
-import threading
-
-def send_login_notification_async(user, device_name, ip_address):
-    thread = threading.Thread(
-        target=send_login_notification,
-        args=(user, device_name, ip_address),
-        daemon=True
-    )
-    thread.start()
+    # Use Celery task instead of direct send_mail
+    send_email_reminder.delay(recipient_email, subject, message)
 
 
 @authentication_classes([BasicAuthentication]) 
@@ -106,7 +91,7 @@ def login_view(request):
             )
 
         if not settings.DEBUG:
-            send_login_notification_async(user, device_name, ip_address)
+            send_login_notification(user, device_name, ip_address)
 
         return JsonResponse({'message': 'Login successful'})
 
@@ -126,21 +111,8 @@ def send_confirmation_email(user, token):
         f"If you did not create this account, please ignore this email."
     )
     
-    send_mail(
-        subject,
-        message,
-        settings.EMAIL_USERNAME,
-        [user.email],
-        fail_silently=False,
-    )
-
-def send_confirmation_email_async(user, token):
-    thread = threading.Thread(
-        target=send_confirmation_email,
-        args=(user, token),
-        daemon=True
-    )
-    thread.start()
+    # Use Celery task
+    send_email_reminder.delay(user.email, subject, message)
 
 
 @api_view(['POST'])
@@ -180,7 +152,7 @@ def signup_view(request):
                     'debug_token': str(confirmation_token.token)
                 })
             else:
-                send_confirmation_email_async(user, confirmation_token.token)
+                send_confirmation_email(user, confirmation_token.token)
 
         return JsonResponse({'message': 'Signup successful. Please check your email to confirm your account.'})
     except Exception as e:
