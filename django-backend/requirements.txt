@@ -10,7 +10,7 @@ constantly==23.10.4
 cryptography==43.0.3
 daphne==4.1.2
 Django==5.2.8
-django-celery-beat==2.5.0
+django-celery-beat==2.8.1
 django-resized==1.0.3
 djangorestframework==3.15.2
 drf-spectacular==0.27.2
@@ -44,4 +44,4 @@ requests==2.32.3
 sqlite-vec==0.1.6
 pytz==2025.1
 langchain-text-splitters==0.3.7
-celery==5.3.4
+celery==5.6.0
