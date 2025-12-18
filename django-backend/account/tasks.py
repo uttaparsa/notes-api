@@ -134,11 +134,36 @@ def check_and_send_reminders():
     """
     from note.models import Reminder
     from django.utils import timezone
+    from django.db import models
     
     now = timezone.now()
+    
+    # Only get reminders that:
+    # 1. Are active
+    # 2. Are scheduled for now or earlier
+    # 3. Either have never been sent (last_sent is None) OR
+    #    have been sent but are recurring and enough time has passed
     due_reminders = Reminder.objects.filter(
         is_active=True,
         scheduled_time__lte=now
+    ).filter(
+        models.Q(last_sent__isnull=True) |  # Never sent
+        models.Q(
+            frequency='once',
+            last_sent__isnull=True
+        ) |  # One-time reminder not sent yet
+        models.Q(
+            frequency='daily',
+            last_sent__lt=now - timezone.timedelta(days=1)
+        ) |  # Daily and last sent more than a day ago
+        models.Q(
+            frequency='weekly',
+            last_sent__lt=now - timezone.timedelta(weeks=1)
+        ) |  # Weekly and last sent more than a week ago
+        models.Q(
+            frequency='monthly',
+            last_sent__lt=now - timezone.timedelta(days=30)
+        )  # Monthly and last sent more than 30 days ago
     )
     
     count = 0
