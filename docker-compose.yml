@@ -51,7 +51,7 @@ services:
 
   celery_worker:
     build: django-backend
-    command: celery -A config worker -l info
+    command: celery -A config worker -l info --concurrency=1
     depends_on:
       - redis
       - backend
@@ -61,6 +61,8 @@ services:
       - django-backend/.env
     networks:
       - app-network
+    deploy:
+      replicas: 1
 
   celery_beat:
     build: django-backend
@@ -74,6 +76,8 @@ services:
       - django-backend/.env
     networks:
       - app-network
+    deploy:
+      replicas: 1
 
   frontend:
     build:
