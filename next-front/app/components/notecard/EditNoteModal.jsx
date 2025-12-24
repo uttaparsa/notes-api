@@ -31,6 +31,7 @@ const EditNoteModal = ({
     const editMessageTextAreaRef = useRef(null);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [showRevisionModal, setShowRevisionModal] = useState(false);
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     // Reset lastSavedText when modal is opened with new content
     useEffect(() => {
@@ -212,9 +213,14 @@ const EditNoteModal = ({
 
     return (
         <>
-        <Modal show={show} onHide={handleClose} className="modal-fullscreen w-100 mw-100">
+        <Modal show={show} onHide={handleClose} fullscreen="xxl-down" size="lg">
+            <Modal.Header closeButton className="p-1">
+  <Modal.Title className="fs-6">Edit Note</Modal.Title>
+</Modal.Header>
+
             <Modal.Body>
-                <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
+                {/* Desktop button layout */}
+                <div className="mb-3 mt-0 px-2 d-none d-lg-flex justify-content-between">
                     <div>
                     {!singleView && (
                             <>
@@ -232,7 +238,6 @@ const EditNoteModal = ({
                                 )}
                             </>
                         )}
-                        {/* show hide/unhide button only if note refreshNotes is not none */}
                         {refreshNotes && (
                             <>
                                 {!note.archived ? (
@@ -273,20 +278,123 @@ const EditNoteModal = ({
                             onTextChange={setEditText}
                             size="sm"
                             className="btn-sm"
+                            width="20px"
+                            height="20px"
                         />
 
                         <RtlToggleButton 
                             onClick={toggleEditorRtl}
                             isRTL={isRTL}
                             className="mx-2 btn-sm"
+                            width="20px"
+                            height="20px"
                         />
 
                         <PreviewToggleButton 
                             className="btn-sm"
                             isPreviewMode={isPreviewMode}
                             onClick={() => setIsPreviewMode(!isPreviewMode)}
+                            width="20px"
+                            height="20px"
                         />
                     </div>
+                </div>
+
+                {/* Mobile button layout */}
+                <div className="mb-3 mt-0 px-2 d-lg-none">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                        <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => setShowMobileMenu(!showMobileMenu)}
+                        >
+                            {showMobileMenu ? '▼' : '▶'} Actions
+                        </Button>
+                        <div className="d-flex gap-2">
+                            <SaveButton 
+                                hasUnsavedChanges={hasUnsavedChanges}
+                                onClick={handleSave}
+                                className="btn-sm"
+                            />
+                            <PreviewToggleButton 
+                                className="btn-sm"
+                                isPreviewMode={isPreviewMode}
+                                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                            />
+                        </div>
+                    </div>
+                    
+                    {showMobileMenu && (
+                        <div className="d-flex justify-content-between gap-2 mb-2 p-2 border rounded">
+                            <div className="d-flex flex-wrap gap-2">
+                                {!singleView && (
+                                    <>
+                                        {note.importance < 4 && (
+                                            <PinButton 
+                                                onClick={pinMessage}
+                                                className="btn-sm"
+                                                width={16}
+                                                height={16}
+                                            />
+                                        )}
+                                        {note.importance > 0 && (
+                                            <UnpinButton 
+                                                onClick={unPinMessage}
+                                                className="btn-sm"
+                                                width={16}
+                                                height={16}
+                                            />
+                                        )}
+                                    </>
+                                )}
+                                {refreshNotes && (
+                                    <>
+                                        {!note.archived ? (
+                                            <Button
+                                                variant="outline-secondary"
+                                                onClick={hideMessage}
+                                                className="btn-sm"
+                                            >
+                                                Hide
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="outline-secondary"
+                                                onClick={unHideMessage}
+                                                className="btn-sm"
+                                            >
+                                                Unhide
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                                <RevisionHistoryButton
+                                    onClick={() => setShowRevisionModal(true)}
+                                    className="btn-sm"
+                                    width={16}
+                                    height={16}
+                                />
+                            </div>
+                            <div className="d-flex flex-wrap gap-2">
+                                <FileUploadComponent
+                                    onFileUploaded={handleFileUpload}
+                                    initialText={editText}
+                                    onTextChange={setEditText}
+                                    size="sm"
+                                    className="btn-sm"
+                                    width={16}
+                                    height={16}
+                                />
+                                <RtlToggleButton 
+                                    onClick={toggleEditorRtl}
+                                    isRTL={isRTL}
+                                    className="btn-sm"
+                                    width={16}
+                                    height={16}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="position-relative">

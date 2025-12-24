@@ -168,6 +168,20 @@ pre.codeBlock code {
   resize: vertical;  /* Allow user to resize vertically if needed */
   overflow-y: auto;
   line-height: 1.5;
+  min-height: 400px;
+}
+
+/* Full screen modal adjustments for mobile */
+@media (max-width: 991.98px) {
+    .editTextArea {
+        min-height: 60vh;
+    }
+    
+    .previewArea {
+        min-height: 60vh;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
 }
 
 .previewArea {

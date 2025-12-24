@@ -1,6 +1,6 @@
 import { Button } from 'react-bootstrap';
 
-const RtlToggleButton = ({ onClick, isRTL = false, size = "sm", className = "" }) => {
+const RtlToggleButton = ({ onClick, isRTL = false, size = "sm", className = "", width = '20px', height = '20px' }) => {
   return (
     <Button
       variant="outline-secondary"
@@ -12,9 +12,9 @@ const RtlToggleButton = ({ onClick, isRTL = false, size = "sm", className = "" }
       <span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          height="24px"
+          height={height}
           viewBox="0 0 24 24"
-          width="24px"
+          width={width}
           className="rtl-icon"
           style={{
             display: isRTL ? "none" : "block",
@@ -26,9 +26,9 @@ const RtlToggleButton = ({ onClick, isRTL = false, size = "sm", className = "" }
         </svg>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          height="24px"
+          height={height}
           viewBox="0 0 24 24"
-          width="24px"
+          width={width}
           className="ltr-icon"
           style={{
             display: isRTL ? "block" : "none",

@@ -5,7 +5,7 @@ import { Button, Form, Modal, Spinner } from 'react-bootstrap';
 import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 
-const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, size }) => {
+const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, size, width = '24px', height = '24px', className = "" }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -88,8 +88,8 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="24px"
-          height="24px"
+          width={width}
+          height={height}
           style={{ 
                 fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
               }}
