@@ -1,6 +1,6 @@
 import { Button } from 'react-bootstrap';
 
-const SaveButton = ({ hasUnsavedChanges, onClick, size = "sm", className = "" }) => {
+const SaveButton = ({ hasUnsavedChanges, onClick, size = "sm", className = "", width = '20px', height = '20px' }) => {
   return (
     <Button
       className={className}
@@ -11,9 +11,9 @@ const SaveButton = ({ hasUnsavedChanges, onClick, size = "sm", className = "" })
       {/* Save icon */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        height="24px"
+        height={height}
         viewBox="0 0 24 24"
-        width="24px"
+        width={width}
         style={{
           fill: hasUnsavedChanges
             ? "var(--bs-warning)"

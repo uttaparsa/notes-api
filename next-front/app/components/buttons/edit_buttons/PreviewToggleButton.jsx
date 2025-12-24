@@ -1,11 +1,13 @@
-    import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 const PreviewToggleButton = ({ 
   isPreviewMode, 
   onClick, 
   size = "sm", 
   className = "",
-  showTooltip = true 
+  showTooltip = true,
+  width = '20px',
+  height = '20px'
 }) => {
   const button = (
     <Button
@@ -16,9 +18,9 @@ const PreviewToggleButton = ({
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        height="24px"
+        height={height}
         viewBox="0 0 24 24"
-        width="24px"
+        width={width}
         style={{ fill: "var(--bs-body-color)" }}
       >
         <path d="M0 0h24v24H0z" fill="none" />

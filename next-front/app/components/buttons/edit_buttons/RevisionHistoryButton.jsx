@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 
-const RevisionHistoryButton = ({ onClick, className = '' }) => {
+const RevisionHistoryButton = ({ onClick, className = '', width = '20px', height = '20px' }) => {
     return (
         <Button
             variant="outline-secondary"
@@ -10,8 +10,8 @@ const RevisionHistoryButton = ({ onClick, className = '' }) => {
             title="Revision History"
         >
             <svg 
-                width="16" 
-                height="16" 
+                width={width}
+                height={height}
                 viewBox="0 0 24 24" 
                 fill="none" 
                 xmlns="http://www.w3.org/2000/svg"

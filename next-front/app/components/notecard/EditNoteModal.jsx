@@ -212,7 +212,7 @@ const EditNoteModal = ({
 
     return (
         <>
-        <Modal show={show} onHide={handleClose} size="xl">
+        <Modal show={show} onHide={handleClose} className="modal-fullscreen w-100 mw-100">
             <Modal.Body>
                 <div className="mb-3 mt-0 px-2 d-flex justify-content-between">
                     <div>
@@ -221,13 +221,13 @@ const EditNoteModal = ({
                                 {note.importance < 4 && (
                                     <PinButton 
                                         onClick={pinMessage}
-                                        className="mr-2"
+                                        className="mr-2 btn-sm"
                                     />
                                 )}
                                 {note.importance > 0 && (
                                     <UnpinButton 
                                         onClick={unPinMessage}
-                                        className="mr-2"
+                                        className="mr-2 btn-sm"
                                     />
                                 )}
                             </>
@@ -239,7 +239,7 @@ const EditNoteModal = ({
                                     <Button
                                         variant="outline-secondary"
                                         onClick={hideMessage}
-                                        className="me-2"
+                                        className="me-2 btn-sm"
                                     >
                                         Hide
                                     </Button>
@@ -247,7 +247,7 @@ const EditNoteModal = ({
                                     <Button
                                         variant="outline-secondary"
                                         onClick={unHideMessage}
-                                        className="me-2"
+                                        className="me-2 btn-sm"
                                     >
                                         Unhide
                                     </Button>
@@ -257,13 +257,14 @@ const EditNoteModal = ({
                         
                         <RevisionHistoryButton
                             onClick={() => setShowRevisionModal(true)}
+                            className="btn-sm"
                         />
                     </div>
                     <div>
                         <SaveButton 
                             hasUnsavedChanges={hasUnsavedChanges}
                             onClick={handleSave}
-                            className="me-2"
+                            className="me-2 btn-sm"
                         />
 
                         <FileUploadComponent
@@ -271,15 +272,17 @@ const EditNoteModal = ({
                             initialText={editText}
                             onTextChange={setEditText}
                             size="sm"
+                            className="btn-sm"
                         />
 
                         <RtlToggleButton 
                             onClick={toggleEditorRtl}
                             isRTL={isRTL}
-                            className="mx-2"
+                            className="mx-2 btn-sm"
                         />
 
                         <PreviewToggleButton 
+                            className="btn-sm"
                             isPreviewMode={isPreviewMode}
                             onClick={() => setIsPreviewMode(!isPreviewMode)}
                         />

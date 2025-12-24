@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from 'react-bootstrap';
 
-const PinButton = ({ onClick, variant = "outline-primary", className = "" }) => {
+const PinButton = ({ onClick, variant = "outline-primary", className = "", width = '20px', height = '20px' }) => {
     return (
         <Button
             variant={variant}
@@ -11,9 +11,9 @@ const PinButton = ({ onClick, variant = "outline-primary", className = "" }) => 
             <svg
                 version="1.1"
                 xmlns="http://www.w3.org/2000/svg"
-                height="24px"
+                height={height}
                 viewBox="0 0 1000 1000"
-                width="24px"
+                width={width}
                 style={{ fill: "var(--bs-primary)" }}
             >
                 <g>
