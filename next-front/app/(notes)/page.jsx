@@ -118,7 +118,7 @@ export default function NotesPage() {
   };
 
   return (
-    <div dir="ltr">
+    <div dir="ltr" style={{ minHeight: '100vh', overflow: 'auto' }}>
       <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
         <PaginationComponent
