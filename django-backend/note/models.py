@@ -64,6 +64,7 @@ class LocalMessageList(models.Model):
     slug = models.SlugField(default="n")
     archived = models.BooleanField(default=False, null=False)
     show_in_feed = models.BooleanField(default=True, null=False)
+    disable_related = models.BooleanField(default=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_lists')
 
     class Meta:

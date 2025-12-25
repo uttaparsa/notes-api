@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from ..models import LocalMessageList
+from ..models import LocalMessageList, LocalMessage
 from ..serializers import NoteListSerializer
 
 class NoteListView(APIView):
@@ -63,6 +63,15 @@ class DeleteMessageListView(APIView):
     def delete(self, request, pk):
         try:
             item = LocalMessageList.objects.get(pk=pk, user=request.user)
+            
+            # Check if the list has any messages
+            message_count = LocalMessage.objects.filter(list=item).count()
+            if message_count > 0:
+                return Response(
+                    {"error": f"Cannot delete list with {message_count} message(s). Please move or delete all messages first."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             item.delete()
             return Response({"message": "List deleted successfully"}, status=status.HTTP_200_OK)
         except LocalMessageList.DoesNotExist:

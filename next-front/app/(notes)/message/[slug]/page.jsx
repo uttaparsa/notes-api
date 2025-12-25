@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/notecard/NoteCard';
@@ -10,14 +10,17 @@ import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/M
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { Spinner } from 'react-bootstrap';
+import { NoteListContext } from '../../layout';
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
+  const [similarNotesLoaded, setSimilarNotesLoaded] = useState(false);
   const noteComponentRef = useRef(null);
   const noteContainerRef = useRef(null);
   const params = useParams();
+  const noteLists = useContext(NoteListContext);
 
   useEffect(() => {
     const loadData = async () => {
@@ -31,18 +34,26 @@ const SingleNoteView = () => {
           document.title = extractMarkdownTitleFromText(currentNote.text);
         }
         
-        // Load similar notes separately
-        await fetchSimilarNotes(currentNote.id);
+        // Find the list for this note and check disable_related
+        const noteList = noteLists.find((lst) => lst.id === currentNote.list);
+        const shouldLoadSimilar = noteList && !noteList.disable_related;
+        
+        // Only load similar notes if disable_related is false
+        if (currentNote && shouldLoadSimilar) {
+          await fetchSimilarNotes(currentNote.id);
+        } else {
+          setSimilarNotesLoaded(true);
+        }
       } catch (error) {
         console.error('Error fetching note:', error);
         document.title = 'Note - Error';
         setNoteBusy(false);
-        setSimilarNotesBusy(false);
+        setSimilarNotesLoaded(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [noteLists]);
 
   const fetchSimilarNotes = async (noteId) => {
     try {
@@ -52,6 +63,8 @@ const SingleNoteView = () => {
       }
       const data = await response.json();
       setSimilarNotes(data);
+      // Trigger animation after a brief delay to ensure DOM is ready
+      setTimeout(() => setSimilarNotesLoaded(true), 50);
     } catch (error) {
       console.error("Error fetching similar notes:", error);
       handleApiError(error);
@@ -125,8 +138,33 @@ const SingleNoteView = () => {
     return (score * 100).toFixed(0) + '%';
   };
 
+  // Helper function to check if related notes should be shown
+  const shouldShowRelated = () => {
+    if (!note) return false;
+    const noteList = noteLists.find((lst) => lst.id === note.list);
+    return noteList && !noteList.disable_related;
+  };
+
   return (
     <div className="container-fluid py-5" dir="ltr">
+      <style jsx>{`
+        @keyframes slideInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .similar-note-item {
+          animation: slideInUp 0.5s ease-out forwards;
+          opacity: 0;
+        }
+      `}</style>
+      
       <div className="row">
         <div className="col-lg-2"></div>
         <div className="col-lg-8 position-relative" ref={noteContainerRef}>
@@ -164,17 +202,19 @@ const SingleNoteView = () => {
             </>
           )}
           
-          {similarNotes.length > 0 && (
+          {shouldShowRelated() && similarNotes.length > 0 && (
             <>
               <h5 className="text-body-emphasis mb-2">Similar Notes</h5>
               <div className="list-group">
-                {similarNotes.map(similarNote => (
+                {similarNotes.map((similarNote, index) => (
                   <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none mb-2">
-                    <div className="list-group-item list-group-item-action border-start border-3" 
-                         style={{
-                           borderLeftColor: similarNote.similarity_score > 0.7 ? '#198754' : 
-                                            similarNote.similarity_score > 0.4 ? '#0d6efd' : '#6c757d'
-                         }}>
+                    <div 
+                      className="list-group-item list-group-item-action border-start border-3 similar-note-item" 
+                      style={{
+                        borderLeftColor: similarNote.similarity_score > 0.7 ? '#198754' : 
+                                         similarNote.similarity_score > 0.4 ? '#0d6efd' : '#6c757d',
+                        animationDelay: similarNotesLoaded ? `${index * 0.1}s` : '0s'
+                      }}>
                       <div className="d-flex flex-column">
                         <div className="small">
                           <CompactMarkdownRenderer>

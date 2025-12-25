@@ -2,7 +2,7 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
-import { Container, ListGroup, Button, Modal, Form } from 'react-bootstrap';
+import { Container, ListGroup, Button, Modal, Form, Dropdown, Badge } from 'react-bootstrap';
 import { NoteListContext, ToastContext } from '../layout';
 import { fetchWithAuth } from '../../lib/api';
 
@@ -10,6 +10,7 @@ export default function CategoryList() {
   const [newListName, setNewListName] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedList, setSelectedList] = useState(null);
   const [renameListName, setRenameListName] = useState('');
   const noteLists = useContext(NoteListContext);
@@ -41,6 +42,16 @@ export default function CategoryList() {
     }),
     null,
     'Failed to update show in feed setting'
+  );
+
+  const toggleDisableRelated = (list) => handleApiCall(
+    () => fetchWithAuth(`/api/note/list/${list.id}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disable_related: !list.disable_related }),
+    }),
+    null,
+    'Failed to update disable related setting'
   );
 
   const archiveTopic = (topicId) => handleApiCall(
@@ -87,6 +98,22 @@ export default function CategoryList() {
     setShowRenameModal(true);
   };
 
+  const openDeleteModal = (list) => {
+    setSelectedList(list);
+    setShowDeleteModal(true);
+  };
+
+  const deleteList = () => handleApiCall(
+    () => fetchWithAuth(`/api/note/list/${selectedList.id}/`, {
+      method: 'DELETE',
+    }),
+    'List deleted',
+    'Failed to delete list'
+  ).then(() => {
+    setShowDeleteModal(false);
+    setSelectedList(null);
+  });
+
   return (
     <Container className="py-4">
       <ListGroup>
@@ -95,39 +122,67 @@ export default function CategoryList() {
             {lst_idx > 0 && lst_idx < (noteLists.length - 1) && lst.archived !== noteLists[lst_idx - 1].archived && (
               <hr className="my-3" />
             )}
-<ListGroup.Item 
-  className="d-flex justify-content-between align-items-center mb-2"
-  variant="secondary"
->
-  <div className="d-flex align-items-center gap-3">
-    <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
-      {lst.name}
-    </Link>
-    <Form.Check
-      type="checkbox"
-      checked={lst.show_in_feed}
-      onChange={() => toggleShowInFeed(lst)}
-      label="Show in feed"
-      className="mb-0"
-    />
-  </div>
-  <div className="d-flex gap-2">
-    <Button
-      variant={lst.archived ? "outline-success" : "outline-warning"}
-      size="sm"
-      onClick={() => lst.archived ? unArchiveTopic(lst.id) : archiveTopic(lst.id)}
-    >
-      {lst.archived ? "Unarchive" : "Archive"}
-    </Button>
-    <Button
-      variant="outline-primary"
-      size="sm"
-      onClick={() => openRenameModal(lst)}
-    >
-      Rename
-    </Button>
-  </div>
-</ListGroup.Item>
+            <ListGroup.Item 
+              className="d-flex justify-content-between align-items-center mb-2"
+              variant="secondary"
+            >
+              <div className="d-flex align-items-center gap-2">
+                <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
+                  {lst.name}
+                </Link>
+                {lst.show_in_feed && (
+                  <Badge bg="secondary" pill>
+                    Feed
+                  </Badge>
+                )}
+                {!lst.disable_related && (
+                  <Badge bg="primary" pill>
+                    Related
+                  </Badge>
+                )}
+              </div>
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="outline-secondary" size="sm">
+                  Actions
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => toggleShowInFeed(lst)}>
+                    <Form.Check
+                      type="checkbox"
+                      checked={lst.show_in_feed}
+                      onChange={() => {}}
+                      label="Show in feed"
+                      className="mb-0"
+                      readOnly
+                    />
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => toggleDisableRelated(lst)}>
+                    <Form.Check
+                      type="checkbox"
+                      checked={!lst.disable_related}
+                      onChange={() => {}}
+                      label="Show related messages"
+                      className="mb-0"
+                      readOnly
+                    />
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={() => openRenameModal(lst)}>
+                    Rename
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => lst.archived ? unArchiveTopic(lst.id) : archiveTopic(lst.id)}>
+                    {lst.archived ? "Unarchive" : "Archive"}
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item 
+                    onClick={() => openDeleteModal(lst)}
+                    className="text-danger"
+                  >
+                    Delete
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            </ListGroup.Item>
           </React.Fragment>
         ))}
       </ListGroup>
@@ -184,6 +239,24 @@ export default function CategoryList() {
           </Button>
           <Button variant="primary" onClick={renameList}>
             Rename
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete List</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete the list "{selectedList?.name}"?</p>
+          <p className="text-danger">This action cannot be undone. The list must be empty to be deleted.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteList}>
+            Delete
           </Button>
         </Modal.Footer>
       </Modal>
