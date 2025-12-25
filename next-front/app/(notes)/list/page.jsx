@@ -104,7 +104,7 @@ export default function CategoryList() {
   };
 
   const deleteList = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${selectedList.id}/`, {
+    () => fetchWithAuth(`/api/note/list/${selectedList.id}/delete`, {
       method: 'DELETE',
     }),
     'List deleted',

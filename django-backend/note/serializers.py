@@ -83,7 +83,7 @@ class NoteListSerializer(serializers.ModelSerializer):
     class Meta:
         model = LocalMessageList
         fields = '__all__'
-        read_only_fields = ['slug']
+        read_only_fields = ['slug', 'user']
 
 
 class NoteRevisionSerializer(serializers.ModelSerializer):

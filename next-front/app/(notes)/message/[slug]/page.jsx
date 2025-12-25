@@ -162,6 +162,80 @@ const SingleNoteView = () => {
         .similar-note-item {
           animation: slideInUp 0.5s ease-out forwards;
           opacity: 0;
+          transition: all 0.3s ease;
+        }
+
+        .similar-note-item:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .similarity-badge {
+          font-size: 0.7rem;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 12px;
+          letter-spacing: 0.5px;
+        }
+
+        .section-header {
+          font-size: 0.875rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 1rem;
+          color: var(--bs-secondary);
+        }
+
+        .backlink-item {
+          border-radius: 8px;
+          border-left: 3px solid #6c757d !important;
+          padding: 0.75rem;
+          transition: all 0.2s ease;
+          background: var(--bs-body-bg);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .backlink-item:hover {
+          transform: translateX(4px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .similar-card {
+          border-radius: 12px;
+          padding: 1rem;
+          background: var(--bs-body-bg);
+          border: 1px solid var(--bs-border-color);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .similar-card::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          width: 4px;
+          background: var(--border-color);
+          border-radius: 12px 0 0 12px;
+        }
+
+        .similar-card.high-similarity::before {
+          background: linear-gradient(180deg, #198754 0%, #20c997 100%);
+        }
+
+        .similar-card.medium-similarity::before {
+          background: linear-gradient(180deg, #0d6efd 0%, #6610f2 100%);
+        }
+
+        .similar-card.low-similarity::before {
+          background: linear-gradient(180deg, #6c757d 0%, #adb5bd 100%);
+        }
+
+        .note-content {
+          padding-left: 0.5rem;
         }
       `}</style>
       
@@ -184,12 +258,11 @@ const SingleNoteView = () => {
         <div className="col-lg-2 pl-lg-0">
           {note && note.source_links.length > 0 && (
             <>
-              <h5 className="text-body-emphasis mb-2">Backlinks</h5>
-              <div className="list-group mb-4">
+              <div className="section-header">Backlinks</div>
+              <div className="d-flex flex-column gap-2 mb-4">
                 {note.source_links.map(link => (
-                  <Link href={`/message/${link.source_message.id}`} key={link.id} className="text-decoration-none mb-2">
-                    <div className="list-group-item list-group-item-action border-start border-3" 
-                         style={{ borderLeftColor: '#6c757d' }}>
+                  <Link href={`/message/${link.source_message.id}`} key={link.id} className="text-decoration-none">
+                    <div className="backlink-item">
                       <div className="small">
                         <CompactMarkdownRenderer>
                           {link.source_message.text}
@@ -204,37 +277,37 @@ const SingleNoteView = () => {
           
           {shouldShowRelated() && similarNotes.length > 0 && (
             <>
-              <h5 className="text-body-emphasis mb-2">Similar Notes</h5>
-              <div className="list-group">
-                {similarNotes.map((similarNote, index) => (
-                  <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none mb-2">
-                    <div 
-                      className="list-group-item list-group-item-action border-start border-3 similar-note-item" 
-                      style={{
-                        borderLeftColor: similarNote.similarity_score > 0.7 ? '#198754' : 
-                                         similarNote.similarity_score > 0.4 ? '#0d6efd' : '#6c757d',
-                        animationDelay: similarNotesLoaded ? `${index * 0.1}s` : '0s'
-                      }}>
-                      <div className="d-flex flex-column">
-                        <div className="small">
-                          <CompactMarkdownRenderer>
-                            {similarNote.text}
-                          </CompactMarkdownRenderer>
-                        </div>
-                        <div className="d-flex justify-content-end mt-1">
-                          <small 
-                            className={`${
-                              similarNote.similarity_score > 0.7 ? 'text-success' : 
-                              similarNote.similarity_score > 0.4 ? 'text-primary' : 'text-secondary'
-                            }`}
-                          >
-                            {formatSimilarityScore(similarNote.similarity_score)}
-                          </small>
+              <div className="section-header">Related Notes</div>
+              <div className="d-flex flex-column gap-3">
+                {similarNotes.map((similarNote, index) => {
+                  const similarityClass = similarNote.similarity_score > 0.7 ? 'high-similarity' : 
+                                         similarNote.similarity_score > 0.4 ? 'medium-similarity' : 'low-similarity';
+                  const badgeClass = similarNote.similarity_score > 0.7 ? 'bg-success' : 
+                                    similarNote.similarity_score > 0.4 ? 'bg-primary' : 'bg-secondary';
+                  
+                  return (
+                    <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none">
+                      <div 
+                        className={`similar-card similar-note-item ${similarityClass}`}
+                        style={{
+                          animationDelay: similarNotesLoaded ? `${index * 0.1}s` : '0s'
+                        }}>
+                        <div className="note-content">
+                          <div className="small mb-2">
+                            <CompactMarkdownRenderer>
+                              {similarNote.text}
+                            </CompactMarkdownRenderer>
+                          </div>
+                          <div className="d-flex justify-content-end">
+                            <span className={`similarity-badge ${badgeClass} text-white`}>
+                              {formatSimilarityScore(similarNote.similarity_score)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </>
           )}
