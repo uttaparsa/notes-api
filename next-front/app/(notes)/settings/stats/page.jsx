@@ -16,11 +16,6 @@ const StatsPage = () => {
         title="Note Activity" 
         endpoint="stats/notes/"
       />
-      <div className="mt-3">
-        <Link href="/settings/sessions" className="text-decoration-none">
-          Sessions
-        </Link>
-      </div>
       <FileAccessStats />
     </div>
   );

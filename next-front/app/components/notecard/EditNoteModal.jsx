@@ -61,7 +61,9 @@ const EditNoteModal = ({
     };
 
     const handleEnter = (e) => {
-        if (e.ctrlKey && e.key === "Enter") {
+        const isCmdOrCtrl = e.ctrlKey || e.metaKey;
+
+        if (isCmdOrCtrl && e.key === "Enter") {
             handleSaveAndClose();
         } else if (e.shiftKey && e.key === "Enter") {
             handleSave();

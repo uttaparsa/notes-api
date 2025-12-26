@@ -42,6 +42,7 @@ class StatsManager:
             count=Count('id')
         ).order_by('date')
 
+
         # Create a complete list of dates with counts
         date_counts = {}
         current_date = start_date.date()
@@ -64,9 +65,10 @@ class RevisionStatsView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        # Get notes for the authenticated user
-        user_note_ids = LocalMessage.objects.filter(user=request.user).values_list('id', flat=True)
-        
+        # Force evaluation by converting to a list
+        user_note_ids = list(
+            LocalMessage.objects.filter(user=request.user).values_list('id', flat=True)
+        )
         return Response(
             StatsManager.get_date_range_stats(
                 NoteRevision.objects.filter(note_id__in=user_note_ids),
