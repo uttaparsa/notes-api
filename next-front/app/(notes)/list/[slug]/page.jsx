@@ -7,6 +7,7 @@ import NoteList from '../../../components/NoteList';
 import MessageInput from '../../../components/MessageInput';
 import SearchBar from '../../../components/search/SearchBar';
 import PaginationComponent from '../../../components/PaginationComponent';
+import ImportantNotesSidebar from '../../../components/ImportantNotesSidebar';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
 import { sortNotesList } from '../../noteUtils'
@@ -18,6 +19,7 @@ export default function NoteListPage({ params }) {
   const [date, setDate] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const [newNoteId, setNewNoteId] = useState(null);
+  const [highlightNoteId, setHighlightNoteId] = useState(null);
   const noteListRef = useRef();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,8 +33,17 @@ export default function NoteListPage({ params }) {
 
   useEffect(() => {
     const page = searchParams.get('page');
+    const highlight = searchParams.get('highlight');
     if (page) {
       setCurrentPage(parseInt(page));
+    }
+    if (highlight) {
+      setHighlightNoteId(highlight);
+      // Clear highlight from URL after reading it
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('highlight');
+      const newUrl = newParams.toString() ? `?${newParams.toString()}` : window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
     }
   }, [searchParams]);
 
@@ -61,6 +72,9 @@ export default function NoteListPage({ params }) {
         } else if (data.previous !== null) {
           const prevPage = new URL(data.previous).searchParams.get('page');
           setCurrentPage(parseInt(prevPage) + 1);
+        }
+        if (data.highlight_note_id) {
+          setHighlightNoteId(data.highlight_note_id);
         }
       }
 
@@ -143,7 +157,7 @@ export default function NoteListPage({ params }) {
       onPageChange={handlePageChange}
     />
     <Row className="m-0 p-0">
-      <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+      <Col xs={12} lg={2} className="mx-0 mb-3 mb-lg-0 order-2 order-lg-1">
         <FormCheck
           type="checkbox"
           id="show-hidden"
@@ -161,7 +175,7 @@ export default function NoteListPage({ params }) {
           />
         </Form.Group>
       </Col>
-      <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
+      <Col xs={12} lg={8} className="mx-0 px-3 px-lg-0 order-3 order-lg-2" dir="ltr">
       <NoteList
         ref={noteListRef}
         notes={notes}
@@ -171,9 +185,12 @@ export default function NoteListPage({ params }) {
         onDeleteNote={deleteNote}
         refreshNotes={getRecords}
         newNoteId={newNoteId}
+        highlightNoteId={highlightNoteId}
       />
       </Col>
-      <Col lg={2}></Col>
+      <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
+        <ImportantNotesSidebar listSlug={slug} basePath={`/list/${slug}`} />
+      </Col>
     </Row>
   </div>
   <MessageInput onNoteSaved={addNewNote} listSlug={slug} />

@@ -326,92 +326,72 @@ def insert_links(note: LocalMessage):
 
 from django.shortcuts import get_object_or_404
 
+def get_shown_list_ids(user):
+    return LocalMessageList.objects.filter(
+        show_in_feed=True,
+        user=user
+    ).values_list('id', flat=True)
+
+def get_list_by_slug(slug, user):
+    if not slug:
+        return LocalMessageList.objects.filter(user=user).first()
+    return get_object_or_404(LocalMessageList, slug=slug, user=user)
+
+def filter_notes_by_slug(queryset, slug, user):
+    if not slug:
+        return LocalMessage.objects.none()
+    if slug == "All":
+        return queryset.filter(list__in=get_shown_list_ids(user))
+    lst = get_list_by_slug(slug, user)
+    if not lst:
+        return LocalMessage.objects.none()
+    return queryset.filter(list=lst.id)
+
 class NoteView(GenericAPIView, ListModelMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = DateBasedPagination
     serializer_class = MessageSerializer
 
-    def get_list(self, slug):
-        """Get list by slug or return None"""
-        if not slug:
-            # Get user's default list (first list)
-            return LocalMessageList.objects.filter(user=self.request.user).first()
-        return get_object_or_404(LocalMessageList, slug=slug, user=self.request.user)
-
     def get_queryset(self):
-        """Get filtered queryset based on slug parameter"""
         slug = self.kwargs.get('slug')
-        
-        # Base queryset with ordering and user filter
-        base_queryset = LocalMessage.objects.filter(user=self.request.user).order_by('-importance', '-created_at')
-        
-        if not slug:
-            return LocalMessage.objects.none()
-            
-        # Handle "All" slug special case
-        if slug == "All":
-            shown_lin = LocalMessageList.objects.filter(
-                show_in_feed=True,
-                user=self.request.user
-            ).values_list('id', flat=True)
-            return base_queryset.filter(list__in=shown_lin)
-            
-        # Get notes for specific list
-        lst = self.get_list(slug)
-        if not lst:
-            return LocalMessage.objects.none()
-        return base_queryset.filter(list=lst.id)
+        base_queryset = LocalMessage.objects.filter(user=self.request.user).order_by('-created_at')
+        return filter_notes_by_slug(base_queryset, slug, self.request.user)
 
     def get(self, request, **kwargs):
-        """List notes with pagination"""
         return self.list(request)
 
     def post(self, request, **kwargs):
-        """Create a new note with initial revision"""
-        # Don't include user in the data being validated
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            # Get appropriate list
-            lst = self.get_list(kwargs.get('slug'))
+            lst = get_list_by_slug(kwargs.get('slug'), request.user)
             if not lst:
                 return Response(
                     {"error": "No lists found for user"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Save the note with user - this is correct
             note = serializer.save(list=lst, user=request.user)
-            
-            # Create initial revision using RevisionService
             RevisionService.update_or_create_revision(note.id, note.text)
-            
-            # Handle links
             insert_links(note)
-            
-            # Schedule async creation of chunks and embeddings
             executor.submit(create_embeddings_async, note.id, note.text)
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
-            # Log the error properly
             logger.error(f"Error creating note: {str(e)}", exc_info=True)
-            
             return Response(
                 {"error": "Failed to create note"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 class NoteRevisionView(APIView):
-    """View for retrieving note revision history"""
     permission_classes = [IsAuthenticated]
     
     def get(self, request, note_id):
-        """Get revision history for a note"""
         revisions = NoteRevision.objects.filter(note_id=note_id).order_by('-created_at')
         if not revisions:
             return Response([], status=status.HTTP_200_OK)
@@ -419,22 +399,63 @@ class NoteRevisionView(APIView):
         return Response(serializer.data)
 
 
+class PinnedNotesView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = MessageSerializer
+
+    def get(self, request, slug=None):
+        base_queryset = LocalMessage.objects.filter(
+            user=request.user,
+            importance__gt=0,
+            archived=False
+        ).order_by('-importance', '-created_at')
+
+        if not slug or slug == "All":
+            queryset = base_queryset.filter(list__in=get_shown_list_ids(request.user))
+        else:
+            try:
+                lst = LocalMessageList.objects.get(slug=slug, user=request.user)
+                queryset = base_queryset.filter(list=lst)
+            except LocalMessageList.DoesNotExist:
+                return Response({"error": "List not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
+
+
+class NotePageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, note_id):
+        from django.conf import settings
+        try:
+            target_note = LocalMessage.objects.get(pk=note_id, user=request.user)
+        except LocalMessage.DoesNotExist:
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        slug = request.query_params.get('slug', 'All')
+        base_queryset = LocalMessage.objects.filter(user=request.user).order_by('-created_at')
+        queryset = filter_notes_by_slug(base_queryset, slug, request.user)
+
+        count_before = queryset.filter(created_at__gt=target_note.created_at).count()
+        page_size = settings.NOTES_PAGE_SIZE
+        page = (count_before // page_size) + 1
+
+        return Response({
+            "page": page,
+            "note_id": note_id,
+            "position_in_page": count_before % page_size
+        })
+
+
 class NoteChunksView(APIView):
-    """View to retrieve chunks for a note"""
     permission_classes = [IsAuthenticated]
     
     def get(self, request, note_id, format=None):
-        """
-        Get all chunks for a specific note
-        """
-        # Check if the note exists and user has access to it
         try:
             note = LocalMessage.objects.get(id=note_id, user=request.user)
-            
-            # Get all chunks for this note
             chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
             
-            # If no chunks exist yet, create them
             if not chunks.exists():
                 note.update_chunks()
                 chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
@@ -443,13 +464,8 @@ class NoteChunksView(APIView):
             return Response(serializer.data)
             
         except LocalMessage.DoesNotExist:
-            return Response(
-                {"error": "Note not found"}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.error(f"Error retrieving note chunks: {str(e)}", exc_info=True)
             return Response(
                 {"error": "Failed to retrieve note chunks"},

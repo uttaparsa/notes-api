@@ -271,6 +271,8 @@ OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "granite-embedding:30m")
 OLLAMA_EMBEDDING_SIZE = int(os.environ.get("OLLAMA_EMBEDDING_SIZE", "384"))
 
+NOTES_PAGE_SIZE = 20
+
 TIME_ZONE = "America/Regina"
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")

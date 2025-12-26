@@ -3,7 +3,7 @@ from django.urls import path
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView, DeleteMessageListView
 from .views.search_view import SearchResultsView
-from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView, PinnedNotesView, NotePageView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
 from .views.similar_note_view import SimilarNotesView
@@ -24,12 +24,18 @@ urlpatterns = [
     path('list/<int:pk>/', NoteListView.as_view(), name='note-list-detail'),
     path('list/', NoteListView.as_view(), name='note-list'),
     path('search/', SearchResultsView.as_view()),
+    
+    # Pinned notes endpoints (must be before the slug catch-all)
+    path('pinned/', PinnedNotesView.as_view(), name='pinned-notes'),
+    path('pinned/<slug>/', PinnedNotesView.as_view(), name='pinned-notes-by-list'),
+    
     path('', NoteView.as_view()),
 
     path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
     path('similar/', SimilarNotesView.as_view(), name='similar-text'),
 
     path('message/<int:note_id>/chunks/', NoteChunksView.as_view(), name='note-chunks'),
+    path('message/<int:note_id>/page/', NotePageView.as_view(), name='note-page'),
 
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),

@@ -15,41 +15,48 @@ export default function NoteList({
   onUpdateNote,
   onDeleteNote,
   refreshNotes,
-  newNoteId = null
+  newNoteId = null,
+  highlightNoteId = null
 }) {
   const noteRefs = useRef({});
   const [animatingNotes, setAnimatingNotes] = useState(new Set());
-  const [sortingNotes, setSortingNotes] = useState(new Set());
+  const [highlightedNote, setHighlightedNote] = useState(null);
 
   useEffect(() => {
     if (newNoteId) {
       setAnimatingNotes(prev => new Set([...prev, newNoteId]));
       
-      // After entrance animation, trigger sorting animation
+      // Remove entrance animation after it completes
       setTimeout(() => {
         setAnimatingNotes(prev => {
           const newSet = new Set(prev);
           newSet.delete(newNoteId);
           return newSet;
         });
-
-        // Only trigger sorting animation if the note is not already at the top.
-        const newNoteIndex = notes.findIndex(note => note.id === newNoteId);
-        if (newNoteIndex > 0) {
-          setSortingNotes(prev => new Set([...prev, newNoteId]));
-        }
-      }, 1000); // Extended from 600ms to 1000ms
-
-      // Remove sorting animation after it completes
-      setTimeout(() => {
-        setSortingNotes(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(newNoteId);
-          return newSet;
-        });
-      }, 2000); // Extended from 1200ms to 2000ms
+      }, 1000);
     }
-  }, [newNoteId, notes]);
+  }, [newNoteId]);
+
+  // Handle highlight from pinned notes navigation
+  useEffect(() => {
+    if (highlightNoteId && !isBusy && notes.length > 0) {
+      const noteId = parseInt(highlightNoteId);
+      setHighlightedNote(noteId);
+      
+      // Scroll to the note after a short delay to ensure DOM is ready
+      setTimeout(() => {
+        const noteElement = noteRefs.current[noteId];
+        if (noteElement) {
+          noteElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+
+      // Clear highlight after animation completes
+      setTimeout(() => {
+        setHighlightedNote(null);
+      }, 2500);
+    }
+  }, [highlightNoteId, isBusy, notes]);
 
   const handlePinUpdate = async (note, pinned) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Updating note' }));
@@ -177,20 +184,19 @@ export default function NoteList({
               <div 
                 key={note.id} 
                 id="notesListt"
-                className={`${animatingNotes.has(note.id) ? styles.newNoteAnimation : ''} ${sortingNotes.has(note.id) ? styles.sortingAnimation : ''}`}
+                ref={el => noteRefs.current[note.id] = el}
+                className={`${animatingNotes.has(note.id) ? styles.newNoteAnimation : ''} ${highlightedNote === note.id ? styles.highlightAnimation : ''}`}
                 style={{
                   animation: animatingNotes.has(note.id) 
                     ? `${styles.slideInFromTop} 1s cubic-bezier(0.4, 0, 0.2, 1), ${styles.highlightNew} 1.5s ease-out` 
+                    : highlightedNote === note.id
+                    ? 'highlightPulse 2s ease-out'
                     : 'none',
-                  transition: sortingNotes.has(note.id) ? 'all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none',
-                  transform: sortingNotes.has(note.id) ? 'scale(1.02) translateY(-5px)' : 'none',
-                  boxShadow: sortingNotes.has(note.id) ? '0 8px 25px rgba(13, 110, 253, 0.15)' : 'none',
-                  zIndex: sortingNotes.has(note.id) ? 10 : 'auto',
+                  zIndex: highlightedNote === note.id ? 10 : 'auto',
                 }}
               >
                 {(showHidden || !note.archived) && (
                   <NoteCard
-                    ref={el => noteRefs.current[note.id] = el}
                     note={note}
                     singleView={false}
                     hideEdits={hideEdits}

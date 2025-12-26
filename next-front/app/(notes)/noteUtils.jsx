@@ -1,13 +1,9 @@
 export const sortNotesList = (notesList) => {
     return [...notesList].sort((a, b) => {
-      console.log("a pinned:", a.importance, "b pinned:", b.importance);
-      
-      if (a.importance === b.importance) {
-        if (a.archived === b.archived) {
-          return new Date(b.created_at) - new Date(a.created_at);
-        }
+      // Sort archived notes to the bottom, then by created_at descending
+      if (a.archived !== b.archived) {
         return a.archived > b.archived ? 1 : -1;
       }
-      return b.importance- a.importance;
+      return new Date(b.created_at) - new Date(a.created_at);
     });
   };
