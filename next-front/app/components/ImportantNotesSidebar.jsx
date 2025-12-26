@@ -12,7 +12,7 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '' 
   const [pinnedNotes, setPinnedNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
