@@ -22,16 +22,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
-  const [similarityModeEnabled, setSimilarityModeEnabled] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
   }));
-
-  const toggleSimilarityMode = () => {
-    setSimilarityModeEnabled(!similarityModeEnabled);
-  };
 
   const expandNote = () => {
     setIsExpanded(true);
@@ -131,17 +126,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
                 <Dropdown.Item onClick={copyNoteLink}>Copy Link</Dropdown.Item>
                 {!hideEdits && <Dropdown.Item onClick={showEditModalHandler}>Edit</Dropdown.Item>}
                 {!hideEdits && <Dropdown.Item onClick={() => setShowReminderModal(true)}>Create Reminder</Dropdown.Item>}
-                {singleView && (
-                  <Dropdown.Item 
-                    onClick={toggleSimilarityMode}
-                    className={similarityModeEnabled ? "text-primary" : ""}
-                  >
-                    <span className="d-flex align-items-center">
-                      <i className="bi bi-lightbulb "></i>
-                      {similarityModeEnabled ? "Disable" : "Enable"} Similar Thoughts
-                    </span>
-                  </Dropdown.Item>
-                )}
                 {!singleView && !hideEdits && (
                   <Dropdown.Item onClick={showDeleteModalHandler}>Delete</Dropdown.Item>
                 )}
@@ -158,7 +142,6 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
               onExpand={expandNote}
               shouldLoadLinks={shouldLoadLinks}
               showToast={showToast}
-              similarityModeEnabled={similarityModeEnabled}
             />
           </div>
         </div>

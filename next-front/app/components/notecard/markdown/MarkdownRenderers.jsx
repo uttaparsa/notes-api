@@ -7,7 +7,6 @@ import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
 import { safeUrlEncode } from './UrlUtils';
-import HoverableSimilarChunks from '../HoverableSimilarChunks'; // Import HoverableSimilarChunks
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -102,12 +101,11 @@ const getNodeText = (childrenInput) => {
 
 export const createCustomRenderers = (
   note, 
-  similarityModeEnabled, 
   singleView, 
   shouldLoadLinks,
   showToast
 ) => {
-  const baseRenderers = {
+  return {
     p: (props) => <p {...props} />,
     h1: (props) => <h1 {...props} />,
     h2: (props) => <h2 {...props} />,
@@ -116,7 +114,7 @@ export const createCustomRenderers = (
     h5: (props) => <h5 {...props} />,
     h6: (props) => <h6 {...props} />,
     li: (props) => <li {...props} />,
-    mark: (props) => <mark className={styles.highlightedText} {...props} />, // Add explicit mark renderer
+    mark: (props) => <mark className={styles.highlightedText} {...props} />,
     blockquote: (props) => {
       const isRTLContent = props.children && 
         typeof props.children === 'string' && 
@@ -181,40 +179,7 @@ export const createCustomRenderers = (
       );
     }
   };
-
-  if (similarityModeEnabled) {
-    const finalRenderers = { ...baseRenderers };
-    const elementsToWrap = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
-    
-    for (const elementType of elementsToWrap) {
-      const originalRenderer = baseRenderers[elementType];
-      if (!originalRenderer) continue;
-
-      finalRenderers[elementType] = (props) => {
-        const renderedElement = originalRenderer(props);
-        const elementText = getNodeText(props.children); 
-
-        if (elementText && elementText.trim()) {
-          return (
-            <HoverableSimilarChunks
-              noteId={note.id}
-              enabled={true}
-              chunkText={elementText.trim()}
-              // isChunkContainer will be false by default, appropriate for individual elements
-            >
-              {renderedElement}
-            </HoverableSimilarChunks>
-          );
-        }
-        return renderedElement;
-      };
-    }
-    return finalRenderers;
-  }
-
-  return baseRenderers;
 };
-
 
 
 // Create compact renderers for headers to be same size as text
