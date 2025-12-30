@@ -6,6 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
 import BootstrapClient from '../components/BootstrapClient'
 import TopNavbar from '../components/TopNavbar'
+import BackToTop from '../components/BackToTop'
 import { fetchWithAuth } from '../lib/api';
 import { logout } from '../lib/auth';
 import { Toast, ToastContainer } from 'react-bootstrap';
@@ -112,6 +113,7 @@ export default function RootLayout({ children }) {
                   {children}
                   <BootstrapClient />
                 </div>
+                <BackToTop />
                 <ToastContainer position="top-end" className="p-3 position-fixed">
                   <Toast
                     onClose={() => setToast(prev => ({ ...prev, show: false }))}

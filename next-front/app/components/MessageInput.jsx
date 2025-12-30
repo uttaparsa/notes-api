@@ -40,13 +40,7 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
   useEffect(() => {
     if (isExpanded && typeof window !== 'undefined') {
       const scrollY = window.scrollY;
-      
-      // Prevent body scroll on mobile
-      const preventScroll = (e) => {
-        if (containerRef.current && !containerRef.current.contains(e.target)) {
-          e.preventDefault();
-        }
-      };
+    
       
       document.body.style.position = 'fixed';
       document.body.style.top = `-${scrollY}px`;
