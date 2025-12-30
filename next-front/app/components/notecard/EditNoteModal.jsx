@@ -11,7 +11,7 @@ import RevisionHistoryButton from "../buttons/edit_buttons/RevisionHistoryButton
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
-import NoteTextRenderer from "./markdown/NoteTextRenderer";
+import NoteTextRenderer from "./markdown/MarkdownRenderers";
 import RevisionHistoryModal from './RevisionHistoryModal';
 
 const EditNoteModal = ({

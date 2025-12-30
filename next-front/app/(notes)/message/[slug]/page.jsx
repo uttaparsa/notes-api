@@ -5,7 +5,6 @@ import { useState, useEffect, useRef, useContext } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import NoteCard from '../../../components/notecard/NoteCard';
-import MarginSimilarNotes from '../../../components/MarginSimilarNotes';
 import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/MarkdownRenderers';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
@@ -314,8 +313,7 @@ const SingleNoteView = () => {
         </div>
       </div>
       
-      {/* Single global instance of margin similar notes */}
-      <MarginSimilarNotes />
+
     </div>
   );
 };

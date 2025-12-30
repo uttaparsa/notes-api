@@ -8,7 +8,7 @@ import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 import EditNoteModal from './EditNoteModal';
-import NoteTextRenderer from './markdown/NoteTextRenderer';
+import NoteTextRenderer from './markdown/MarkdownRenderers';
 import ReminderModal from './ReminderModal';
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {

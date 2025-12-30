@@ -1,5 +1,8 @@
-import React from 'react';
+'use client'
+
+import React, { useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Button } from 'react-bootstrap';
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
@@ -128,7 +131,6 @@ export const createCustomRenderers = (
       return <blockquote {...blockquoteProps}>{props.children}</blockquote>;
     },
     pre: ({ node, inline, className, children, ...props }) => {
-      // Extract code string for copy functionality and potentially for chunkText
       const codeString = getNodeText(children).replace(/\n$/, '');
       const copyCode = () => {
         copyTextToClipboard(codeString);
@@ -254,3 +256,90 @@ export const CompactMarkdownRenderer = ({ children, className = '', ...props }) 
 
   );
 };
+
+const DisplayRenderer = ({ 
+  note, 
+  singleView = false, 
+  isExpanded = false, 
+  onExpand = () => {}, 
+  shouldLoadLinks = true,
+  showToast = () => {},
+  highlightStart = null,
+  highlightEnd = null
+}) => {
+  const highlightPlugin = useMemo(() => 
+    createHighlightPlugin(highlightStart, highlightEnd), 
+    [highlightStart, highlightEnd]
+  );
+
+  const customRenderers = createCustomRenderers(note, singleView, shouldLoadLinks, showToast);
+
+  let textToRender = singleView || note.text.length < 1000 || isExpanded
+    ? note.text
+    : note.text.substring(0, 1000);
+  
+  textToRender = processTextForHashtags(textToRender);
+
+  return (
+    <span
+      className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
+      dir={isRTL(note.text) ? "rtl" : "ltr"}
+    >
+      <ReactMarkdown 
+        components={customRenderers} 
+        remarkPlugins={[remarkGfm, highlightPlugin]} 
+        className={`${isRTL(note.text) ? styles.rtlMarkdown : ''}`}
+      >
+        {textToRender}
+      </ReactMarkdown>
+      
+      {!singleView && note.text.length > 1000 && !isExpanded && (
+        <span 
+          onClick={() => onExpand()} 
+          className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap"
+        >
+          <b>...</b>
+        </span>
+      )}
+    </span>
+  );
+};
+
+const NoteTextRenderer = ({ 
+  note, 
+  singleView = false, 
+  isExpanded = false, 
+  onExpand = () => {}, 
+  shouldLoadLinks = true,
+  showToast = () => {}
+}) => {
+  const searchParams = useSearchParams();
+  const highlightStart = searchParams ? parseInt(searchParams.get('highlight_start')) : null;
+  const highlightEnd = searchParams ? parseInt(searchParams.get('highlight_end')) : null;
+  
+  useEffect(() => {
+    if (singleView && !isNaN(highlightStart) && !isNaN(highlightEnd)) {
+      setTimeout(() => {
+        const highlightedElement = document.querySelector('.highlighted-reminder-text');
+        if (highlightedElement) {
+          highlightedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500);
+    }
+  }, [singleView, highlightStart, highlightEnd]);
+
+  return (
+    <DisplayRenderer
+      note={note}
+      singleView={singleView}
+      isExpanded={isExpanded}
+      onExpand={onExpand}
+      shouldLoadLinks={shouldLoadLinks}
+      showToast={showToast}
+      highlightStart={!isNaN(highlightStart) ? highlightStart : null}
+      highlightEnd={!isNaN(highlightEnd) ? highlightEnd : null}
+    />
+  );
+};
+
+export default NoteTextRenderer;

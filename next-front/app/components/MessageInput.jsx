@@ -9,7 +9,7 @@ import FileUploadComponent from './FileUploadComponent';
 import SendButton from './SendButton';
 import RtlToggleButton from './buttons/edit_buttons/RtlToggleButton';
 import PreviewToggleButton from './buttons/edit_buttons/PreviewToggleButton';
-import NoteTextRenderer from './notecard/markdown/NoteTextRenderer';
+import NoteTextRenderer from './notecard/markdown/MarkdownRenderers';
 
 export default function MessageInput({ listSlug, onNoteSaved }) {
   const [text, setText] = useState('');
