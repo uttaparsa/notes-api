@@ -13,6 +13,7 @@ import { Toast, ToastContainer } from 'react-bootstrap';
 import { handleApiError } from '../utils/errorHandler';
 import { Modal, Spinner } from 'react-bootstrap';
 import styles from './layout.module.css';
+import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 
 
 
@@ -108,12 +109,14 @@ export default function RootLayout({ children }) {
           <NoteListContext.Provider value={noteLists}>
             <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
               <ToastContext.Provider value={showToast}>
-                <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
-                <div className="h-100" style={{minHeight: '100vh'}}>
-                  {children}
-                  <BootstrapClient />
-                </div>
-                <BackToTop />
+                <ExternalLinkProvider>
+                  <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
+                  <div className="h-100" style={{minHeight: '100vh'}}>
+                    {children}
+                    <BootstrapClient />
+                  </div>
+                  <BackToTop />
+                </ExternalLinkProvider>
                 <ToastContainer position="top-end" className="p-3 position-fixed">
                   <Toast
                     onClose={() => setToast(prev => ({ ...prev, show: false }))}

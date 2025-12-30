@@ -9,9 +9,10 @@ import { isRTL } from "../../../utils/stringUtils";
 import { copyTextToClipboard } from "../../../utils/clipboardUtils";
 import ResponsiveImage from './ResponsiveImage';
 import YouTubeLink from '../YouTubeLink';
-import { safeUrlEncode } from './UrlUtils';
+import { safeUrlEncode, isExternalLink } from './UrlUtils';
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useExternalLink } from '../ExternalLinkModal';
 
 // Remark plugin to highlight text based on character indices
 export const createHighlightPlugin = (start, end) => {
@@ -106,7 +107,8 @@ export const createCustomRenderers = (
   note, 
   singleView, 
   shouldLoadLinks,
-  showToast
+  showToast,
+  openExternalLink
 ) => {
   return {
     p: (props) => <p {...props} />,
@@ -158,7 +160,21 @@ export const createCustomRenderers = (
       if (href.includes('youtube.com') || href.includes('youtu.be')) {
         return <YouTubeLink url={encodedHref} shouldLoadLinks={shouldLoadLinks} />;
       }
-      return <Link href={encodedHref} rel="noopener noreferrer">{children}</Link>;
+      if (isExternalLink(href)) {
+        return (
+          <a
+            href={encodedHref}
+            onClick={(e) => {
+              e.preventDefault();
+              openExternalLink(encodedHref);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {children}
+          </a>
+        );
+      }
+      return <Link href={encodedHref}>{children}</Link>;
     },
     img: (props) => {
       const encodedSrc = safeUrlEncode(props.src);
@@ -185,7 +201,7 @@ export const createCustomRenderers = (
 
 
 // Create compact renderers for headers to be same size as text
-const createCompactRenderers = () => {
+const createCompactRenderers = (openExternalLink) => {
   return {
     h1: ({ children }) => <span style={{ fontWeight: '600' }}>{children}</span>,
     h2: ({ children }) => <span style={{ fontWeight: '500' }}>{children}</span>,
@@ -196,6 +212,24 @@ const createCompactRenderers = () => {
     img: (props) => {
           const encodedSrc = safeUrlEncode(props.src);
           return <ResponsiveImage {...props} src={encodedSrc} />;
+    },
+    a: ({ href, children }) => {
+      const encodedHref = safeUrlEncode(href);
+      if (isExternalLink(href)) {
+        return (
+          <a
+            href={encodedHref}
+            onClick={(e) => {
+              e.preventDefault();
+              openExternalLink(encodedHref);
+            }}
+            style={{ cursor: 'pointer' }}
+          >
+            {children}
+          </a>
+        );
+      }
+      return <Link href={encodedHref}>{children}</Link>;
     },
   };
 };
@@ -237,9 +271,10 @@ export const processTextForHashtags = (text) => {
  * Useful for sidebars, similar notes, and linked notes displays
  */
 export const CompactMarkdownRenderer = ({ children, className = '', ...props }) => {
+  const { openExternalLink } = useExternalLink();
   const text = children || '';
   const processedText = removeHyphens(processTextForHashtags(text));
-  const compactRenderers = createCompactRenderers();
+  const compactRenderers = createCompactRenderers(openExternalLink);
 
   return (
     <div style={{maxHeight: '80px', overflow: 'hidden'}}>
@@ -267,12 +302,14 @@ const DisplayRenderer = ({
   highlightStart = null,
   highlightEnd = null
 }) => {
+  const { openExternalLink } = useExternalLink();
+  
   const highlightPlugin = useMemo(() => 
     createHighlightPlugin(highlightStart, highlightEnd), 
     [highlightStart, highlightEnd]
   );
 
-  const customRenderers = createCustomRenderers(note, singleView, shouldLoadLinks, showToast);
+  const customRenderers = createCustomRenderers(note, singleView, shouldLoadLinks, showToast, openExternalLink);
 
   let textToRender = singleView || note.text.length < 1000 || isExpanded
     ? note.text
