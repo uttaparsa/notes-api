@@ -16,6 +16,8 @@ const SingleNoteView = () => {
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
   const [similarNotesLoaded, setSimilarNotesLoaded] = useState(false);
+  const [noteUpdateConflict, setNoteUpdateConflict] = useState(false);
+  const [shouldShowRefreshPrompt, setShouldShowRefreshPrompt] = useState(false);
   const noteComponentRef = useRef(null);
   const noteContainerRef = useRef(null);
   const params = useParams();
@@ -53,6 +55,22 @@ const SingleNoteView = () => {
 
     loadData();
   }, [noteLists]);
+
+  // Periodically check for note updates
+  useEffect(() => {
+    if (!note) return;
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetchWithAuth(`/api/note/message/${params.slug}/`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.updated_at && note.updated_at && data.updated_at !== note.updated_at) {
+          setShouldShowRefreshPrompt(true);
+        }
+      } catch {}
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [note, params.slug]);
 
   const fetchSimilarNotes = async (noteId) => {
     try {
@@ -109,8 +127,20 @@ const SingleNoteView = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: newText }),
+        body: JSON.stringify({ text: newText, updated_at: note.updated_at }),
       });
+      if (response.status === 409) {
+        setNoteUpdateConflict(true);
+        window.dispatchEvent(new CustomEvent('showToast', {
+          detail: {
+            title: "Edit Rejected",
+            body: "This note was updated elsewhere. Please refresh.",
+            delay: 7000,
+            status: "danger",
+          }
+        }));
+        return false;
+      }
       if (!response.ok) {
         throw new Error('Failed to edit note');
       }
@@ -123,6 +153,7 @@ const SingleNoteView = () => {
           status: "success",
         }
       }));
+      setNoteUpdateConflict(false);
       return true;
     } catch (err) {
       console.error(`Error editing note: ${err}`);
@@ -237,6 +268,15 @@ const SingleNoteView = () => {
           padding-left: 0.5rem;
         }
       `}</style>
+      
+      {shouldShowRefreshPrompt && (
+        <div className="alert alert-warning d-flex align-items-center my-2" role="alert">
+          <span className="me-2">This note was updated elsewhere.</span>
+          <button className="btn btn-sm btn-outline-primary ms-auto" onClick={() => window.location.reload()}>
+            Refresh
+          </button>
+        </div>
+      )}
       
       <div className="row">
         <div className="col-lg-2"></div>

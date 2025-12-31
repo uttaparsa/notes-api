@@ -182,12 +182,23 @@ class SingleNoteView(APIView):
         try:
             item = LocalMessage.objects.get(pk=kwargs['note_id'], user=request.user)
             new_text = request.data.get("text")
+            client_updated_at = request.data.get("updated_at")
+            if not client_updated_at:
+                return Response({"error": "Missing updated_at"}, status=status.HTTP_400_BAD_REQUEST)
+            # Compare updated_at
+            from django.utils.dateparse import parse_datetime
+            client_dt = parse_datetime(client_updated_at)
+            if not client_dt:
+                return Response({"error": "Invalid updated_at"}, status=status.HTTP_400_BAD_REQUEST)
+            # item.updated_at is aware, client_dt may be naive
+            if item.updated_at and client_dt < item.updated_at:
+                return Response(
+                    {"error": "Note has been updated elsewhere", "updated_at": item.updated_at},
+                    status=status.HTTP_409_CONFLICT
+                )
             RevisionService.update_note_with_revision(item, new_text)
             insert_links(item)
-            
-            # Update chunks and schedule async creation of embeddings
             executor.submit(create_embeddings_async, item.id, new_text)
-            
             return Response("1", status=status.HTTP_200_OK)
         except LocalMessage.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)

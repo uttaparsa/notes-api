@@ -66,7 +66,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const handleSave = async () => {
     try {
-      const result = await onEditNote(note.id, editText);
+      const result = await onEditNote(note.id, editText, note.updated_at);
       if (result) {
         setShouldLoadLinks(true);
       }
@@ -77,7 +77,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
 
   const handleSaveAndClose = async () => {
     try {
-      const result = await onEditNote(note.id, editText);
+      const result = await onEditNote(note.id, editText, note.updated_at);
       if (result) {
         setShowEditModal(false);
         setShouldLoadLinks(true);
