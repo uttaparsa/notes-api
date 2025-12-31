@@ -7,50 +7,16 @@
 	font-style: normal;
 }
 
-
-
-/* Override specific Bootstrap component colors if needed */
-.btn-primary {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
+body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
 
-.btn-secondary {
-  background-color: var(--bs-secondary);
-  border-color: var(--bs-secondary);
+[data-bs-theme="light"] body {
+  background-color: #f8f9fa;
 }
 
-.btn-success {
-  background-color: var(--bs-success);
-  border-color: var(--bs-success);
-}
-
-.btn-info {
-  background-color: var(--bs-info);
-  border-color: var(--bs-info);
-}
-
-.btn-warning {
-  background-color: var(--bs-warning);
-  border-color: var(--bs-warning);
-}
-
-.btn-danger {
-  background-color: var(--bs-danger);
-  border-color: var(--bs-danger);
-}
-
-.btn-light {
-  background-color: var(--bs-light);
-  border-color: var(--bs-light);
-}
-
-.btn-dark {
+[data-bs-theme="dark"] body {
   background-color: var(--bs-dark);
-  border-color: var(--bs-dark);
-}
-
-.text-primary {
-  color: var(--bs-primary) !important;
 }
 

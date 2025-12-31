@@ -24,7 +24,7 @@
 .youtubeTitleWrapper {
   display: inline-flex;
   align-items: center;
-  background-color: #f0f0f0;
+  background-color: var(--bs-secondary-bg);
   border-radius: 4px;
   padding: 2px 6px;
   max-width: 100%;
@@ -39,7 +39,7 @@
 }
 
 .youtubeTitle {
-  color: #333;
+  color: var(--bs-body-color);
   font-weight: 500;
   font-size: 0.9em;
   overflow: hidden;
@@ -197,36 +197,32 @@ pre.codeBlock code {
 /* Add these styles to your NoteCard.module.css file */
 
 .blockquote {
-  border-left: 4px solid var(--bs-border-color);
+  border-left: 4px solid var(--bs-primary);
   padding-left: 1rem;
   margin: 1rem 0;
   color: var(--bs-secondary-color);
   font-style: italic;
+  background-color: var(--bs-primary-bg-subtle);
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
 }
 
 /* For RTL support */
 [dir="rtl"] .blockquote {
   border-left: none;
-  border-right: 4px solid var(--bs-border-color);
+  border-right: 4px solid var(--bs-primary);
   padding-left: 0;
   padding-right: 1rem;
   text-align: right;
 }
 
-/* Add a subtle background color when in dark mode */
-[data-bs-theme="dark"] .blockquote {
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 0.25rem;
-}
-
 .highlightedText {
-  background-color: rgba(255, 255, 0, 0.4);
+  background-color: rgba(255, 193, 7, 0.3);
   color: inherit;
   padding: 0 2px;
   border-radius: 2px;
 }
 
 [data-bs-theme="dark"] .highlightedText {
-  background-color: rgba(255, 215, 0, 0.3);
-  color: #fff;
+  background-color: rgba(255, 193, 7, 0.2);
 }
