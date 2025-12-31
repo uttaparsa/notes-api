@@ -129,7 +129,7 @@ export default function NoteList({
     }
   };
   
-  const handleEdit = async (noteId, newText) => {
+  const handleEdit = async (noteId, newText, updatedAt) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
     try {
       const response = await fetchWithAuth(`/api/note/message/${noteId}/`, {
@@ -137,7 +137,7 @@ export default function NoteList({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: newText }),
+        body: JSON.stringify({ text: newText, updated_at: updatedAt }),
       });
       
       if (!response.ok) throw new Error('Failed to edit note');
@@ -205,7 +205,7 @@ export default function NoteList({
                     onArchived={() => handleArchiveUpdate(note, true)}
                     onUnarchived={() => handleArchiveUpdate(note, false)}
                     onDeleteNote={handleDelete}
-                    onEditNote={handleEdit}
+                    onEditNote={(noteId, newText) => handleEdit(noteId, newText, note.updated_at)}
                     refreshNotes={refreshNotes}
                   />
                 )}
