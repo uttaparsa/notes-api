@@ -144,7 +144,14 @@ const SingleNoteView = () => {
       if (!response.ok) {
         throw new Error('Failed to edit note');
       }
-      setNote(prevNote => ({ ...prevNote, text: newText }));
+      // Fetch the updated note to get the new updated_at and any other changes
+      const updatedNoteResp = await fetchWithAuth(`/api/note/message/${targetNoteId}/`);
+      if (updatedNoteResp.ok) {
+        const updatedNote = await updatedNoteResp.json();
+        setNote(updatedNote);
+      } else {
+        setNote(prevNote => ({ ...prevNote, text: newText }));
+      }
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
           title: "Success",
