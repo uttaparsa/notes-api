@@ -34,3 +34,7 @@ nuxt is just old and deprecated
 some words are used interchangably as the code have evaloved.
 category: LocalMessageList, note list
 note: LocalMessage
+
+
+## formatting
+- do not leave comments

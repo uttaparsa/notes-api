@@ -199,7 +199,9 @@ class SingleNoteView(APIView):
             RevisionService.update_note_with_revision(item, new_text)
             insert_links(item)
             executor.submit(create_embeddings_async, item.id, new_text)
-            return Response("1", status=status.HTTP_200_OK)
+            item.refresh_from_db()
+            serialized = self.serializer_class(item)
+            return Response(serialized.data, status=status.HTTP_200_OK)
         except LocalMessage.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 

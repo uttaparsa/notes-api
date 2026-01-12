@@ -142,14 +142,15 @@ export default function NoteList({
       
       if (!response.ok) throw new Error('Failed to edit note');
       
-      onUpdateNote(noteId, { text: newText });
+      const updatedNote = await response.json();
+      onUpdateNote(noteId, updatedNote);
       
       window.dispatchEvent(new CustomEvent('showToast', {
         detail: {
           title: "Success",
           body: "Note Saved",
           delay: 5000,
-          status: "success",
+          variant: "success"
         }
       }));
       
