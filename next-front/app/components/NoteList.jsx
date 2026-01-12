@@ -117,7 +117,7 @@ export default function NoteList({
           title: "Success",
           body: toastBody,
           delay: 5000,
-          status: "success",
+          variant: "success",
         }
       }));
       

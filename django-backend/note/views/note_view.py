@@ -213,7 +213,7 @@ class SingleNoteView(APIView):
             file_manager = FileManager()
             deleted_files = file_manager.delete_unused_files(item.text, item.id)
             print(f"deleted files are {deleted_files}")
-            # Delete the note
+            
             item.delete()
             
             # Return success response with info about deleted files

@@ -1,10 +1,16 @@
 import React, { forwardRef, useContext } from "react";
 import { formatDateSmall, formatDateLarge } from "../../utils/dateFormatters";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { NoteListContext } from "../../(notes)/layout";
+import { fetchWithAuth } from "../../lib/api";
+import { handleApiError } from "../../utils/errorHandler";
 import styles from "./NoteCardBottomBar.module.css";
 
-const NoteCardBottomBar = forwardRef(({ note }, ref) => {
+const NoteCardBottomBar = forwardRef(({ note, singleView }, ref) => {
+    const noteLists = useContext(NoteListContext);
+    const router = useRouter();
+
     const getListName = () => {
         const list = noteLists.find((lst) => lst.id === note.list);
         return list ? list.name : "";
@@ -15,24 +21,55 @@ const NoteCardBottomBar = forwardRef(({ note }, ref) => {
         return list ? list.slug : "";
     };
 
-    const noteLists = useContext(NoteListContext);
+    const handleNavigateToNote = async () => {
+        try {
+            const listSlug = getListSlug() || 'All';
+            const response = await fetchWithAuth(`/api/note/message/${note.id}/page/?slug=${listSlug}`);
+            if (!response.ok) throw new Error('Failed to get note page');
+            const data = await response.json();
+            router.push(`/list/${listSlug}?page=${data.page}&highlight=${note.id}`);
+        } catch (err) {
+            console.error('Error navigating to note:', err);
+            handleApiError(err);
+        }
+    };
 
     return (
         <div className="mt-2 mb-0 d-flex ">
-            <div  className="me-auto" >
-                <Link href={`/message/${note.id}/`} >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        fill="currentColor"
-                        className="bi bi-link"
-                        viewBox="0 0 16 16"
+            <div className="me-auto">
+                {singleView ? (
+                    <button 
+                        onClick={handleNavigateToNote}
+                        className="btn btn-link p-0"
+                        style={{ textDecoration: 'none' }}
                     >
-                        <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z" />
-                        <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z" />
-                    </svg>
-                </Link>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-link"
+                            viewBox="0 0 16 16"
+                        >
+                            <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z" />
+                            <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z" />
+                        </svg>
+                    </button>
+                ) : (
+                    <Link href={`/message/${note.id}/`}>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            className="bi bi-link"
+                            viewBox="0 0 16 16"
+                        >
+                            <path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z" />
+                            <path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z" />
+                        </svg>
+                    </Link>
+                )}
             </div>
             <div className="me-2 text-info">
                 {note.importance > 0 && (

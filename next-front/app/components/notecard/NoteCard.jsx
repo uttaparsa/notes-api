@@ -145,7 +145,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
             />
           </div>
         </div>
-        <NoteCardBottomBar note={note}></NoteCardBottomBar>
+        <NoteCardBottomBar note={note} singleView={singleView}></NoteCardBottomBar>
       </div>
       
       <Modal show={showMoveModal} onHide={() => setShowMoveModal(false)}>
