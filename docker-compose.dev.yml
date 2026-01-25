@@ -37,7 +37,7 @@ services:
     depends_on:
       - minio
     volumes:
-      - ./django-backend/data/:/usr/src/app/data/
+      - ./django-backend:/usr/src/app
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
@@ -58,7 +58,7 @@ services:
       - redis
       - backend
     volumes:
-      - ./django-backend/data/:/usr/src/app/data/
+      - ./django-backend:/usr/src/app
     env_file:
       - .env.dev
     networks:
@@ -73,7 +73,7 @@ services:
       - redis
       - backend
     volumes:
-      - ./django-backend/data/:/usr/src/app/data/
+      - ./django-backend:/usr/src/app
     env_file:
       - .env.dev
     networks:
