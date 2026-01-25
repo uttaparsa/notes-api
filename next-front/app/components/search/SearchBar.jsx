@@ -1,18 +1,25 @@
 import { useState, useEffect, useContext } from 'react';
 import { NoteListContext } from '../../(notes)/layout';
-import { Form, Button, InputGroup } from 'react-bootstrap';
+import { Form, Button, InputGroup, Collapse } from 'react-bootstrap';
 
-export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All' }) {
+export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All', selectedWorkspace = null }) {
   const [searchText, setSearchText] = useState(initialSearchText);
   const [showFilters, setShowFilters] = useState(false);
   const noteLists = useContext(NoteListContext);
   const [selectedCategories, setSelectedCategories] = useState(new Set());
+  const [showNonWorkspaceCategories, setShowNonWorkspaceCategories] = useState(false);
   
-  // Update selected categories when initialListSlug changes
+  // Update selected categories when initialListSlug or selectedWorkspace changes
   useEffect(() => {
     if (noteLists) {
       if (initialListSlug === 'All') {
-        setSelectedCategories(new Set(noteLists.map(list => list.slug)));
+        if (selectedWorkspace && selectedWorkspace.categories && selectedWorkspace.categories.length > 0) {
+          // Select only categories from the current workspace
+          setSelectedCategories(new Set(selectedWorkspace.categories.map(cat => cat.slug)));
+        } else {
+          // Select all categories if no workspace or no categories
+          setSelectedCategories(new Set(noteLists.map(list => list.slug)));
+        }
       } else if (initialListSlug.includes(',')) {
         setSelectedCategories(new Set(initialListSlug.split(',')));
       } else {
@@ -20,7 +27,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
         setSelectedCategories(new Set([initialListSlug]));
       }
     }
-  }, [noteLists, initialListSlug]);
+  }, [noteLists, initialListSlug, selectedWorkspace]);
 
   useEffect(() => {
     setSearchText(initialSearchText);
@@ -66,6 +73,11 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
     }
     return `Search in ${selectedCategories.size === noteLists?.length ? 'All' : `${selectedCategories.size} categories`}`;
   };
+
+  // Separate categories into workspace and non-workspace
+  const workspaceCategorySlugs = selectedWorkspace ? selectedWorkspace.categories.map(cat => cat.slug) : [];
+  const workspaceCategories = noteLists?.filter(list => workspaceCategorySlugs.includes(list.slug)) || [];
+  const nonWorkspaceCategories = noteLists?.filter(list => !workspaceCategorySlugs.includes(list.slug)) || [];
 
   return (
     <Form onSubmit={handleSubmit}>
@@ -115,17 +127,64 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
                       </Button>
                     </div>
                     <div className="mb-2">
-                      {noteLists?.map((list) => (
-                        <Form.Check
-                          key={list.slug}
-                          type="checkbox"
-                          id={`category-${list.slug}`}
-                          label={list.name}
-                          checked={selectedCategories.has(list.slug)}
-                          onChange={() => handleCategoryToggle(list.slug)}
-                          className="mb-2"
-                        />
-                      ))}
+                      {selectedWorkspace && selectedWorkspace.categories ? (
+                        <>
+                          {/* Workspace Categories */}
+                          {workspaceCategories.map((list) => (
+                            <Form.Check
+                              key={list.slug}
+                              type="checkbox"
+                              id={`category-${list.slug}`}
+                              label={list.name}
+                              checked={selectedCategories.has(list.slug)}
+                              onChange={() => handleCategoryToggle(list.slug)}
+                              className="mb-2"
+                            />
+                          ))}
+                          
+                          {/* Non-Workspace Categories */}
+                          {nonWorkspaceCategories.length > 0 && (
+                            <div className="mt-3">
+                              <Button
+                                variant="link"
+                                size="sm"
+                                onClick={() => setShowNonWorkspaceCategories(!showNonWorkspaceCategories)}
+                                className="p-0 mb-2 text-decoration-none"
+                              >
+                                {showNonWorkspaceCategories ? '▼' : '▶'} Other Categories ({nonWorkspaceCategories.length})
+                              </Button>
+                              <Collapse in={showNonWorkspaceCategories}>
+                                <div>
+                                  {nonWorkspaceCategories.map((list) => (
+                                    <Form.Check
+                                      key={list.slug}
+                                      type="checkbox"
+                                      id={`category-${list.slug}`}
+                                      label={list.name}
+                                      checked={selectedCategories.has(list.slug)}
+                                      onChange={() => handleCategoryToggle(list.slug)}
+                                      className="mb-2"
+                                    />
+                                  ))}
+                                </div>
+                              </Collapse>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        // If no workspace, show all categories
+                        noteLists?.map((list) => (
+                          <Form.Check
+                            key={list.slug}
+                            type="checkbox"
+                            id={`category-${list.slug}`}
+                            label={list.name}
+                            checked={selectedCategories.has(list.slug)}
+                            onChange={() => handleCategoryToggle(list.slug)}
+                            className="mb-2"
+                          />
+                        ))
+                      )}
                     </div>
                     <div className="d-flex justify-content-end">
                       <Button 

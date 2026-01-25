@@ -155,7 +155,8 @@ export default function NoteListPage({ params }) {
 <div dir="ltr">
   <SearchBar 
     onSearch={handleSearch} 
-    initialListSlug={slug || 'All'} 
+    initialListSlug={slug || 'All'}
+    selectedWorkspace={selectedWorkspace}
   />
 
   <div dir="ltr">
