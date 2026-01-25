@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('note', '0017_workspace_localmessagelist_workspaces'),
+        ('note', '0019_remove_localmessagelist_archived'),
     ]
 
     operations = [

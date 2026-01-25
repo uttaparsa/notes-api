@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('note', '0018_remove_localmessagelist_show_in_feed'),
+        ('note', '0018_create_default_workspaces'),
     ]
 
     operations = [
