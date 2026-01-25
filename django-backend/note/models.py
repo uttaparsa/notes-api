@@ -96,12 +96,8 @@ class Workspace(models.Model):
 
     def get_visible_categories(self):
         """Get categories visible in this workspace"""
-        if self.is_default:
-            # Default workspace shows categories not assigned to any non-default workspace
-            return LocalMessageList.objects.filter(user=self.user).exclude(workspaces__is_default=False).distinct()
-        else:
-            # Regular workspace shows only categories assigned to it
-            return self.categories.all()
+        # Regular workspace shows only categories assigned to it
+        return self.categories.all()
 
     @property
     def is_archived_category(self, category):

@@ -351,6 +351,8 @@ def get_shown_list_ids(user, workspace=None):
             # Fallback: show all categories if no default workspace exists
             return LocalMessageList.objects.filter(user=user).values_list('id', flat=True)
 
+    
+
 def get_list_by_slug(slug, user):
     if not slug:
         return LocalMessageList.objects.filter(user=user).first()
@@ -360,7 +362,9 @@ def filter_notes_by_slug(queryset, slug, user, workspace=None):
     if not slug:
         return LocalMessage.objects.none()
     if slug == "All":
-        return queryset.filter(list__in=get_shown_list_ids(user, workspace))
+        list_ids = get_shown_list_ids(user, workspace)
+        print(f"shown list ids are {list_ids}") 
+        return queryset.filter(list__in=list_ids)
     lst = get_list_by_slug(slug, user)
     if not lst:
         return LocalMessage.objects.none()

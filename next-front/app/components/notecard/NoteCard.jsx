@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useContext, forwardRef, useImperativeHandle } from "react";
-import { Dropdown, Modal, Button } from "react-bootstrap";
+import { Dropdown, Modal, Button, Collapse } from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../../(notes)/layout";
 import { SelectedWorkspaceContext } from "../../(notes)/layout";
 import { copyTextToClipboard } from "../../utils/clipboardUtils";
@@ -24,6 +24,7 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
   const [showReminderModal, setShowReminderModal] = useState(false);
+  const [showOtherCategories, setShowOtherCategories] = useState(false);
 
   useImperativeHandle(ref, () => ({
     hideEditModal: () => setShowEditModal(false),
@@ -100,11 +101,11 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setShowDeleteModal(true);
   };
 
-  const renderCategoryButtons = (categories) => {
+  const renderCategoryButtons = (categories, variant = "info") => {
     return categories.map(lst => (
       <Button 
         key={lst.id} 
-        variant="info" 
+        variant={variant} 
         className="m-1" 
         onClick={() => moveNote(lst.id)}
       >
@@ -170,13 +171,28 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           )}
           
           <div className="mb-3">
-            <h6 className="text-muted mb-2">Other Categories</h6>
-            {renderCategoryButtons(
-              noteLists.filter(lst => 
-                lst.id !== note.list && 
-                (!selectedWorkspace || !selectedWorkspace.categories.some(cat => cat.id === lst.id))
-              )
-            )}
+            <Button
+              variant="link"
+              className="p-0 mb-2 text-decoration-none"
+              onClick={() => setShowOtherCategories(!showOtherCategories)}
+              aria-controls="other-categories-collapse"
+              aria-expanded={showOtherCategories}
+            >
+              <h6 className="text-muted mb-0">
+                Other Categories {showOtherCategories ? '▼' : '▶'}
+              </h6>
+            </Button>
+            <Collapse in={showOtherCategories}>
+              <div id="other-categories-collapse">
+                {renderCategoryButtons(
+                  noteLists.filter(lst => 
+                    lst.id !== note.list && 
+                    (!selectedWorkspace || !selectedWorkspace.categories.some(cat => cat.id === lst.id))
+                  ),
+                  "secondary"
+                )}
+              </div>
+            </Collapse>
           </div>
         </Modal.Body>
         <Modal.Footer>
