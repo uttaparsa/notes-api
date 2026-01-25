@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Form, FormCheck , Row, Col} from 'react-bootstrap';
 import NoteList from '../../../components/NoteList';
@@ -10,6 +10,7 @@ import PaginationComponent from '../../../components/PaginationComponent';
 import ImportantNotesSidebar from '../../../components/ImportantNotesSidebar';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
+import { NoteListContext } from '../../layout';
 
 export default function NoteListPage({ params }) {
   const [notes, setNotes] = useState([]);
@@ -24,6 +25,7 @@ export default function NoteListPage({ params }) {
   const searchParams = useSearchParams();
   const perPage = 20;
   const { slug } = params;
+  const noteLists = useContext(NoteListContext);
 
   const [currentPage, setCurrentPage] = useState(() => {
     const page = searchParams.get('page');
@@ -49,6 +51,15 @@ export default function NoteListPage({ params }) {
   useEffect(() => {
     getRecords();
   }, [currentPage, showHidden, slug]);
+
+  useEffect(() => {
+    const currentList = noteLists.find(lst => lst.slug === slug);
+    if (currentList) {
+      document.title = `${currentList.name} - Notes`;
+    } else {
+      document.title = 'Notes';
+    }
+  }, [noteLists, slug]);
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");
