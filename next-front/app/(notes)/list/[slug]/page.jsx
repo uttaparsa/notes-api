@@ -68,6 +68,7 @@ export default function NoteListPage({ params }) {
       let url = `/api/note/${slug}/`;
       const params = new URLSearchParams({
         page: currentPage,
+        show_hidden: showHidden,
         ...(selectedDate && { date: selectedDate }),
       });
       
@@ -168,7 +169,10 @@ export default function NoteListPage({ params }) {
           id="show-hidden"
           label="Show Hidden"
           checked={showHidden}
-          onChange={(e) => setShowHidden(e.target.checked)}
+          onChange={(e) => {
+            setShowHidden(e.target.checked);
+            setCurrentPage(1);
+          }}
           className="mb-3 text-body-emphasis mt-2"
         />
         <Form.Group>

@@ -16,10 +16,13 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
     def get_queryset(self):
         query = self.request.GET.get("q", "")
         list_slugs = self.request.GET.get("list_slug", "")
+        show_hidden = self.request.GET.get('show_hidden', 'false').lower() == 'true'
 
         print(f"list_slugs {list_slugs} query is {query}")
         
         queryset = LocalMessage.objects.filter(user=self.request.user)
+        if not show_hidden:
+            queryset = queryset.filter(archived=False)
         
         if query:
             # Handle both 'and' and 'or' conditions

@@ -28,7 +28,7 @@ export default function ClientSideSearchWrapper() {
   const getRecords = useCallback(async (query, slugs, page) => {
     setIsBusy(true);
     try {
-      let url = `/api/note/search/?q=${encodeURIComponent(query || '')}`;
+      let url = `/api/note/search/?q=${encodeURIComponent(query || '')}&show_hidden=${showHidden}`;
       
       if (slugs && slugs !== 'All') {
         url += `&list_slug=${encodeURIComponent(slugs)}`;
@@ -47,7 +47,7 @@ export default function ClientSideSearchWrapper() {
     } finally {
       setIsBusy(false);
     }
-  }, []);
+  }, [showHidden]);
   
 
   const updateNote = async (noteId, updates) => {
@@ -134,7 +134,11 @@ export default function ClientSideSearchWrapper() {
               id="show-hidden"
               label="Show Hidden"
               checked={showHidden}
-              onChange={(e) => setShowHidden(e.target.checked)}
+              onChange={(e) => {
+                setShowHidden(e.target.checked);
+                setCurrentPage(1);
+                getRecords(searchText, listSlug, 1);
+              }}
               className="mb-3 text-body-emphasis mt-2"
             />
           </Col>

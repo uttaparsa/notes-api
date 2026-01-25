@@ -368,6 +368,9 @@ class NoteView(GenericAPIView, ListModelMixin):
     def get_queryset(self):
         slug = self.kwargs.get('slug')
         base_queryset = LocalMessage.objects.filter(user=self.request.user).order_by('-created_at')
+        show_hidden = self.request.GET.get('show_hidden', 'false').lower() == 'true'
+        if not show_hidden:
+            base_queryset = base_queryset.filter(archived=False)
         return filter_notes_by_slug(base_queryset, slug, self.request.user)
 
     def get(self, request, **kwargs):

@@ -42,8 +42,15 @@ export default function NotesPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    setCurrentPage(1);
     getRecords();
-  }, [currentPage, showHidden]);
+  }, [showHidden]);
+
+  useEffect(() => {
+    if (currentPage !== 1 || showHidden) { // Avoid double call on initial load
+      getRecords();
+    }
+  }, [currentPage]);
 
   const showMessagesForDate = (selectedDate) => {
     setDate(selectedDate);
@@ -56,6 +63,7 @@ export default function NotesPage() {
       let url = `/api/note/${listSlug}/`;
       const params = new URLSearchParams({
         page: currentPage,
+        show_hidden: showHidden,
         ...(selectedDate && { date: selectedDate }),
       });
       
@@ -143,7 +151,10 @@ export default function NotesPage() {
               id="show-hidden"
               label="Show Hidden"
               checked={showHidden}
-              onChange={(e) => setShowHidden(!showHidden)}
+              onChange={(e) => {
+                setShowHidden(!showHidden);
+                setCurrentPage(1);
+              }}
               className="mb-3 text-body-emphasis mt-2"
             />
             <Form.Group>
