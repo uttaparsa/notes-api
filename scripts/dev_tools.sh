@@ -5,7 +5,7 @@ source ./.env.dev
 set +a
 
 if [ "$1" == "run" ]; then
-    docker compose -f ./docker-compose.dev.yml exec backend python manage.py runserver 0.0.0.0:${DJANGO_PORT}
+    docker compose -f ./docker-compose.dev.yml up 
 elif [ "$1" == "migrate" ]; then
     docker compose -f ./docker-compose.dev.yml exec backend python manage.py migrate
     docker compose -f ./docker-compose.dev.yml exec backend python manage.py migrate --database=embeddings

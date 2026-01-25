@@ -42,6 +42,8 @@ services:
       - "host.docker.internal:host-gateway"
     env_file:
       - .env.dev
+    ports:
+      - "127.0.0.1:${DJANGO_PORT}:${DJANGO_PORT}"
     # restart: always
     dns:
       - 8.8.8.8
