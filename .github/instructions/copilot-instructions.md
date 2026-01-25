@@ -38,23 +38,32 @@ note: LocalMessage
 
 ## Development Operations
 
-### Database Management (Development)
+### Running Scripts
 
-- **Restore database from backup**: `scripts/restore_db.sh`
-- **Create database backup**: `scripts/backup_db.sh`
+All scripts are located in the `scripts/` directory and must be run using the `./script` wrapper from the project root:
 
-### Django Management Commands (Development)
+**Format**: `./script <script_name>.sh [params]`
 
-⚠️ **IMPORTANT**: Always use the Docker wrapper script for Django commands in development.
+### Database Management
 
-- **Run ANY Django management command**: `scripts/dev_tools.sh <command>`
+- **Restore database**: `./script restore_db.sh`
+- **Backup database**: `./script backup_db.sh`
 
-- **Generate embeddings for notes**: `scripts/dev_tools.sh generate_embeddings`
+### Django Management Commands
+
+**Always use the dev_tools.sh wrapper for any `manage.py` commands.**
+
+**Format**: `./script dev_tools.sh <manage.py_command> [params]`
+
+Common commands:
+
+- Migrations: `./script dev_tools.sh migrate`
+- Generate embeddings: `./script dev_tools.sh generate_embeddings`
+- Any other manage.py command: `./script dev_tools.sh <command>`
 
 ### Docker Configuration (Development)
 
 - Development uses a separate Docker Compose file: `docker-compose.dev.yml`
-- The `scripts/dev_tools.sh` script automatically uses this configuration
 
 ## Database
 
