@@ -1,0 +1,88 @@
+services:
+  minio:
+    image: minio/minio
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes:
+      - ./minio-data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - app-network
+
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:16379:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build: django-backend
+    command: python manage.py runserver 0.0.0.0:${DJANGO_PORT}
+    depends_on:
+      - minio
+    volumes:
+      - ./django-backend/data/:/usr/src/app/data/
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env.dev
+    # restart: always
+    dns:
+      - 8.8.8.8
+    networks:
+      - app-network
+    
+
+  celery_worker:
+    build: django-backend
+    command: celery -A config worker -l info --concurrency=1
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./django-backend/data/:/usr/src/app/data/
+    env_file:
+      - .env.dev
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+
+  celery_beat:
+    build: django-backend
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - backend
+    volumes:
+      - ./django-backend/data/:/usr/src/app/data/
+    env_file:
+      - .env.dev
+    networks:
+      - app-network
+    deploy:
+      replicas: 1
+
+
+
+
+
+networks:	
+  app-network:
+    driver: bridge
