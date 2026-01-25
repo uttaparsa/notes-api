@@ -15,4 +15,6 @@ nuxt-front/.nuxt/
 
 *.zip
 
+minio-data/
+
 

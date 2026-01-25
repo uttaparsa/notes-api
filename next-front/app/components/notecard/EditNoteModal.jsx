@@ -154,6 +154,7 @@ const EditNoteModal = ({
             }
             showToast("Success", "Importance increased", 3000, "success");
             window.dispatchEvent(new Event("updateNoteLists"));
+            window.dispatchEvent(new Event("refreshImportantNotes"));
             onHide();
             refreshNotes();
         } catch (err) {
@@ -171,6 +172,7 @@ const EditNoteModal = ({
                 throw new Error("Failed to decrease importance");
             }
             showToast("Success", "Importance decreased", 3000, "success");
+            window.dispatchEvent(new Event("refreshImportantNotes"));
             refreshNotes();
             onHide();
         } catch (err) {

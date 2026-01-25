@@ -19,6 +19,18 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '' 
     fetchImportantNotes();
   }, [listSlug]);
 
+  useEffect(() => {
+    const handleRefreshImportantNotes = () => {
+      fetchImportantNotes();
+    };
+
+    window.addEventListener('refreshImportantNotes', handleRefreshImportantNotes);
+
+    return () => {
+      window.removeEventListener('refreshImportantNotes', handleRefreshImportantNotes);
+    };
+  }, []);
+
   const fetchImportantNotes = async () => {
     setIsLoading(true);
     setLoaded(false);
