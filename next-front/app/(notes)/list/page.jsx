@@ -3,7 +3,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
 import { Container, ListGroup, Button, Modal, Form, Dropdown, Badge, Card, Row, Col } from 'react-bootstrap';
-import { NoteListContext, WorkspaceContext, ToastContext } from '../layout';
+import { NoteListContext, WorkspaceContext, ToastContext, SelectedWorkspaceContext } from '../layout';
 import { fetchWithAuth } from '../../lib/api';
 
 export default function CategoryList() {
@@ -20,13 +20,16 @@ export default function CategoryList() {
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
   const [showWorkspaceRenameModal, setShowWorkspaceRenameModal] = useState(false);
   const [showWorkspaceDeleteModal, setShowWorkspaceDeleteModal] = useState(false);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+  const [localSelectedWorkspace, setLocalSelectedWorkspace] = useState(null);
   const [renameWorkspaceName, setRenameWorkspaceName] = useState('');
   const [renameWorkspaceDescription, setRenameWorkspaceDescription] = useState('');
   
   const noteLists = useContext(NoteListContext);
   const workspaces = useContext(WorkspaceContext);
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const showToast = useContext(ToastContext);
+
+  const filteredNoteLists = selectedWorkspace && !selectedWorkspace.is_default ? noteLists.filter(lst => lst.workspaces.some(ws => ws.id === selectedWorkspace.id)) : noteLists;
 
   useEffect(() => {
     window.dispatchEvent(new Event('updateNoteLists'));
@@ -114,7 +117,7 @@ export default function CategoryList() {
   });
 
   const renameWorkspace = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/workspaces/${selectedWorkspace.id}/`, {
+    () => fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -131,26 +134,26 @@ export default function CategoryList() {
   });
 
   const openWorkspaceRenameModal = (workspace) => {
-    setSelectedWorkspace(workspace);
+    setLocalSelectedWorkspace(workspace);
     setRenameWorkspaceName(workspace.name);
     setRenameWorkspaceDescription(workspace.description || '');
     setShowWorkspaceRenameModal(true);
   };
 
   const openWorkspaceDeleteModal = (workspace) => {
-    setSelectedWorkspace(workspace);
+    setLocalSelectedWorkspace(workspace);
     setShowWorkspaceDeleteModal(true);
   };
 
   const deleteWorkspace = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/workspaces/${selectedWorkspace.id}/`, {
+    () => fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
       method: 'DELETE',
     }),
     'Workspace deleted',
     'Failed to delete workspace'
   ).then(() => {
     setShowWorkspaceDeleteModal(false);
-    setSelectedWorkspace(null);
+    setLocalSelectedWorkspace(null);
   });
 
   return (
@@ -163,7 +166,7 @@ export default function CategoryList() {
             </Card.Header>
             <Card.Body>
               <ListGroup variant="flush">
-                {noteLists.map((lst, lst_idx) => (
+                {filteredNoteLists.map((lst, lst_idx) => (
                   <React.Fragment key={lst.id}>
                     <ListGroup.Item 
                       className="d-flex justify-content-between align-items-center mb-2"
@@ -415,7 +418,7 @@ export default function CategoryList() {
           <Modal.Title>Delete Workspace</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Are you sure you want to delete the workspace "{selectedWorkspace?.name}"?</p>
+          <p>Are you sure you want to delete the workspace "{localSelectedWorkspace?.name}"?</p>
           <p className="text-danger">This action cannot be undone. Categories in this workspace will remain but won't be associated with any workspace.</p>
         </Modal.Body>
         <Modal.Footer>

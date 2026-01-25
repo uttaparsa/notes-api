@@ -12,7 +12,7 @@ I have a notes app.
 - notes are parsed and shown as markdown
 - It has several features such as:
   - editing a note
-  - adding note category
+  - adding note category(each note should belong to only one category)
   - dark mode toggle. This is being handled using boostrap. So don't use dark, light variant
   - linking to other notes, backlinking from them.
 - there is a similar notes feature that basically shows a similar notes. I'm still working to improve this

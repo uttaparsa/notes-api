@@ -368,9 +368,7 @@ def filter_notes_by_slug(queryset, slug, user, workspace=None):
     lst = get_list_by_slug(slug, user)
     if not lst:
         return LocalMessage.objects.none()
-    # Check if the list is visible in the workspace
-    if workspace and lst not in workspace.get_visible_categories():
-        return LocalMessage.objects.none()
+    # Allow viewing any category, regardless of workspace
     return queryset.filter(list=lst.id)
 
 class NoteView(GenericAPIView, ListModelMixin):

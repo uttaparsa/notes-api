@@ -21,6 +21,7 @@ export default function NoteListPage({ params }) {
   const [showHidden, setShowHidden] = useState(false);
   const [newNoteId, setNewNoteId] = useState(null);
   const [highlightNoteId, setHighlightNoteId] = useState(null);
+  const [isCategoryInWorkspace, setIsCategoryInWorkspace] = useState(true);
   const noteListRef = useRef();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -58,10 +59,16 @@ export default function NoteListPage({ params }) {
     const currentList = noteLists.find(lst => lst.slug === slug);
     if (currentList) {
       document.title = `${currentList.name} - Notes`;
+      if (selectedWorkspace && !selectedWorkspace.is_default) {
+        setIsCategoryInWorkspace(selectedWorkspace.categories.some(c => c.id === currentList.id));
+      } else {
+        setIsCategoryInWorkspace(true);
+      }
     } else {
       document.title = 'Notes';
+      setIsCategoryInWorkspace(true);
     }
-  }, [noteLists, slug]);
+  }, [noteLists, slug, selectedWorkspace]);
 
   const getRecords = async (selectedDate = null) => {
     console.log("getting records!");
@@ -189,17 +196,24 @@ export default function NoteListPage({ params }) {
         </Form.Group>
       </Col>
       <Col xs={12} lg={8} className="mx-0 px-3 px-lg-0 order-3 order-lg-2" dir="ltr">
-      <NoteList
-        ref={noteListRef}
-        notes={notes}
-        isBusy={isBusy}
-        showHidden={showHidden}
-        onUpdateNote={updateNote}
-        onDeleteNote={deleteNote}
-        refreshNotes={getRecords}
-        newNoteId={newNoteId}
-        highlightNoteId={highlightNoteId}
-      />
+      {isCategoryInWorkspace ? (
+        <NoteList
+          ref={noteListRef}
+          notes={notes}
+          isBusy={isBusy}
+          showHidden={showHidden}
+          onUpdateNote={updateNote}
+          onDeleteNote={deleteNote}
+          refreshNotes={getRecords}
+          newNoteId={newNoteId}
+          highlightNoteId={highlightNoteId}
+        />
+      ) : (
+        <div className="text-center mt-5">
+          <h4>This category is not in the current workspace.</h4>
+          <p>Please select a different workspace or switch to "All" to view this category.</p>
+        </div>
+      )}
       </Col>
       <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
         <ImportantNotesSidebar listSlug={slug} basePath={`/list/${slug}`} selectedWorkspace={selectedWorkspace} />
