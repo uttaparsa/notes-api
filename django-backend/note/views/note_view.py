@@ -474,13 +474,12 @@ class ImportantNotesView(APIView):
         ).order_by('-importance', '-created_at')
 
         if not slug or slug == "All":
-            queryset = base_queryset.filter(list__in=get_shown_list_ids(request.user, workspace))
+            # For important notes, show from all categories regardless of workspace
+            queryset = base_queryset
         else:
             try:
                 lst = LocalMessageList.objects.get(slug=slug, user=request.user)
-                # Check if the list is visible in the workspace
-                if workspace and lst not in workspace.get_visible_categories():
-                    return Response({"error": "List not found in workspace"}, status=status.HTTP_404_NOT_FOUND)
+                # For important notes, allow access to any category
                 queryset = base_queryset.filter(list=lst)
             except LocalMessageList.DoesNotExist:
                 return Response({"error": "List not found"}, status=status.HTTP_404_NOT_FOUND)

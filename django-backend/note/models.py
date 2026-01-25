@@ -62,7 +62,6 @@ class NoteRevision(models.Model):
 class LocalMessageList(models.Model):
     name = models.CharField(max_length=255, default="")
     slug = models.SlugField(default="n")
-    disable_related = models.BooleanField(default=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_lists')
     workspaces = models.ManyToManyField('Workspace', related_name='categories', blank=True)
 

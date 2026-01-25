@@ -18,6 +18,12 @@ class SimilarNotesView(APIView):
         # Get query parameters
         limit = int(request.query_params.get('limit', 4))
         
+        # Get workspaces of the current note's category
+        workspaces = note.list.workspaces.all()
+        workspace_category_ids = set()
+        for ws in workspaces:
+            workspace_category_ids.update(ws.categories.values_list('id', flat=True))
+        
         try:
             results = []
             
@@ -34,9 +40,9 @@ class SimilarNotesView(APIView):
             # Get IDs of notes that link to the current note (backlinks)
             backlink_ids = set(Link.objects.filter(dest_message_id=note_id).values_list('source_message_id', flat=True))
 
-            # Fetch more items to account for filtering out backlinks and ensure we can meet the limit
-            # Add a small buffer (e.g., 5) in case many top similar notes are backlinks
-            effective_limit = limit + len(backlink_ids) 
+            # Fetch more items to account for filtering out backlinks and workspace categories, ensure we can meet the limit
+            # Add buffer for backlinks and workspace filtering
+            effective_limit = (limit + len(backlink_ids)) * 2 
 
             # Get similar notes based on embeddings
             similar_notes_results = NoteEmbedding.find_similar_notes(note_id, limit=effective_limit)
@@ -50,6 +56,9 @@ class SimilarNotesView(APIView):
                         continue
 
                     similar_note = LocalMessage.objects.get(id=similar_note_id)
+                    # Only include notes from categories in the same workspaces
+                    if similar_note.list_id not in workspace_category_ids:
+                        continue
                     distance = float(result['distance'])
                     sim_score = self._calculate_similarity_score(distance)
                     # Only include notes with reasonable similarity
@@ -61,7 +70,12 @@ class SimilarNotesView(APIView):
                             'distance': distance,
                             'is_full_note': True,
                             'created_at': similar_note.created_at,
-                            'updated_at': similar_note.updated_at
+                            'updated_at': similar_note.updated_at,
+                            'category': {
+                                'id': similar_note.list.id,
+                                'name': similar_note.list.name,
+                                'slug': similar_note.list.slug
+                            }
                         })
                 except LocalMessage.DoesNotExist:
                     continue
@@ -164,7 +178,12 @@ class SimilarNotesView(APIView):
                             'is_full_note': False,
                             'chunk_index': chunk_data.get('chunk_index'),
                             'created_at': parent_note.created_at,
-                            'updated_at': parent_note.updated_at
+                            'updated_at': parent_note.updated_at,
+                            'category': {
+                                'id': parent_note.list.id,
+                                'name': parent_note.list.name,
+                                'slug': parent_note.list.slug
+                            }
                         })
                         added_note_ids.add(note_id)
                         chunks_count += 1
@@ -201,7 +220,12 @@ class SimilarNotesView(APIView):
                                 'distance': distance,
                                 'is_full_note': True,
                                 'created_at': similar_note.created_at,
-                                'updated_at': similar_note.updated_at
+                                'updated_at': similar_note.updated_at,
+                                'category': {
+                                    'id': similar_note.list.id,
+                                    'name': similar_note.list.name,
+                                    'slug': similar_note.list.slug
+                                }
                             })
                             added_note_ids.add(note_id)
                             notes_count += 1

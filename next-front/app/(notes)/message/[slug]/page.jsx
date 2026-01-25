@@ -8,7 +8,7 @@ import NoteCard from '../../../components/notecard/NoteCard';
 import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/MarkdownRenderers';
 import { fetchWithAuth } from '@/app/lib/api';
 import { handleApiError } from '@/app/utils/errorHandler';
-import { Spinner } from 'react-bootstrap';
+import { Spinner, Badge } from 'react-bootstrap';
 import { NoteListContext } from '../../layout';
 
 const SingleNoteView = () => {
@@ -35,12 +35,8 @@ const SingleNoteView = () => {
           document.title = extractMarkdownTitleFromText(currentNote.text);
         }
         
-        // Find the list for this note and check disable_related
-        const noteList = noteLists.find((lst) => lst.id === currentNote.list);
-        const shouldLoadSimilar = noteList && !noteList.disable_related;
-        
-        // Only load similar notes if disable_related is false
-        if (currentNote && shouldLoadSimilar) {
+        // Always load similar notes for the current note
+        if (currentNote) {
           await fetchSimilarNotes(currentNote.id);
         } else {
           setSimilarNotesLoaded(true);
@@ -79,6 +75,10 @@ const SingleNoteView = () => {
         throw new Error('Failed to fetch similar notes');
       }
       const data = await response.json();
+      
+      // Log distances for debugging
+      console.log('Similar notes distances:', data.map(note => ({ id: note.id, distance: note.distance })));
+      
       setSimilarNotes(data);
       // Trigger animation after a brief delay to ensure DOM is ready
       setTimeout(() => setSimilarNotesLoaded(true), 50);
@@ -167,13 +167,6 @@ const SingleNoteView = () => {
 
   const formatSimilarityScore = (score) => {
     return (score * 100).toFixed(0) + '%';
-  };
-
-  // Helper function to check if related notes should be shown
-  const shouldShowRelated = () => {
-    if (!note) return false;
-    const noteList = noteLists.find((lst) => lst.id === note.list);
-    return noteList && !noteList.disable_related;
   };
 
   return (
@@ -315,20 +308,18 @@ const SingleNoteView = () => {
             </>
           )}
           
-          {shouldShowRelated() && similarNotes.length > 0 && (
+          {similarNotes.length > 0 && (
             <>
               <div className="section-header">Related Notes</div>
               <div className="d-flex flex-column gap-3">
                 {similarNotes.map((similarNote, index) => {
-                  const similarityClass = similarNote.similarity_score > 0.7 ? 'high-similarity' : 
-                                         similarNote.similarity_score > 0.4 ? 'medium-similarity' : 'low-similarity';
-                  const badgeClass = similarNote.similarity_score > 0.7 ? 'bg-success' : 
-                                    similarNote.similarity_score > 0.4 ? 'bg-primary' : 'bg-secondary';
+                  const distanceClass = similarNote.distance < 1 ? 'high-similarity' : 
+                                       similarNote.distance < 2 ? 'medium-similarity' : 'low-similarity';
                   
                   return (
                     <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none">
                       <div 
-                        className={`similar-card similar-note-item ${similarityClass}`}
+                        className={`similar-card similar-note-item ${distanceClass}`}
                         style={{
                           animationDelay: similarNotesLoaded ? `${index * 0.1}s` : '0s'
                         }}>
@@ -339,9 +330,9 @@ const SingleNoteView = () => {
                             </CompactMarkdownRenderer>
                           </div>
                           <div className="d-flex justify-content-end">
-                            <span className={`similarity-badge ${badgeClass} text-white`}>
-                              {formatSimilarityScore(similarNote.similarity_score)}
-                            </span>
+                            <Badge bg="secondary" className="text-white">
+                              {similarNote.category.name}
+                            </Badge>
                           </div>
                         </div>
                       </div>

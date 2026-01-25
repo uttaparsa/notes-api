@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, DeleteMessageListView
@@ -35,7 +35,7 @@ urlpatterns = [
     
     path('', NoteView.as_view()),
 
-    path('message/<int:note_id>/similar/', SimilarNotesView.as_view(), name='similar-notes'),
+    re_path(r'message/(?P<note_id>\d+)/similar/?$', SimilarNotesView.as_view(), name='similar-notes'),
     path('similar/', SimilarNotesView.as_view(), name='similar-text'),
 
     path('message/<int:note_id>/chunks/', NoteChunksView.as_view(), name='note-chunks'),

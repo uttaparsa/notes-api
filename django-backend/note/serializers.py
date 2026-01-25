@@ -175,10 +175,12 @@ class SimilarNoteSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     text = serializers.CharField()
     similarity_score = serializers.FloatField()
+    distance = serializers.FloatField()
     is_full_note = serializers.BooleanField(default=True)
     chunk_index = serializers.IntegerField(required=False, allow_null=True)
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
+    category = serializers.DictField()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

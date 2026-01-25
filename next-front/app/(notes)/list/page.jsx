@@ -47,16 +47,6 @@ export default function CategoryList() {
     }
   };
 
-  const toggleDisableRelated = (list) => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${list.id}/`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ disable_related: !list.disable_related }),
-    }),
-    null,
-    'Failed to update disable related setting'
-  );
-
   const sendNewListName = () => handleApiCall(
     () => fetchWithAuth('/api/note/list/', {
       method: 'POST',
@@ -183,11 +173,6 @@ export default function CategoryList() {
                         <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
                           {lst.name}
                         </Link>
-                        {!lst.disable_related && (
-                          <Badge bg="primary" pill>
-                            Related
-                          </Badge>
-                        )}
                         {lst.workspaces && lst.workspaces.length > 0 && (
                           <Badge bg="info" pill>
                             {lst.workspaces.length} WS
@@ -199,17 +184,6 @@ export default function CategoryList() {
                           Actions
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
-                          <Dropdown.Item onClick={() => toggleDisableRelated(lst)}>
-                            <Form.Check
-                              type="checkbox"
-                              checked={!lst.disable_related}
-                              onChange={() => {}}
-                              label="Show related messages"
-                              className="mb-0"
-                              readOnly
-                            />
-                          </Dropdown.Item>
-                          <Dropdown.Divider />
                           <Dropdown.Item onClick={() => openRenameModal(lst)}>
                             Rename
                           </Dropdown.Item>
