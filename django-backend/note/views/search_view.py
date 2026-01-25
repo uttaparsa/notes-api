@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.db.models import Q
-from ..models import LocalMessage, LocalMessageList
+from ..models import LocalMessage, LocalMessageList, Workspace
 from ..serializers import MessageSerializer, SearchSerializer
 from .pagination import DateBasedPagination
 
@@ -16,6 +16,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
     def get_queryset(self):
         query = self.request.GET.get("q", "")
         list_slugs = self.request.GET.get("list_slug", "")
+        workspace_slug = self.request.GET.get("workspace", "")
         show_hidden = self.request.GET.get('show_hidden', 'false').lower() == 'true'
 
         print(f"list_slugs {list_slugs} query is {query}")
@@ -23,6 +24,14 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         queryset = LocalMessage.objects.filter(user=self.request.user)
         if not show_hidden:
             queryset = queryset.filter(archived=False)
+        
+        # Get workspace if specified
+        workspace = None
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=self.request.user)
+            except Workspace.DoesNotExist:
+                return LocalMessage.objects.none()
         
         if query:
             # Handle both 'and' and 'or' conditions
@@ -49,11 +58,22 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
             if not lists.exists():
                 return LocalMessage.objects.none()
             
+            # Filter lists by workspace visibility
+            if workspace:
+                visible_lists = workspace.get_visible_categories()
+                lists = lists.filter(id__in=visible_lists.values_list('id', flat=True))
+                if not lists.exists():
+                    return LocalMessage.objects.none()
+            
             list_filter = Q()
             for lst in lists:
                 list_filter |= Q(list=lst.id)
             
             queryset = queryset.filter(list_filter)
+        elif workspace:
+            # If workspace is specified but no specific lists, filter by workspace's visible categories
+            visible_list_ids = workspace.get_visible_categories().values_list('id', flat=True)
+            queryset = queryset.filter(list__in=visible_list_ids)
         
         return queryset.order_by('-created_at')
 
@@ -66,6 +86,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         - q: Search query string (supports 'and'/'or' operators, e.g., 'term1 and term2' or 'term1 or term2')
         - list_slug: Single list slug or comma-separated list of slugs (e.g., 'list1,list2,list3')
                     Use 'All' or omit to search all lists
+        - workspace: Workspace slug to filter search results
         """
     )
     def get(self, request, **kwargs):

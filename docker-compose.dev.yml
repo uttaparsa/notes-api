@@ -61,8 +61,6 @@ services:
       - .env.dev
     networks:
       - app-network
-    deploy:
-      replicas: 1
 
   celery_beat:
     build: django-backend
@@ -76,13 +74,11 @@ services:
       - .env.dev
     networks:
       - app-network
-    deploy:
-      replicas: 1
 
 
 
 
 
-networks:	
+networks:
   app-network:
     driver: bridge

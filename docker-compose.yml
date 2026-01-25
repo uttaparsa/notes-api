@@ -115,6 +115,6 @@ services:
 
 
 
-networks:	
+networks:
   app-network:
     driver: bridge

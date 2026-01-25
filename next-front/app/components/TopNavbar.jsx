@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button, Dropdown } from 'react-bootstrap';
 
-export default function NavbarComponent({ isLoggedIn, onLogout }) {
+export default function NavbarComponent({ isLoggedIn, onLogout, workspaces, selectedWorkspace, selectWorkspace }) {
   const [theme, setTheme] = useState('light');
 
   useEffect(() => {
@@ -15,6 +15,24 @@ export default function NavbarComponent({ isLoggedIn, onLogout }) {
   return (
     <Navbar className='px-3' bg="primary" variant="dark" expand="lg">
       <Navbar.Brand href="/">Notes</Navbar.Brand>
+      {isLoggedIn && workspaces && workspaces.length > 0 && (
+        <Dropdown className="me-2">
+          <Dropdown.Toggle variant="outline-light" id="workspace-dropdown">
+            {selectedWorkspace ? selectedWorkspace.name : 'Select Workspace'}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {workspaces.map((workspace) => (
+              <Dropdown.Item
+                key={workspace.id}
+                active={selectedWorkspace && selectedWorkspace.id === workspace.id}
+                onClick={() => selectWorkspace(workspace)}
+              >
+                {workspace.name}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      )}
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       {isLoggedIn && (
         <Navbar.Collapse id="basic-navbar-nav">

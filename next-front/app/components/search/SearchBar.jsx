@@ -5,20 +5,14 @@ import { Form, Button, InputGroup } from 'react-bootstrap';
 export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All' }) {
   const [searchText, setSearchText] = useState(initialSearchText);
   const [showFilters, setShowFilters] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
   const noteLists = useContext(NoteListContext);
   const [selectedCategories, setSelectedCategories] = useState(new Set());
-  
-  // Separate archived and non-archived lists
-  const activeLists = noteLists?.filter(list => !list.archived) || [];
-  const archivedLists = noteLists?.filter(list => list.archived) || [];
   
   // Update selected categories when initialListSlug changes
   useEffect(() => {
     if (noteLists) {
       if (initialListSlug === 'All') {
-        // Only select non-archived categories by default
-        setSelectedCategories(new Set(activeLists.map(list => list.slug)));
+        setSelectedCategories(new Set(noteLists.map(list => list.slug)));
       } else if (initialListSlug.includes(',')) {
         setSelectedCategories(new Set(initialListSlug.split(',')));
       } else {
@@ -56,8 +50,8 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
   };
 
   const selectAll = () => {
-    // Only select non-archived categories
-    setSelectedCategories(new Set(activeLists.map(list => list.slug)));
+    // Select all categories
+    setSelectedCategories(new Set(noteLists.map(list => list.slug)));
   };
 
   const deselectAll = () => {
@@ -70,7 +64,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
       const currentCategory = noteLists?.find(list => list.slug === initialListSlug)?.name;
       return `Search in ${currentCategory || initialListSlug}`;
     }
-    return `Search in ${selectedCategories.size === activeLists?.length ? 'All' : `${selectedCategories.size} categories`}`;
+    return `Search in ${selectedCategories.size === noteLists?.length ? 'All' : `${selectedCategories.size} categories`}`;
   };
 
   return (
@@ -121,7 +115,7 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
                       </Button>
                     </div>
                     <div className="mb-2">
-                      {activeLists?.map((list) => (
+                      {noteLists?.map((list) => (
                         <Form.Check
                           key={list.slug}
                           type="checkbox"
@@ -132,32 +126,6 @@ export default function SearchBar({ onSearch, initialSearchText = '', initialLis
                           className="mb-2"
                         />
                       ))}
-                      
-                      {archivedLists.length > 0 && (
-                        <>
-                          <div className="mt-3 mb-2">
-                            <Button
-                              variant="link"
-                              size="sm"
-                              onClick={() => setShowArchived(!showArchived)}
-                              className="p-0 text-decoration-none"
-                            >
-                              {showArchived ? '▼' : '▶'} Archived ({archivedLists.length})
-                            </Button>
-                          </div>
-                          {showArchived && archivedLists.map((list) => (
-                            <Form.Check
-                              key={list.slug}
-                              type="checkbox"
-                              id={`category-${list.slug}`}
-                              label={list.name}
-                              checked={selectedCategories.has(list.slug)}
-                              onChange={() => handleCategoryToggle(list.slug)}
-                              className="mb-2 ms-3"
-                            />
-                          ))}
-                        </>
-                      )}
                     </div>
                     <div className="d-flex justify-content-end">
                       <Button 

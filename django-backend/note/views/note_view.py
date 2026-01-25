@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, NoteEmbedding
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, NoteEmbedding, Workspace
 from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer, NoteChunkSerializer
 import re 
 from django.utils import timezone
@@ -339,24 +339,33 @@ def insert_links(note: LocalMessage):
 
 from django.shortcuts import get_object_or_404
 
-def get_shown_list_ids(user):
-    return LocalMessageList.objects.filter(
-        show_in_feed=True,
-        user=user
-    ).values_list('id', flat=True)
+def get_shown_list_ids(user, workspace=None):
+    if workspace:
+        return workspace.get_visible_categories().values_list('id', flat=True)
+    else:
+        # When no workspace is specified, use the default workspace
+        try:
+            default_workspace = Workspace.objects.get(user=user, is_default=True)
+            return default_workspace.get_visible_categories().values_list('id', flat=True)
+        except Workspace.DoesNotExist:
+            # Fallback: show all categories if no default workspace exists
+            return LocalMessageList.objects.filter(user=user).values_list('id', flat=True)
 
 def get_list_by_slug(slug, user):
     if not slug:
         return LocalMessageList.objects.filter(user=user).first()
     return get_object_or_404(LocalMessageList, slug=slug, user=user)
 
-def filter_notes_by_slug(queryset, slug, user):
+def filter_notes_by_slug(queryset, slug, user, workspace=None):
     if not slug:
         return LocalMessage.objects.none()
     if slug == "All":
-        return queryset.filter(list__in=get_shown_list_ids(user))
+        return queryset.filter(list__in=get_shown_list_ids(user, workspace))
     lst = get_list_by_slug(slug, user)
     if not lst:
+        return LocalMessage.objects.none()
+    # Check if the list is visible in the workspace
+    if workspace and lst not in workspace.get_visible_categories():
         return LocalMessage.objects.none()
     return queryset.filter(list=lst.id)
 
@@ -367,16 +376,34 @@ class NoteView(GenericAPIView, ListModelMixin):
 
     def get_queryset(self):
         slug = self.kwargs.get('slug')
+        workspace_slug = self.request.GET.get('workspace')
+        workspace = None
+        
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=self.request.user)
+            except Workspace.DoesNotExist:
+                return LocalMessage.objects.none()
+        
         base_queryset = LocalMessage.objects.filter(user=self.request.user).order_by('-created_at')
         show_hidden = self.request.GET.get('show_hidden', 'false').lower() == 'true'
         if not show_hidden:
             base_queryset = base_queryset.filter(archived=False)
-        return filter_notes_by_slug(base_queryset, slug, self.request.user)
+        return filter_notes_by_slug(base_queryset, slug, self.request.user, workspace)
 
     def get(self, request, **kwargs):
         return self.list(request)
 
     def post(self, request, **kwargs):
+        workspace_slug = request.data.get('workspace') or request.GET.get('workspace')
+        workspace = None
+        
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=request.user)
+            except Workspace.DoesNotExist:
+                return Response({"error": "Workspace not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
@@ -387,6 +414,13 @@ class NoteView(GenericAPIView, ListModelMixin):
             if not lst:
                 return Response(
                     {"error": "No lists found for user"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if the list is accessible in the workspace
+            if workspace and lst not in workspace.get_visible_categories():
+                return Response(
+                    {"error": "List not accessible in this workspace"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
@@ -420,6 +454,15 @@ class ImportantNotesView(APIView):
     serializer_class = MessageSerializer
 
     def get(self, request, slug=None):
+        workspace_slug = request.query_params.get('workspace')
+        workspace = None
+        
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=request.user)
+            except Workspace.DoesNotExist:
+                return Response({"error": "Workspace not found"}, status=status.HTTP_404_NOT_FOUND)
+        
         base_queryset = LocalMessage.objects.filter(
             user=request.user,
             importance__gt=0,
@@ -427,10 +470,13 @@ class ImportantNotesView(APIView):
         ).order_by('-importance', '-created_at')
 
         if not slug or slug == "All":
-            queryset = base_queryset.filter(list__in=get_shown_list_ids(request.user))
+            queryset = base_queryset.filter(list__in=get_shown_list_ids(request.user, workspace))
         else:
             try:
                 lst = LocalMessageList.objects.get(slug=slug, user=request.user)
+                # Check if the list is visible in the workspace
+                if workspace and lst not in workspace.get_visible_categories():
+                    return Response({"error": "List not found in workspace"}, status=status.HTTP_404_NOT_FOUND)
                 queryset = base_queryset.filter(list=lst)
             except LocalMessageList.DoesNotExist:
                 return Response({"error": "List not found"}, status=status.HTTP_404_NOT_FOUND)

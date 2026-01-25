@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { Form, FormCheck, Row, Col } from 'react-bootstrap';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NoteList from "../components/NoteList";
@@ -10,10 +10,12 @@ import { handleApiError } from '../utils/errorHandler';
 import SearchBar from '../components/search/SearchBar';
 import PaginationComponent from '../components/PaginationComponent';
 import ImportantNotesSidebar from '../components/ImportantNotesSidebar';
+import { SelectedWorkspaceContext } from './layout';
 
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,7 +46,7 @@ export default function NotesPage() {
   useEffect(() => {
     setCurrentPage(1);
     getRecords();
-  }, [showHidden]);
+  }, [showHidden, selectedWorkspace]);
 
   useEffect(() => {
     if (currentPage !== 1 || showHidden) { // Avoid double call on initial load
@@ -65,6 +67,7 @@ export default function NotesPage() {
         page: currentPage,
         show_hidden: showHidden,
         ...(selectedDate && { date: selectedDate }),
+        ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
       });
       
       const response = await fetchWithAuth(`${url}?${params}`);
@@ -179,7 +182,7 @@ export default function NotesPage() {
             />
           </Col>
           <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
-            <ImportantNotesSidebar listSlug={listSlug} />
+            <ImportantNotesSidebar listSlug={listSlug} selectedWorkspace={selectedWorkspace} />
           </Col>
         </Row>
       </div>

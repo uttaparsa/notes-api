@@ -8,7 +8,7 @@ import { fetchWithAuth } from '../lib/api';
 import { handleApiError } from '../utils/errorHandler';
 import { CompactMarkdownRenderer } from './notecard/markdown/MarkdownRenderers';
 
-export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '' }) {
+export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '', selectedWorkspace = null }) {
   const [importantNotes, setImportantNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -17,7 +17,7 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '' 
 
   useEffect(() => {
     fetchImportantNotes();
-  }, [listSlug]);
+  }, [listSlug, selectedWorkspace]);
 
   useEffect(() => {
     const handleRefreshImportantNotes = () => {
@@ -36,7 +36,13 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '' 
     setLoaded(false);
     try {
       const slug = listSlug || 'All';
-      const response = await fetchWithAuth(`/api/note/important/${slug}/`);
+      const params = new URLSearchParams();
+      if (selectedWorkspace) {
+        params.append('workspace', selectedWorkspace.slug);
+      }
+      const queryString = params.toString();
+      const url = `/api/note/important/${slug}/${queryString ? `?${queryString}` : ''}`;
+      const response = await fetchWithAuth(url);
       if (!response.ok) throw new Error('Failed to fetch important notes');
       const data = await response.json();
       setImportantNotes(data);

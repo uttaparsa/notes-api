@@ -15,11 +15,8 @@ class DateBasedPagination(PageNumberPagination):
             # Get the slug from the request to determine if we're viewing a specific list
             slug = request.resolver_match.kwargs.get('slug') if hasattr(request, 'resolver_match') else None
             
-            # Only exclude archived lists if we're viewing "All" or no specific slug
+            # No need to exclude archived lists anymore
             queryset = paginator.object_list.order_by('-created_at')
-            if not slug or slug == "All":
-                archived_lists = LocalMessageList.objects.filter(archived=True, user=request.user)
-                queryset = queryset.exclude(list__in=archived_lists)
             
             notes_before = queryset.filter(created_at__gt=selected_date)
             page_number = notes_before.count() // self.page_size + 1

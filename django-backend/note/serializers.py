@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, Reminder
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, Reminder, Workspace
 import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
@@ -52,6 +52,10 @@ class SearchSerializer(serializers.Serializer):
         required=False, 
         help_text="Single list slug or comma-separated list of slugs (e.g., 'list1,list2,list3')"
     )
+    workspace = serializers.CharField(
+        required=False,
+        help_text="Workspace slug to filter search results"
+    )
     page = serializers.IntegerField(required=False, help_text="Page number for pagination")
 
     def validate_list_slug(self, value):
@@ -80,10 +84,47 @@ class MoveMessageSerializer(serializers.Serializer):
 
 
 class NoteListSerializer(serializers.ModelSerializer):
+    workspaces = serializers.SerializerMethodField()
+    is_archived_in_default = serializers.SerializerMethodField()
+
+    def get_workspaces(self, obj):
+        # Return simple workspace data to avoid circular reference
+        return [{
+            'id': workspace.id,
+            'name': workspace.name,
+            'slug': workspace.slug,
+            'is_default': workspace.is_default
+        } for workspace in obj.workspaces.all()]
+
+    def get_is_archived_in_default(self, obj):
+        """Check if category is archived in the default workspace (not in any workspace)"""
+        return not obj.workspaces.exists()
+
     class Meta:
         model = LocalMessageList
         fields = '__all__'
         read_only_fields = ['slug', 'user']
+
+
+class WorkspaceSerializer(serializers.ModelSerializer):
+    categories = serializers.SerializerMethodField()
+    default_category_name = serializers.SerializerMethodField()
+
+    def get_categories(self, obj):
+        # Return simple category data to avoid circular reference
+        return [{
+            'id': category.id,
+            'name': category.name,
+            'slug': category.slug
+        } for category in obj.categories.all()]
+
+    def get_default_category_name(self, obj):
+        return obj.default_category.name if obj.default_category else None
+
+    class Meta:
+        model = Workspace
+        fields = ['id', 'name', 'slug', 'description', 'user', 'default_category', 'default_category_name', 'is_default', 'categories', 'created_at', 'updated_at']
+        read_only_fields = ['slug', 'user', 'created_at', 'updated_at']
 
 
 class NoteRevisionSerializer(serializers.ModelSerializer):

@@ -11,6 +11,7 @@ import ImportantNotesSidebar from '../../../components/ImportantNotesSidebar';
 import { handleApiError } from '@/app/utils/errorHandler';
 import { fetchWithAuth } from '@/app/lib/api';
 import { NoteListContext } from '../../layout';
+import { SelectedWorkspaceContext } from '../../layout';
 
 export default function NoteListPage({ params }) {
   const [notes, setNotes] = useState([]);
@@ -26,6 +27,7 @@ export default function NoteListPage({ params }) {
   const perPage = 20;
   const { slug } = params;
   const noteLists = useContext(NoteListContext);
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
 
   const [currentPage, setCurrentPage] = useState(() => {
     const page = searchParams.get('page');
@@ -50,7 +52,7 @@ export default function NoteListPage({ params }) {
 
   useEffect(() => {
     getRecords();
-  }, [currentPage, showHidden, slug]);
+  }, [currentPage, showHidden, slug, selectedWorkspace]);
 
   useEffect(() => {
     const currentList = noteLists.find(lst => lst.slug === slug);
@@ -70,6 +72,7 @@ export default function NoteListPage({ params }) {
         page: currentPage,
         show_hidden: showHidden,
         ...(selectedDate && { date: selectedDate }),
+        ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
       });
       
       const response = await fetchWithAuth(`${url}?${params}`);
@@ -198,7 +201,7 @@ export default function NoteListPage({ params }) {
       />
       </Col>
       <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
-        <ImportantNotesSidebar listSlug={slug} basePath={`/list/${slug}`} />
+        <ImportantNotesSidebar listSlug={slug} basePath={`/list/${slug}`} selectedWorkspace={selectedWorkspace} />
       </Col>
     </Row>
   </div>

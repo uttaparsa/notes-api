@@ -19,6 +19,8 @@ import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 
 
 export const NoteListContext = createContext([]);
+export const WorkspaceContext = createContext([]);
+export const SelectedWorkspaceContext = createContext(null);
 export const ModalContext = createContext({});
 export const ToastContext = createContext({});
 export const AuthContext = createContext();
@@ -26,6 +28,8 @@ export const AuthContext = createContext();
 
 export default function RootLayout({ children }) {
   const [noteLists, setNoteLists] = useState([]);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,6 +59,41 @@ export default function RootLayout({ children }) {
     }
   }, []);
 
+  const getWorkspaces = useCallback(async () => {
+    try {
+      const response = await fetchWithAuth('/api/note/workspaces/');
+      if (!response.ok) {
+        throw new Error('Failed to fetch workspaces');
+      }
+      const data = await response.json();
+      setWorkspaces(data);
+      
+      // Set selected workspace from localStorage or default to first workspace
+      const savedWorkspaceSlug = localStorage.getItem('selectedWorkspace');
+      if (savedWorkspaceSlug) {
+        const savedWorkspace = data.find(w => w.slug === savedWorkspaceSlug);
+        if (savedWorkspace) {
+          setSelectedWorkspace(savedWorkspace);
+        } else {
+          // If saved workspace doesn't exist, clear it
+          localStorage.removeItem('selectedWorkspace');
+        }
+      }
+    } catch (err) {
+      console.error(`Error: ${err}`);
+      handleApiError(err);
+    }
+  }, []);
+
+  const selectWorkspace = useCallback((workspace) => {
+    setSelectedWorkspace(workspace);
+    if (workspace) {
+      localStorage.setItem('selectedWorkspace', workspace.slug);
+    } else {
+      localStorage.removeItem('selectedWorkspace');
+    }
+  }, []);
+
   const showToast = useCallback((title, body, delay = 3000, variant = 'primary') => {
     setToast({ show: true, title, body, delay, variant });
   }, []);
@@ -66,6 +105,7 @@ export default function RootLayout({ children }) {
 
     if (accessToken){
       getLists();
+      getWorkspaces();
     }
     
 
@@ -87,15 +127,17 @@ export default function RootLayout({ children }) {
     window.addEventListener('showWaitingModal', showWaitingModal);
     window.addEventListener('hideWaitingModal', hideWaitingModal);
     window.addEventListener('updateNoteLists', getLists);
+    window.addEventListener('updateWorkspaces', getWorkspaces);
     window.addEventListener('showToast', handleShowToast);
 
     return () => {
       window.removeEventListener('showWaitingModal', showWaitingModal);
       window.removeEventListener('hideWaitingModal', hideWaitingModal);
       window.removeEventListener('updateNoteLists', getLists);
+      window.removeEventListener('updateWorkspaces', getWorkspaces);
       window.removeEventListener('showToast', handleShowToast);
     };
-  }, [getLists, showToast]);
+  }, [getLists, getWorkspaces, showToast]);
 
   return (
     <html lang="en"  data-bs-theme="light">
@@ -107,10 +149,12 @@ export default function RootLayout({ children }) {
       <body >
         <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
           <NoteListContext.Provider value={noteLists}>
-            <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
-              <ToastContext.Provider value={showToast}>
+            <SelectedWorkspaceContext.Provider value={{ selectedWorkspace, selectWorkspace }}>
+              <WorkspaceContext.Provider value={workspaces}>
+                <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
+                  <ToastContext.Provider value={showToast}>
                 <ExternalLinkProvider>
-                  <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
+                  <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} workspaces={workspaces} selectedWorkspace={selectedWorkspace} selectWorkspace={selectWorkspace} />
                   <div className="h-100" style={{minHeight: '100vh'}}>
                     {children}
                     <BootstrapClient />
@@ -149,6 +193,8 @@ export default function RootLayout({ children }) {
                 </Modal.Body>
               </Modal>
             </ModalContext.Provider>
+            </WorkspaceContext.Provider>
+            </SelectedWorkspaceContext.Provider>
           </NoteListContext.Provider>
         </AuthContext.Provider>
       </body>

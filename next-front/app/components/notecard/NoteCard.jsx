@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useRef, useContext, forwardRef, useImperativeHandle } from "react";
-import { Dropdown, Modal, Button, Collapse} from "react-bootstrap";
+import { Dropdown, Modal, Button } from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../../(notes)/layout";
+import { SelectedWorkspaceContext } from "../../(notes)/layout";
 import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
@@ -13,13 +14,13 @@ import ReminderModal from './ReminderModal';
 
 const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDeleteNote, refreshNotes }, ref) => {
   const showToast = useContext(ToastContext);
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [textInsideDeleteModal, setTextInsideDeleteModal] = useState("");
   const [editText, setEditText] = useState(note.text);
   const noteLists = useContext(NoteListContext);
-  const [showArchivedCategories, setShowArchivedCategories] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -99,15 +100,15 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
     setShowDeleteModal(true);
   };
 
-  const renderCategoryButtons = (categories, isArchived = false) => {
+  const renderCategoryButtons = (categories) => {
     return categories.map(lst => (
       <Button 
         key={lst.id} 
-        variant={isArchived ? "secondary" : "info"} 
+        variant="info" 
         className="m-1" 
         onClick={() => moveNote(lst.id)}
       >
-        {lst.name} {isArchived && "(Archived)"}
+        {lst.name}
       </Button>
     ));
   };
@@ -153,30 +154,30 @@ const NoteCard = forwardRef(({ note, singleView, hideEdits, onEditNote, onDelete
           <Modal.Title>Moving note</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <div className="mb-3">
-            {renderCategoryButtons(noteLists.filter(lst => lst.id !== note.list && !lst.archived))}
-          </div>
-          
-          {noteLists.some(lst => lst.archived) && (
+          {selectedWorkspace && (
             <>
-              <hr className="my-3" />
-              <div 
-                className="d-flex align-items-center cursor-pointer" 
-                onClick={() => setShowArchivedCategories(!showArchivedCategories)}
-              >
-                <span className="mr-2">
-                  {showArchivedCategories ? '▼' : '▶'}
-                </span>
-                <h6 className="mb-0">Archived Categories</h6>
+              <div className="mb-3">
+                <h6 className="text-primary mb-2">Workspace Categories</h6>
+                {renderCategoryButtons(
+                  noteLists.filter(lst => 
+                    lst.id !== note.list && 
+                    selectedWorkspace.categories.some(cat => cat.id === lst.id)
+                  )
+                )}
               </div>
-              
-              <Collapse in={showArchivedCategories}>
-                <div className="mt-2">
-                  {renderCategoryButtons(noteLists.filter(lst => lst.id !== note.list && lst.archived), true)}
-                </div>
-              </Collapse>
+              <hr className="my-3" />
             </>
           )}
+          
+          <div className="mb-3">
+            <h6 className="text-muted mb-2">Other Categories</h6>
+            {renderCategoryButtons(
+              noteLists.filter(lst => 
+                lst.id !== note.list && 
+                (!selectedWorkspace || !selectedWorkspace.categories.some(cat => cat.id === lst.id))
+              )
+            )}
+          </div>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowMoveModal(false)}>

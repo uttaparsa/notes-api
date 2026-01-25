@@ -2,15 +2,30 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from ..models import LocalMessageList, LocalMessage
+from ..models import LocalMessageList, LocalMessage, Workspace
 from ..serializers import NoteListSerializer
 
 class NoteListView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = NoteListSerializer
 
+class NoteListView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NoteListSerializer
+
     def get(self, request, format=None):
-        local_messages = LocalMessageList.objects.filter(user=request.user)
+        workspace_slug = request.query_params.get('workspace')
+        
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=request.user)
+                local_messages = workspace.get_visible_categories()
+            except Workspace.DoesNotExist:
+                return Response({"error": "Workspace not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Default behavior: show all categories for the user
+            local_messages = LocalMessageList.objects.filter(user=request.user)
+        
         serializer = self.serializer_class(local_messages, many=True)
         return Response(serializer.data)
 
@@ -32,30 +47,6 @@ class NoteListView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ArchiveMessageListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        try:
-            item = LocalMessageList.objects.get(pk=pk, user=request.user)
-            item.archived = True
-            item.save()
-            return Response("1", status=status.HTTP_200_OK)
-        except LocalMessageList.DoesNotExist:
-            return Response({"error": "LocalMessageList not found"}, status=status.HTTP_404_NOT_FOUND)
-
-class UnArchiveMessageListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk):
-        try:
-            item = LocalMessageList.objects.get(pk=pk, user=request.user)
-            item.archived = False
-            item.save()
-            return Response("1", status=status.HTTP_200_OK)
-        except LocalMessageList.DoesNotExist:
-            return Response({"error": "LocalMessageList not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class DeleteMessageListView(APIView):
     permission_classes = [IsAuthenticated]

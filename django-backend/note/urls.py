@@ -1,16 +1,22 @@
 from django.urls import path
 
 from .views.file_view import FileUploadView, serve_minio_file
-from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView, DeleteMessageListView
+from .views.list_view import NoteListView, DeleteMessageListView
 from .views.search_view import SearchResultsView
 from .views.note_view import NoteView, SingleNoteView, MoveMessageView, IncreaseImportanceView, DecreaseImportanceView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView, ImportantNotesView, NotePageView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
 from .views.similar_note_view import SimilarNotesView
 from .views.reminder_view import ReminderView, SingleReminderView
+from .views.workspace_view import WorkspaceListView, WorkspaceDetailView, WorkspaceCategoriesView, DefaultWorkspaceView
 
 
 urlpatterns = [
+    # Workspace endpoints
+    path('workspaces/', WorkspaceListView.as_view(), name='workspaces'),
+    path('workspaces/default/', DefaultWorkspaceView.as_view(), name='default-workspace'),
+    path('workspaces/<int:pk>/', WorkspaceDetailView.as_view(), name='workspace-detail'),
+    path('workspaces/<int:pk>/categories/', WorkspaceCategoriesView.as_view(), name='workspace-categories'),
         
     # Reminder endpoints
     path('reminders/', ReminderView.as_view(), name='reminders'),
@@ -18,8 +24,6 @@ urlpatterns = [
     
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('files/<path:file_path>', serve_minio_file, name='serve_minio_file'),
-    path('list/<int:pk>/archive/', ArchiveMessageListView.as_view(), name='archive-list'),
-    path('list/<int:pk>/unarchive/', UnArchiveMessageListView.as_view(), name='unarchive-list'),
     path('list/<int:pk>/delete/', DeleteMessageListView.as_view(), name='delete-list'),
     path('list/<int:pk>/', NoteListView.as_view(), name='note-list-detail'),
     path('list/', NoteListView.as_view(), name='note-list'),

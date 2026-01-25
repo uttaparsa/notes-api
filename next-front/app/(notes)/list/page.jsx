@@ -2,8 +2,8 @@
 
 import React, { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
-import { Container, ListGroup, Button, Modal, Form, Dropdown, Badge } from 'react-bootstrap';
-import { NoteListContext, ToastContext } from '../layout';
+import { Container, ListGroup, Button, Modal, Form, Dropdown, Badge, Card, Row, Col } from 'react-bootstrap';
+import { NoteListContext, WorkspaceContext, ToastContext } from '../layout';
 import { fetchWithAuth } from '../../lib/api';
 
 export default function CategoryList() {
@@ -13,11 +13,24 @@ export default function CategoryList() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedList, setSelectedList] = useState(null);
   const [renameListName, setRenameListName] = useState('');
+  
+  // Workspace related state
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState('');
+  const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
+  const [showWorkspaceRenameModal, setShowWorkspaceRenameModal] = useState(false);
+  const [showWorkspaceDeleteModal, setShowWorkspaceDeleteModal] = useState(false);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+  const [renameWorkspaceName, setRenameWorkspaceName] = useState('');
+  const [renameWorkspaceDescription, setRenameWorkspaceDescription] = useState('');
+  
   const noteLists = useContext(NoteListContext);
+  const workspaces = useContext(WorkspaceContext);
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
     window.dispatchEvent(new Event('updateNoteLists'));
+    window.dispatchEvent(new Event('updateWorkspaces'));
   }, []);
 
   const handleApiCall = async (apiCall, successMessage, errorMessage) => {
@@ -34,16 +47,6 @@ export default function CategoryList() {
     }
   };
 
-  const toggleShowInFeed = (list) => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${list.id}/`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ show_in_feed: !list.show_in_feed }),
-    }),
-    null,
-    'Failed to update show in feed setting'
-  );
-
   const toggleDisableRelated = (list) => handleApiCall(
     () => fetchWithAuth(`/api/note/list/${list.id}/`, {
       method: 'PATCH',
@@ -52,18 +55,6 @@ export default function CategoryList() {
     }),
     null,
     'Failed to update disable related setting'
-  );
-
-  const archiveTopic = (topicId) => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${topicId}/archive/`, { method: 'GET' }),
-    null,
-    'Failed to archive topic'
-  );
-
-  const unArchiveTopic = (topicId) => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${topicId}/unarchive/`, { method: 'GET' }),
-    null,
-    'Failed to unarchive topic'
   );
 
   const sendNewListName = () => handleApiCall(
@@ -114,84 +105,197 @@ export default function CategoryList() {
     setSelectedList(null);
   });
 
+  // Workspace functions
+  const createWorkspace = () => handleApiCall(
+    () => fetchWithAuth('/api/note/workspaces/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        name: newWorkspaceName,
+        description: newWorkspaceDescription 
+      }),
+    }),
+    'Workspace created',
+    'Failed to create workspace'
+  ).then(() => {
+    setShowWorkspaceModal(false);
+    setNewWorkspaceName('');
+    setNewWorkspaceDescription('');
+  });
+
+  const renameWorkspace = () => handleApiCall(
+    () => fetchWithAuth(`/api/note/workspaces/${selectedWorkspace.id}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        name: renameWorkspaceName,
+        description: renameWorkspaceDescription 
+      }),
+    }),
+    'Workspace renamed',
+    'Failed to rename workspace'
+  ).then(() => {
+    setShowWorkspaceRenameModal(false);
+    setRenameWorkspaceName('');
+    setRenameWorkspaceDescription('');
+  });
+
+  const openWorkspaceRenameModal = (workspace) => {
+    setSelectedWorkspace(workspace);
+    setRenameWorkspaceName(workspace.name);
+    setRenameWorkspaceDescription(workspace.description || '');
+    setShowWorkspaceRenameModal(true);
+  };
+
+  const openWorkspaceDeleteModal = (workspace) => {
+    setSelectedWorkspace(workspace);
+    setShowWorkspaceDeleteModal(true);
+  };
+
+  const deleteWorkspace = () => handleApiCall(
+    () => fetchWithAuth(`/api/note/workspaces/${selectedWorkspace.id}/`, {
+      method: 'DELETE',
+    }),
+    'Workspace deleted',
+    'Failed to delete workspace'
+  ).then(() => {
+    setShowWorkspaceDeleteModal(false);
+    setSelectedWorkspace(null);
+  });
+
   return (
     <Container className="py-4">
-      <ListGroup>
-        {noteLists.map((lst, lst_idx) => (
-          <React.Fragment key={lst.id}>
-            {lst_idx > 0 && lst_idx < (noteLists.length - 1) && lst.archived !== noteLists[lst_idx - 1].archived && (
-              <hr className="my-3" />
-            )}
-            <ListGroup.Item 
-              className="d-flex justify-content-between align-items-center mb-2"
-              variant="secondary"
-            >
-              <div className="d-flex align-items-center gap-2">
-                <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
-                  {lst.name}
-                </Link>
-                {lst.show_in_feed && (
-                  <Badge bg="secondary" pill>
-                    Feed
-                  </Badge>
-                )}
-                {!lst.disable_related && (
-                  <Badge bg="primary" pill>
-                    Related
-                  </Badge>
-                )}
-              </div>
-              <Dropdown align="end">
-                <Dropdown.Toggle variant="outline-secondary" size="sm">
-                  Actions
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => toggleShowInFeed(lst)}>
-                    <Form.Check
-                      type="checkbox"
-                      checked={lst.show_in_feed}
-                      onChange={() => {}}
-                      label="Show in feed"
-                      className="mb-0"
-                      readOnly
-                    />
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => toggleDisableRelated(lst)}>
-                    <Form.Check
-                      type="checkbox"
-                      checked={!lst.disable_related}
-                      onChange={() => {}}
-                      label="Show related messages"
-                      className="mb-0"
-                      readOnly
-                    />
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item onClick={() => openRenameModal(lst)}>
-                    Rename
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => lst.archived ? unArchiveTopic(lst.id) : archiveTopic(lst.id)}>
-                    {lst.archived ? "Unarchive" : "Archive"}
-                  </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item 
-                    onClick={() => openDeleteModal(lst)}
-                    className="text-danger"
-                  >
-                    Delete
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </ListGroup.Item>
-          </React.Fragment>
-        ))}
-      </ListGroup>
+      <Row>
+        <Col md={6}>
+          <Card className="mb-4">
+            <Card.Header>
+              <h4 className="mb-0">Categories</h4>
+            </Card.Header>
+            <Card.Body>
+              <ListGroup variant="flush">
+                {noteLists.map((lst, lst_idx) => (
+                  <React.Fragment key={lst.id}>
+                    <ListGroup.Item 
+                      className="d-flex justify-content-between align-items-center mb-2"
+                      variant="secondary"
+                    >
+                      <div className="d-flex align-items-center gap-2">
+                        <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
+                          {lst.name}
+                        </Link>
+                        {!lst.disable_related && (
+                          <Badge bg="primary" pill>
+                            Related
+                          </Badge>
+                        )}
+                        {lst.workspaces && lst.workspaces.length > 0 && (
+                          <Badge bg="info" pill>
+                            {lst.workspaces.length} WS
+                          </Badge>
+                        )}
+                      </div>
+                      <Dropdown align="end">
+                        <Dropdown.Toggle variant="outline-secondary" size="sm">
+                          Actions
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item onClick={() => toggleDisableRelated(lst)}>
+                            <Form.Check
+                              type="checkbox"
+                              checked={!lst.disable_related}
+                              onChange={() => {}}
+                              label="Show related messages"
+                              className="mb-0"
+                              readOnly
+                            />
+                          </Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item onClick={() => openRenameModal(lst)}>
+                            Rename
+                          </Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item 
+                            onClick={() => openDeleteModal(lst)}
+                            className="text-danger"
+                          >
+                            Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </ListGroup.Item>
+                  </React.Fragment>
+                ))}
+              </ListGroup>
 
-      <div className="text-center mt-4">
-        <Button variant="primary" size="lg" onClick={() => setShowModal(true)}>
-          Create New List
-        </Button>
-      </div>
+              <div className="text-center mt-4">
+                <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+                  Create New Category
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={6}>
+          <Card className="mb-4">
+            <Card.Header>
+              <h4 className="mb-0">Workspaces</h4>
+            </Card.Header>
+            <Card.Body>
+              <ListGroup variant="flush">
+                {workspaces.map((workspace) => (
+                  <ListGroup.Item 
+                    key={workspace.id}
+                    className="d-flex justify-content-between align-items-center mb-2"
+                  >
+                    <div>
+                      <div className="fw-bold">
+                        <Link href={`/workspace/${workspace.slug}/`} className="text-decoration-none">
+                          {workspace.name}
+                        </Link>
+                        {workspace.is_default && (
+                          <Badge bg="success" className="ms-2">Default</Badge>
+                        )}
+                      </div>
+                      {workspace.description && (
+                        <small className="text-muted">{workspace.description}</small>
+                      )}
+                      <div className="mt-1">
+                        <small className="text-muted">
+                          {workspace.categories.length} categories
+                        </small>
+                      </div>
+                    </div>
+                    <Dropdown align="end">
+                      <Dropdown.Toggle variant="outline-secondary" size="sm">
+                        Actions
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => openWorkspaceRenameModal(workspace)}>
+                          Rename
+                        </Dropdown.Item>
+                        <Dropdown.Divider />
+                        <Dropdown.Item 
+                          onClick={() => openWorkspaceDeleteModal(workspace)}
+                          className="text-danger"
+                        >
+                          Delete
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+
+              <div className="text-center mt-4">
+                <Button variant="success" size="sm" onClick={() => setShowWorkspaceModal(true)}>
+                  Create New Workspace
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
@@ -245,17 +349,106 @@ export default function CategoryList() {
 
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Delete List</Modal.Title>
+          <Modal.Title>Delete Category</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Are you sure you want to delete the list "{selectedList?.name}"?</p>
-          <p className="text-danger">This action cannot be undone. The list must be empty to be deleted.</p>
+          <p>Are you sure you want to delete the category "{selectedList?.name}"?</p>
+          <p className="text-danger">This action cannot be undone. The category must be empty to be deleted.</p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
           <Button variant="danger" onClick={deleteList}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Workspace Modals */}
+      <Modal show={showWorkspaceModal} onHide={() => setShowWorkspaceModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Create New Workspace</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Workspace Name</Form.Label>
+            <Form.Control
+              type="text"
+              value={newWorkspaceName}
+              onChange={(e) => setNewWorkspaceName(e.target.value)}
+              placeholder="Enter workspace name"
+            />
+          </Form.Group>
+          <Form.Group>
+            <Form.Label>Description (Optional)</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={newWorkspaceDescription}
+              onChange={(e) => setNewWorkspaceDescription(e.target.value)}
+              placeholder="Enter workspace description"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowWorkspaceModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="success" onClick={createWorkspace}>
+            Create Workspace
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showWorkspaceRenameModal} onHide={() => setShowWorkspaceRenameModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Rename Workspace</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Workspace Name</Form.Label>
+            <Form.Control
+              type="text"
+              value={renameWorkspaceName}
+              onChange={(e) => setRenameWorkspaceName(e.target.value)}
+              placeholder="Enter new workspace name"
+            />
+          </Form.Group>
+          <Form.Group>
+            <Form.Label>Description (Optional)</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={renameWorkspaceDescription}
+              onChange={(e) => setRenameWorkspaceDescription(e.target.value)}
+              placeholder="Enter workspace description"
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowWorkspaceRenameModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={renameWorkspace}>
+            Rename Workspace
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showWorkspaceDeleteModal} onHide={() => setShowWorkspaceDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Workspace</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete the workspace "{selectedWorkspace?.name}"?</p>
+          <p className="text-danger">This action cannot be undone. Categories in this workspace will remain but won't be associated with any workspace.</p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowWorkspaceDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteWorkspace}>
             Delete
           </Button>
         </Modal.Footer>

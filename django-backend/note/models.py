@@ -62,10 +62,9 @@ class NoteRevision(models.Model):
 class LocalMessageList(models.Model):
     name = models.CharField(max_length=255, default="")
     slug = models.SlugField(default="n")
-    archived = models.BooleanField(default=False, null=False)
-    show_in_feed = models.BooleanField(default=True, null=False)
     disable_related = models.BooleanField(default=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='message_lists')
+    workspaces = models.ManyToManyField('Workspace', related_name='categories', blank=True)
 
     class Meta:
         unique_together = ('name', 'user')
@@ -73,6 +72,44 @@ class LocalMessageList(models.Model):
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
         super(LocalMessageList, self).save(*args, **kwargs)
+
+
+class Workspace(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspaces')
+    default_category = models.ForeignKey(LocalMessageList, on_delete=models.SET_NULL, null=True, blank=True, related_name='default_for_workspaces')
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('name', 'user')
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name)
+        # Ensure only one default workspace per user
+        if self.is_default:
+            Workspace.objects.filter(user=self.user, is_default=True).exclude(pk=self.pk).update(is_default=False)
+        super(Workspace, self).save(*args, **kwargs)
+
+    def get_visible_categories(self):
+        """Get categories visible in this workspace"""
+        if self.is_default:
+            # Default workspace shows categories not assigned to any non-default workspace
+            return LocalMessageList.objects.filter(user=self.user).exclude(workspaces__is_default=False).distinct()
+        else:
+            # Regular workspace shows only categories assigned to it
+            return self.categories.all()
+
+    @property
+    def is_archived_category(self, category):
+        """Check if a category is considered archived in this workspace"""
+        if self.is_default:
+            return False  # No categories are archived anymore
+        else:
+            return not self.categories.filter(id=category.id).exists()
 
 
 def get_image_upload_path(instance, filename):
