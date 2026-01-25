@@ -472,8 +472,9 @@ class ImportantNotesView(APIView):
         ).order_by('-importance', '-created_at')
 
         if not slug or slug == "All":
-            # For important notes, show from all categories regardless of workspace
-            queryset = base_queryset
+            # For important notes, filter by workspace like regular notes
+            list_ids = get_shown_list_ids(request.user, workspace)
+            queryset = base_queryset.filter(list__in=list_ids)
         else:
             try:
                 lst = LocalMessageList.objects.get(slug=slug, user=request.user)
