@@ -36,12 +36,25 @@ some words are used interchangably as the code have evaloved.
 category: LocalMessageList, note list
 note: LocalMessage
 
-## Useful files
+## Development Operations
 
-- you can restore the database from backups using `scripts/restore_db.sh`
-- you can backup the database using `scripts/backup_db.sh`
-- there is a separate dev docker compose file at `docker-compose.dev.yml`. that can be used with `scripts/dev_tools.sh` script. any task with manage.py can be run using this script
-- to generate embeddings for notes, use `python manage.py generate_embeddings` command
+### Database Management (Development)
+
+- **Restore database from backup**: `scripts/restore_db.sh`
+- **Create database backup**: `scripts/backup_db.sh`
+
+### Django Management Commands (Development)
+
+⚠️ **IMPORTANT**: Always use the Docker wrapper script for Django commands in development.
+
+- **Run ANY Django management command**: `scripts/dev_tools.sh <command>`
+
+- **Generate embeddings for notes**: `scripts/dev_tools.sh generate_embeddings`
+
+### Docker Configuration (Development)
+
+- Development uses a separate Docker Compose file: `docker-compose.dev.yml`
+- The `scripts/dev_tools.sh` script automatically uses this configuration
 
 ## Database
 
