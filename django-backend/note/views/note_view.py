@@ -293,7 +293,7 @@ class UnArchiveMessageView(APIView):
         except LocalMessage.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
-class PinMessageView(APIView):
+class IncreaseImportanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
@@ -306,7 +306,7 @@ class PinMessageView(APIView):
         except LocalMessage.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
-class UnPinMessageView(APIView):
+class DecreaseImportanceView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, **kwargs):
@@ -412,7 +412,7 @@ class NoteRevisionView(APIView):
         return Response(serializer.data)
 
 
-class PinnedNotesView(APIView):
+class ImportantNotesView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = MessageSerializer
 

@@ -5,8 +5,8 @@ import FileUploadComponent from "../FileUploadComponent";
 import SaveButton from "../buttons/edit_buttons/SaveButton";
 import RtlToggleButton from "../buttons/edit_buttons/RtlToggleButton";
 import PreviewToggleButton from "../buttons/edit_buttons/PreviewToggleButton";
-import PinButton from "../buttons/edit_buttons/PinButton";
-import UnpinButton from "../buttons/edit_buttons/UnpinButton";
+import IncreaseImportanceButton from "../buttons/edit_buttons/IncreaseImportanceButton";
+import DecreaseImportanceButton from "../buttons/edit_buttons/DecreaseImportanceButton";
 import RevisionHistoryButton from "../buttons/edit_buttons/RevisionHistoryButton";
 import styles from "./NoteCard.module.css";
 import { fetchWithAuth } from "../../lib/api";
@@ -144,37 +144,37 @@ const EditNoteModal = ({
         );
     };
 
-    const pinMessage = async () => {
+    const increaseImportance = async () => {
         try {
             const response = await fetchWithAuth(
-                `/api/note/message/pin/${note.id}/`
+                `/api/note/message/increase_importance/${note.id}/`
             );
             if (!response.ok) {
-                throw new Error("Failed to pin message");
+                throw new Error("Failed to increase importance");
             }
-            showToast("Success", "Message pinned", 3000, "success");
+            showToast("Success", "Importance increased", 3000, "success");
             window.dispatchEvent(new Event("updateNoteLists"));
             onHide();
             refreshNotes();
         } catch (err) {
-            console.error("Error pinning message:", err);
+            console.error("Error increasing importance:", err);
             handleApiError(err);
         }
     };
 
-    const unPinMessage = async () => {
+    const decreaseImportance = async () => {
         try {
             const response = await fetchWithAuth(
-                `/api/note/message/unpin/${note.id}/`
+                `/api/note/message/decrease_importance/${note.id}/`
             );
             if (!response.ok) {
-                throw new Error("Failed to unpin message");
+                throw new Error("Failed to decrease importance");
             }
-            showToast("Success", "Message unpinned", 3000, "success");
+            showToast("Success", "Importance decreased", 3000, "success");
             refreshNotes();
             onHide();
         } catch (err) {
-            console.error("Error unpinning message:", err);
+            console.error("Error decreasing importance:", err);
             handleApiError(err);
         }
     };
@@ -227,14 +227,14 @@ const EditNoteModal = ({
                     {!singleView && (
                             <>
                                 {note.importance < 4 && (
-                                    <PinButton 
-                                        onClick={pinMessage}
+                                    <IncreaseImportanceButton 
+                                        onClick={increaseImportance}
                                         className="mr-2 btn-sm"
                                     />
                                 )}
                                 {note.importance > 0 && (
-                                    <UnpinButton 
-                                        onClick={unPinMessage}
+                                    <DecreaseImportanceButton 
+                                        onClick={decreaseImportance}
                                         className="mr-2 btn-sm"
                                     />
                                 )}
@@ -332,16 +332,16 @@ const EditNoteModal = ({
                                 {!singleView && (
                                     <>
                                         {note.importance < 4 && (
-                                            <PinButton 
-                                                onClick={pinMessage}
+                                            <IncreaseImportanceButton 
+                                                onClick={increaseImportance}
                                                 className="btn-sm"
                                                 width={16}
                                                 height={16}
                                             />
                                         )}
                                         {note.importance > 0 && (
-                                            <UnpinButton 
-                                                onClick={unPinMessage}
+                                            <DecreaseImportanceButton 
+                                                onClick={decreaseImportance}
                                                 className="btn-sm"
                                                 width={16}
                                                 height={16}

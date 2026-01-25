@@ -3,7 +3,7 @@ from django.urls import path
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, ArchiveMessageListView, UnArchiveMessageListView, DeleteMessageListView
 from .views.search_view import SearchResultsView
-from .views.note_view import NoteView, SingleNoteView, MoveMessageView, PinMessageView, UnPinMessageView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView, PinnedNotesView, NotePageView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, IncreaseImportanceView, DecreaseImportanceView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView, ImportantNotesView, NotePageView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
 from .views.similar_note_view import SimilarNotesView
@@ -25,9 +25,9 @@ urlpatterns = [
     path('list/', NoteListView.as_view(), name='note-list'),
     path('search/', SearchResultsView.as_view()),
     
-    # Pinned notes endpoints (must be before the slug catch-all)
-    path('pinned/', PinnedNotesView.as_view(), name='pinned-notes'),
-    path('pinned/<slug>/', PinnedNotesView.as_view(), name='pinned-notes-by-list'),
+    # Important notes endpoints (must be before the slug catch-all)
+    path('important/', ImportantNotesView.as_view(), name='important-notes'),
+    path('important/<slug>/', ImportantNotesView.as_view(), name='important-notes-by-list'),
     
     path('', NoteView.as_view()),
 
@@ -39,8 +39,8 @@ urlpatterns = [
 
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),
-    path('message/pin/<int:note_id>/', PinMessageView.as_view(), name='pin-message'),
-    path('message/unpin/<int:note_id>/', UnPinMessageView.as_view(), name='unpin-message'),
+    path('message/increase_importance/<int:note_id>/', IncreaseImportanceView.as_view(), name='increase-importance'),
+    path('message/decrease_importance/<int:note_id>/', DecreaseImportanceView.as_view(), name='decrease-importance'),
     path('message/archive/<int:note_id>/', ArchiveMessageView.as_view(), name='archive-message'),
     path('message/unarchive/<int:note_id>/', UnArchiveMessageView.as_view(), name='unarchive-message'),
     path('pp/', PublicNoteView.as_view()),

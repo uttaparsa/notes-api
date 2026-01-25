@@ -40,7 +40,7 @@ note: LocalMessage
 
 - you can restore the database from backups using `scripts/restore_db.sh`
 - you can backup the database using `scripts/backup_db.sh`
-- there is a separate dev docker compose file at `docker-compose.dev.yml`. that can be used with `scripts/dev_tools.sh` script
+- there is a separate dev docker compose file at `docker-compose.dev.yml`. that can be used with `scripts/dev_tools.sh` script. any task with manage.py can be run using this script
 - to generate embeddings for notes, use `python manage.py generate_embeddings` command
 
 ## Database

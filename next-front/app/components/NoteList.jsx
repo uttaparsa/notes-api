@@ -37,7 +37,7 @@ export default function NoteList({
     }
   }, [newNoteId]);
 
-  // Handle highlight from pinned notes navigation
+  // Handle highlight from important notes navigation
   useEffect(() => {
     if (highlightNoteId && !isBusy && notes.length > 0) {
       const noteId = parseInt(highlightNoteId);
@@ -58,17 +58,18 @@ export default function NoteList({
     }
   }, [highlightNoteId, isBusy, notes]);
 
-  const handlePinUpdate = async (note, pinned) => {
+  const handleImportanceUpdate = async (note, increase) => {
     window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Updating note' }));
     try {
-      const url = `/api/note/message/${pinned ? 'pin' : 'unpin'}/${note.id}/`;
+      const action = increase ? 'increase_importance' : 'decrease_importance';
+      const url = `/api/note/message/${action}/${note.id}/`;
       const response = await fetchWithAuth(url, { method: 'POST' });
-      if (!response.ok) throw new Error('Failed to update pin status');
+      if (!response.ok) throw new Error('Failed to update importance');
       
-      onUpdateNote(note.id, { pinned });
+      onUpdateNote(note.id, { importance: increase ? note.importance + 1 : note.importance - 1 });
       refreshNotes();
     } catch (err) {
-      console.error('Error updating pin status:', err);
+      console.error('Error updating importance:', err);
       handleApiError(err);
     } finally {
       window.dispatchEvent(new CustomEvent('hideWaitingModal'));
@@ -201,8 +202,7 @@ export default function NoteList({
                     note={note}
                     singleView={false}
                     hideEdits={hideEdits}
-                    onPin={() => handlePinUpdate(note, true)}
-                    onUnpin={() => handlePinUpdate(note, false)}
+
                     onArchived={() => handleArchiveUpdate(note, true)}
                     onUnarchived={() => handleArchiveUpdate(note, false)}
                     onDeleteNote={handleDelete}
