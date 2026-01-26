@@ -185,10 +185,7 @@ class SimilarNoteSerializer(serializers.Serializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         
-        # Convert distance to a similarity score between 0 and 1
-        # Lower distance means higher similarity
-        max_distance = 4.0  # This might need adjustment based on your embeddings
-        representation['similarity_score'] = max(0, 1 - (representation['similarity_score'] / max_distance))
+        # similarity_score is already calculated in the view, no need to convert
         
         # Truncate text if needed (adjustable length)
         max_length = 200  # Adjust this value as needed

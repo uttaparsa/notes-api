@@ -33,26 +33,32 @@ urlpatterns = [
     path('important/', ImportantNotesView.as_view(), name='important-notes'),
     path('important/<slug>/', ImportantNotesView.as_view(), name='important-notes-by-list'),
     
-    path('<slug>/', NoteView.as_view()),
-    path('', NoteView.as_view()),
-
+    # Message-specific endpoints
     re_path(r'message/(?P<note_id>\d+)/similar/?$', SimilarNotesView.as_view(), name='similar-notes'),
-    path('similar/', SimilarNotesView.as_view(), name='similar-text'),
-
     path('message/<int:note_id>/chunks/', NoteChunksView.as_view(), name='note-chunks'),
     path('message/<int:note_id>/page/', NotePageView.as_view(), name='note-page'),
-
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),
     path('message/increase_importance/<int:note_id>/', IncreaseImportanceView.as_view(), name='increase-importance'),
     path('message/decrease_importance/<int:note_id>/', DecreaseImportanceView.as_view(), name='decrease-importance'),
     path('message/archive/<int:note_id>/', ArchiveMessageView.as_view(), name='archive-message'),
     path('message/unarchive/<int:note_id>/', UnArchiveMessageView.as_view(), name='unarchive-message'),
-    path('pp/', PublicNoteView.as_view()),
-    path('<slug>/', NoteView.as_view()),
-    path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
+
+    # Similar text search (POST endpoint)
+    path('similar/', SimilarNotesView.as_view(), name='similar-text'),
+
+    # Stats endpoints
     path('stats/revisions/', RevisionStatsView.as_view(), name='revision-stats'),
     path('stats/notes/', NoteStatsView.as_view(), name='note-stats'),
     path('stats/access/', FileAccessStatsView.as_view(), name='file-access'),
 
+    # Revisions
+    path('revisions/<int:note_id>/', NoteRevisionView.as_view(), name='note-revisions'),
+
+    # Public notes
+    path('pp/', PublicNoteView.as_view()),
+
+    # Catch-all patterns (must be last)
+    path('<slug>/', NoteView.as_view()),
+    path('', NoteView.as_view()),
 ]
