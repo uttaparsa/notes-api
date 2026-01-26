@@ -11,7 +11,7 @@ import RtlToggleButton from './buttons/edit_buttons/RtlToggleButton';
 import PreviewToggleButton from './buttons/edit_buttons/PreviewToggleButton';
 import NoteTextRenderer from './notecard/markdown/MarkdownRenderers';
 
-export default function MessageInput({ listSlug, onNoteSaved }) {
+export default function MessageInput({ listSlug, onNoteSaved, selectedWorkspace }) {
   const [text, setText] = useState('');
   const [uploading, setUploading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -73,7 +73,10 @@ export default function MessageInput({ listSlug, onNoteSaved }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ 
+          text,
+          ...(selectedWorkspace && { workspace: selectedWorkspace.slug })
+        }),
       });
 
       if (!response.ok) {

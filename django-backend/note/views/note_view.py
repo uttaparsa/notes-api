@@ -358,12 +358,35 @@ def get_list_by_slug(slug, user):
         return LocalMessageList.objects.filter(user=user).first()
     return get_object_or_404(LocalMessageList, slug=slug, user=user)
 
+def get_target_list_for_creation(slug, user, workspace):
+    print(f"getting target list for creation with slug {slug}, user {user}, workspace {workspace}")
+    if slug == "All":
+        if workspace:
+            if workspace.default_category:
+                return workspace.default_category
+            else:
+                # fallback to first visible category
+                visible = workspace.get_visible_categories()
+                return visible.first() if visible.exists() else None
+        else:
+            # get default workspace
+            try:
+                default_workspace = Workspace.objects.get(user=user, is_default=True)
+                if default_workspace.default_category:
+                    return default_workspace.default_category
+                else:
+                    visible = default_workspace.get_visible_categories()
+                    return visible.first() if visible.exists() else None
+            except Workspace.DoesNotExist:
+                return LocalMessageList.objects.filter(user=user).first()
+    else:
+        return get_list_by_slug(slug, user)
+
 def filter_notes_by_slug(queryset, slug, user, workspace=None):
     if not slug:
         return LocalMessage.objects.none()
     if slug == "All":
         list_ids = get_shown_list_ids(user, workspace)
-        print(f"shown list ids are {list_ids}") 
         return queryset.filter(list__in=list_ids)
     lst = get_list_by_slug(slug, user)
     if not lst:
@@ -412,7 +435,7 @@ class NoteView(GenericAPIView, ListModelMixin):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            lst = get_list_by_slug(kwargs.get('slug'), request.user)
+            lst = get_target_list_for_creation(kwargs.get('slug'), request.user, workspace)
             if not lst:
                 return Response(
                     {"error": "No lists found for user"},

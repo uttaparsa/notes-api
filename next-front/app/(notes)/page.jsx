@@ -186,7 +186,7 @@ export default function NotesPage() {
           </Col>
         </Row>
       </div>
-      <MessageInput onNoteSaved={addNewNote} listSlug={''} />
+      <MessageInput onNoteSaved={addNewNote} listSlug={'All'} selectedWorkspace={selectedWorkspace} />
     </div>
   );
 }

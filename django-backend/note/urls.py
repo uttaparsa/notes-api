@@ -33,6 +33,7 @@ urlpatterns = [
     path('important/', ImportantNotesView.as_view(), name='important-notes'),
     path('important/<slug>/', ImportantNotesView.as_view(), name='important-notes-by-list'),
     
+    path('<slug>/', NoteView.as_view()),
     path('', NoteView.as_view()),
 
     re_path(r'message/(?P<note_id>\d+)/similar/?$', SimilarNotesView.as_view(), name='similar-notes'),
