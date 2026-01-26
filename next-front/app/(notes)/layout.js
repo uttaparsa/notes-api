@@ -20,7 +20,7 @@ import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 
 export const NoteListContext = createContext([]);
 export const WorkspaceContext = createContext([]);
-export const SelectedWorkspaceContext = createContext(null);
+export const SelectedWorkspaceContext = createContext({ selectedWorkspace: null, selectWorkspace: () => {} });
 export const ModalContext = createContext({});
 export const ToastContext = createContext({});
 export const AuthContext = createContext();
