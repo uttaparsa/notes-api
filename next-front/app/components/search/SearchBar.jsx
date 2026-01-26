@@ -1,11 +1,13 @@
 import { useState, useEffect, useContext } from 'react';
 import { NoteListContext } from '../../(notes)/layout';
+import { SelectedWorkspaceContext } from '../../(notes)/layout';
 import { Form, Button, InputGroup, Collapse } from 'react-bootstrap';
 
-export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All', selectedWorkspace = null }) {
+export default function SearchBar({ onSearch, initialSearchText = '', initialListSlug = 'All' }) {
   const [searchText, setSearchText] = useState(initialSearchText);
   const [showFilters, setShowFilters] = useState(false);
   const noteLists = useContext(NoteListContext);
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const [selectedCategories, setSelectedCategories] = useState(new Set());
   const [showNonWorkspaceCategories, setShowNonWorkspaceCategories] = useState(false);
   

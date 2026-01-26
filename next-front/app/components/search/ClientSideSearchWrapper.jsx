@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useContext } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormCheck, Row, Col } from 'react-bootstrap';
 import NoteList from '../NoteList';
@@ -8,7 +8,6 @@ import SearchBar from './SearchBar';
 import PaginationComponent from '../PaginationComponent';
 import { fetchWithAuth } from '../../lib/api';
 import { handleApiError } from '../../utils/errorHandler';
-import { SelectedWorkspaceContext } from '../../(notes)/layout';
 
 export default function ClientSideSearchWrapper() {
   const [notes, setNotes] = useState([]);
@@ -19,7 +18,6 @@ export default function ClientSideSearchWrapper() {
   const [listSlug, setListSlug] = useState('All');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const perPage = 20;
 
   const [currentPage, setCurrentPage] = useState(() => {
@@ -121,7 +119,6 @@ export default function ClientSideSearchWrapper() {
         onSearch={handleSearch}
         initialSearchText={searchText}
         initialListSlug={listSlug}
-        selectedWorkspace={selectedWorkspace}
       />
       <div dir="ltr">
         <PaginationComponent

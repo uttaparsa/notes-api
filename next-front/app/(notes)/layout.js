@@ -154,7 +154,7 @@ export default function RootLayout({ children }) {
                 <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
                   <ToastContext.Provider value={showToast}>
                 <ExternalLinkProvider>
-                  <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} workspaces={workspaces} selectedWorkspace={selectedWorkspace} selectWorkspace={selectWorkspace} />
+                  <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} workspaces={workspaces} />
                   <div className="h-100" style={{minHeight: '100vh'}}>
                     {children}
                     <BootstrapClient />

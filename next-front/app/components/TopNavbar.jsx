@@ -1,9 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import Link from 'next/link';
 import { Navbar, Nav, Container, Button, Dropdown } from 'react-bootstrap';
+import { SelectedWorkspaceContext } from '../(notes)/layout';
 
-export default function NavbarComponent({ isLoggedIn, onLogout, workspaces, selectedWorkspace, selectWorkspace }) {
+export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
+  const { selectedWorkspace, selectWorkspace } = useContext(SelectedWorkspaceContext);
   const [theme, setTheme] = useState('light');
 
   useEffect(() => {

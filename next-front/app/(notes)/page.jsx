@@ -138,7 +138,7 @@ export default function NotesPage() {
 
   return (
     <div dir="ltr" style={{ minHeight: '100vh', overflow: 'auto' }}>
-      <SearchBar onSearch={handleSearch} selectedWorkspace={selectedWorkspace} />
+      <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
         <PaginationComponent
           currentPage={currentPage}

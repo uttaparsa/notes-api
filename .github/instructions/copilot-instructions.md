@@ -7,7 +7,7 @@ I have a notes app.
 - The app is written in django 5. using SQlite to store data, and minio, to store note attachments.
 - I have session-based authentication
 - I use django rest framework
-- I use next js for front end. Though I am planning to migrate to react because I don't use server side features of it.
+- I use next js for front end(more info under `.github/instructions/next-front.instructions.md`). Though I am planning to migrate to react because I don't use server side features of it.
 - Also use react bootstrap 5 for the front end.
 - notes are parsed and shown as markdown
 - It has several features such as:
