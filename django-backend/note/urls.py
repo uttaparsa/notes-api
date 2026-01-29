@@ -3,7 +3,7 @@ from django.urls import path, re_path
 from .views.file_view import FileUploadView, serve_minio_file
 from .views.list_view import NoteListView, DeleteMessageListView
 from .views.search_view import SearchResultsView
-from .views.note_view import NoteView, SingleNoteView, MoveMessageView, IncreaseImportanceView, DecreaseImportanceView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, NoteChunksView, ImportantNotesView, NotePageView
+from .views.note_view import NoteView, SingleNoteView, MoveMessageView, IncreaseImportanceView, DecreaseImportanceView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, ImportantNotesView, NotePageView
 from .views.public_note_view import PublicNoteView
 from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsView
 from .views.similar_note_view import SimilarNotesView
@@ -35,7 +35,6 @@ urlpatterns = [
     
     # Message-specific endpoints
     re_path(r'message/(?P<note_id>\d+)/similar/?$', SimilarNotesView.as_view(), name='similar-notes'),
-    path('message/<int:note_id>/chunks/', NoteChunksView.as_view(), name='note-chunks'),
     path('message/<int:note_id>/page/', NotePageView.as_view(), name='note-page'),
     path('message/<int:note_id>/', SingleNoteView.as_view()),
     path('message/move/<int:note_id>/', MoveMessageView.as_view(), name='move-message'),

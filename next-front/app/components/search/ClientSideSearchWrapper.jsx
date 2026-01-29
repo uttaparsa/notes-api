@@ -162,6 +162,7 @@ export default function ClientSideSearchWrapper() {
               onDeleteNote={deleteNote}
               refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
               showHidden={showHidden}
+              listSlug={listSlug}
             />
           </Col>
         </Row>

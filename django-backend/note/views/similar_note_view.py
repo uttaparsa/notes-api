@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import LocalMessage, NoteChunk, NoteEmbedding, Link # Added Link
+from ..models import LocalMessage, NoteEmbedding, Link # Added Link
 from ..serializers import SimilarNoteSerializer
 import logging
 
@@ -98,7 +98,7 @@ class SimilarNotesView(APIView):
             )
     
     def post(self, request):
-        """Find similar notes and chunks for a given text input"""
+        """Find similar notes for a given text input"""
         # Get the text from the request
         text = request.data.get('text')
         if not text or len(text) < 10:
@@ -110,6 +110,8 @@ class SimilarNotesView(APIView):
         # Get optional parameters
         limit = int(request.data.get('limit', 3))
         exclude_note_id = request.data.get('exclude_note_id')
+        list_slugs = request.data.get('list_slug', 'All')
+        workspace_slug = request.data.get('workspace')
         
         if exclude_note_id:
             exclude_note_id = int(exclude_note_id)
@@ -118,7 +120,10 @@ class SimilarNotesView(APIView):
             all_found_items = self._find_similars_by_text(
                 text=text,
                 limit_per_type=limit, # This is the desired count for each type
-                exclude_note_id=exclude_note_id
+                exclude_note_id=exclude_note_id,
+                list_slugs=list_slugs,
+                workspace_slug=workspace_slug,
+                user=request.user
             )
             
             # Sort by similarity (higher score is better) and limit results
@@ -141,57 +146,50 @@ class SimilarNotesView(APIView):
         max_distance = 4.0
         return max(0, 1 - (distance / max_distance))
     
+    def _get_allowed_category_ids(self, list_slugs, workspace_slug, user):
+        """Get allowed category IDs based on list_slugs and workspace_slug"""
+        from ..models import LocalMessageList, Workspace
+        
+        if list_slugs.lower() == 'all' and not workspace_slug:
+            # No filtering needed
+            return None
+        
+        allowed_ids = set()
+        
+        # Get workspace if specified
+        workspace = None
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=user)
+            except Workspace.DoesNotExist:
+                return set()  # No allowed categories
+        
+        if list_slugs and list_slugs.lower() != 'all':
+            slug_list = [slug.strip() for slug in list_slugs.split(',')]
+            lists = LocalMessageList.objects.filter(slug__in=slug_list, user=user)
+            
+            if workspace:
+                visible_lists = workspace.get_visible_categories()
+                lists = lists.filter(id__in=visible_lists.values_list('id', flat=True))
+            
+            allowed_ids.update(lists.values_list('id', flat=True))
+        elif workspace:
+            # If workspace is specified but no specific lists, use all visible categories
+            visible_list_ids = workspace.get_visible_categories().values_list('id', flat=True)
+            allowed_ids.update(visible_list_ids)
+        
+        return allowed_ids if allowed_ids else None
     
-    def _find_similars_by_text(self, text, limit_per_type, exclude_note_id=None): # Removed mode parameter
-        """Helper method to find similar chunks and/or notes for arbitrary text"""
+    def _find_similars_by_text(self, text, limit_per_type, exclude_note_id=None, list_slugs='All', workspace_slug=None, user=None):
+        """Helper method to find similar notes for arbitrary text"""
+        # Get allowed category IDs based on list_slugs and workspace_slug
+        allowed_category_ids = self._get_allowed_category_ids(list_slugs, workspace_slug, user)
+        
         all_results = []
-        # Keep track of note IDs added to avoid duplicates from different sources (chunks vs full notes)
-        # or multiple chunks from the same note.
+        # Keep track of note IDs added to avoid duplicates
         added_note_ids = set()
 
-        # Find similar chunks
-        try:
-            # Fetch more chunks than limit_per_type to allow for filtering by score and parent note uniqueness
-            raw_similar_chunks = NoteChunk.find_similar_chunks(
-                chunk_text=text,
-                limit=limit_per_type * 3, # Fetch more to filter effectively
-                exclude_note_id=exclude_note_id
-            )
-            
-            chunks_count = 0
-            for chunk_data in raw_similar_chunks:
-                note_id = chunk_data.get('note_id')
-                distance = float(chunk_data.get('distance'))
-                sim_score = self._calculate_similarity_score(distance)
-
-                if sim_score >= 0.65 and note_id not in added_note_ids:
-                    try:
-                        parent_note = LocalMessage.objects.get(id=note_id)
-                        all_results.append({
-                            'id': note_id,
-                            'text': chunk_data.get('chunk_text'), # Chunk text
-                            'similarity_score': sim_score,
-                            'distance': distance,
-                            'is_full_note': False,
-                            'chunk_index': chunk_data.get('chunk_index'),
-                            'created_at': parent_note.created_at,
-                            'updated_at': parent_note.updated_at,
-                            'category': {
-                                'id': parent_note.list.id,
-                                'name': parent_note.list.name,
-                                'slug': parent_note.list.slug
-                            }
-                        })
-                        added_note_ids.add(note_id)
-                        chunks_count += 1
-                        if chunks_count >= limit_per_type:
-                            break 
-                    except LocalMessage.DoesNotExist:
-                        continue
-        except Exception as e:
-            logger.error(f"Error finding similar chunks for text '{text[:50]}...': {str(e)}")
-
-        # Find similar notes (full documents)
+        # Find similar notes
         try:
             text_embedding = NoteEmbedding.get_embedding(text)
             if text_embedding: # Proceed if embedding was successful
@@ -210,6 +208,9 @@ class SimilarNotesView(APIView):
                     if sim_score >= 0.65 and note_id not in added_note_ids:
                         try:
                             similar_note = LocalMessage.objects.get(id=note_id)
+                            # Filter by allowed categories
+                            if allowed_category_ids is not None and similar_note.list_id not in allowed_category_ids:
+                                continue
                             all_results.append({
                                 'id': similar_note.id,
                                 'text': similar_note.text, # Full note text

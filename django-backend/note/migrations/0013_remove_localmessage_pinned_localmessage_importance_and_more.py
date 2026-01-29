@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('note', '0012_note_chunksembedding'),
+        ('note', '0011_noteembedding'),
     ]
 
     operations = [

@@ -39,6 +39,6 @@ class EmbeddingRouter:
         return True
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
-        if model_name == 'noteembedding' or model_name == 'notechunk':
+        if model_name == 'noteembedding':
             return db == 'embeddings'
         return None

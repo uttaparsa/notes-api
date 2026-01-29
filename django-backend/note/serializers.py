@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, Reminder, Workspace
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, Reminder, Workspace
 import re
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
@@ -37,14 +37,7 @@ class MessageSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']  # Add this line
 
 
-class NoteChunkSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = NoteChunk
-        fields = ['note_id', 'chunk_index', 'chunk_text', 'created_at', 'updated_at']
 
-
-
-    
 
 class SearchSerializer(serializers.Serializer):
     q = serializers.CharField(required=True, help_text="Search query string")
@@ -171,13 +164,12 @@ class NoteRevisionSerializer(serializers.ModelSerializer):
 
 
 class SimilarNoteSerializer(serializers.Serializer):
-    """Serializer for similar notes and chunks results"""
+    """Serializer for similar notes results"""
     id = serializers.IntegerField()
     text = serializers.CharField()
     similarity_score = serializers.FloatField()
     distance = serializers.FloatField()
     is_full_note = serializers.BooleanField(default=True)
-    chunk_index = serializers.IntegerField(required=False, allow_null=True)
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
     category = serializers.DictField()

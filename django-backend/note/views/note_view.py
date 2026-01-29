@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from .pagination import DateBasedPagination
-from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteChunk, NoteEmbedding, Workspace
-from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer, NoteChunkSerializer
+from ..models import LocalMessage, LocalMessageList, Link, NoteRevision, NoteEmbedding, Workspace
+from ..serializers import MessageSerializer, MoveMessageSerializer, NoteRevisionSerializer
 import re 
 from django.utils import timezone
 from typing import Optional
@@ -28,18 +28,9 @@ def create_embeddings_async(note_id, note_text=None):
         if note_text is None:
             note_text = note.text
             
-        # Create chunks
-        chunks = note.update_chunks() if note_text else note.split_into_chunks()
-        
         # Create embedding for the note if it's not RTL
         if not NoteEmbedding.hasRTL(note_text):
             NoteEmbedding.create_for_note(note)
-            
-        # Create embeddings for chunks if there's more than one chunk
-        if len(chunks) > 1:
-            for chunk in chunks:
-                if not NoteEmbedding.hasRTL(chunk.chunk_text):
-                    chunk.create_embedding()
                     
         logger.info(f"Successfully created embeddings for note {note_id}")
     except Exception as e:
@@ -535,26 +526,3 @@ class NotePageView(APIView):
         })
 
 
-class NoteChunksView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, note_id, format=None):
-        try:
-            note = LocalMessage.objects.get(id=note_id, user=request.user)
-            chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
-            
-            if not chunks.exists():
-                note.update_chunks()
-                chunks = NoteChunk.objects.filter(note_id=note_id).order_by('chunk_index')
-            
-            serializer = NoteChunkSerializer(chunks, many=True)
-            return Response(serializer.data)
-            
-        except LocalMessage.DoesNotExist:
-            return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error retrieving note chunks: {str(e)}", exc_info=True)
-            return Response(
-                {"error": "Failed to retrieve note chunks"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )

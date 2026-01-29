@@ -125,93 +125,6 @@ class LocalMessage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     
-    def split_into_chunks(self):
-        """Split the note content into chunks using hierarchical splitting: first by headers, then by character count"""
-        
-        # Extract code blocks
-        code_blocks = []
-        text_without_code_blocks = self.text
-        
-        # Regex pattern for triple backtick code blocks
-        pattern = r"```(?:[a-zA-Z0-9]*\n)?(.*?)```"
-        
-        # Find all code blocks
-        matches = re.finditer(pattern, self.text, re.DOTALL)
-        offset = 0
-        
-        # Extract code blocks and remove them from text
-        for match in matches:
-            code_block = match.group(1).strip()
-            code_blocks.append(code_block)
-            
-            # Replace the code block with a placeholder to maintain text integrity
-            start, end = match.span()
-            start -= offset
-            end -= offset
-            text_without_code_blocks = text_without_code_blocks[:start] + " [CODE_BLOCK_PLACEHOLDER] " + text_without_code_blocks[end:]
-            offset += (end - start) - len(" [CODE_BLOCK_PLACEHOLDER] ")
-        
-
-        # Define headers to split on
-        headers_to_split_on = [
-            ("#", "Header 1"),
-            ("##", "Header 2"),
-            ("###", "Header 3"),
-            ("####", "Header 4"),
-            ("#####", "Header 5"),
-            ("######", "Header 6"),
-        ]
-        
-        # First split by markdown headers
-        markdown_splitter = MarkdownHeaderTextSplitter(
-            headers_to_split_on=headers_to_split_on, strip_headers=False
-        )
-
-        md_header_splits = markdown_splitter.split_text(text_without_code_blocks)
-        
-        # Then apply character-level splitting to the header-split documents
-        chunk_size = 750
-        chunk_overlap = 30
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=chunk_size, chunk_overlap=chunk_overlap
-        )
-        
-        # Split the header-split documents further by character count
-        splits = text_splitter.split_documents(md_header_splits)
-        
-        # Create and save NoteChunk objects for each chunk
-        note_chunks = []
-        chunk_index = 0
-        
-        for doc in splits:
-            note_chunk = NoteChunk.objects.create(
-                note_id=self.id,
-                chunk_index=chunk_index,
-                chunk_text=doc.page_content,
-            )
-            note_chunks.append(note_chunk)
-            chunk_index += 1
-
-                # Then add code blocks as separate chunks
-
-        for code_block in code_blocks:
-            note_chunk = NoteChunk.objects.create(
-                note_id=self.id,
-                chunk_index=chunk_index,
-                chunk_text=code_block,
-            )
-            note_chunks.append(note_chunk)
-            chunk_index += 1
-        
-        return note_chunks
-    
-    def update_chunks(self):
-        """Update chunks for this note"""
-        # Delete existing chunks
-        NoteChunk.objects.filter(note_id=self.id).delete()
-        
-        # Create new chunks
-        return self.split_into_chunks()
 
     def delete(self, *args, **kwargs):
         note_id_to_delete = self.id
@@ -231,16 +144,6 @@ class LocalMessage(models.Model):
                 [note_id_to_delete]
             )
 
-            # 2. Delete NoteChunk embeddings from note_chunk_embeddings_vec
-            # Retrieve all chunks for this note to get their chunk_index
-            chunks_to_delete = NoteChunk.objects.filter(note_id=note_id_to_delete)
-            for chunk in chunks_to_delete:
-                chunk_rowid = (chunk.note_id * 10000) + chunk.chunk_index
-                cursor.execute(
-                    "DELETE FROM note_chunk_embeddings_vec WHERE rowid = ?",
-                    [chunk_rowid]
-                )
-            
             db.commit()
         except sqlite3.Error as e:
             # Log error or handle as needed
@@ -252,15 +155,10 @@ class LocalMessage(models.Model):
             if 'db' in locals() and db:
                 db.close()
 
-        # 3. Delete NoteEmbedding Django model instance
+        # 2. Delete NoteEmbedding Django model instance
         NoteEmbedding.objects.filter(note_id=note_id_to_delete).delete()
-
-        # 4. Delete NoteChunk Django model instances
-        # This will also be handled by the loop above if we delete them one by one,
-        # but a bulk delete is more efficient.
-        NoteChunk.objects.filter(note_id=note_id_to_delete).delete()
         
-        # 5. Call the superclass's delete method
+        # 3. Call the superclass's delete method
         super(LocalMessage, self).delete(*args, **kwargs)
 
 
@@ -476,182 +374,6 @@ class NoteEmbedding(models.Model):
             logger.error(f"Failed to find similar notes by text: {str(e)}")
             return []
 
-# New model for storing note chunks and their embeddings
-class NoteChunk(models.Model):
-    note_id = models.IntegerField()  # Foreign key to the parent note
-    chunk_index = models.IntegerField()  # Index of this chunk within the note
-    chunk_text = models.TextField()  # The content of this chunk
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        db_table = 'note_chunks'
-        # Ensure each chunk has a unique combination of note_id and chunk_index
-        unique_together = ('note_id', 'chunk_index')
-        # Order chunks by note_id and then by chunk_index
-        ordering = ['note_id', 'chunk_index']
-    
-    @staticmethod
-    def setup_vector_table():
-        """Setup the vector table for chunk embeddings in the database"""
-        db_path = NoteEmbedding.get_embedding_db_path()
-        db = sqlite3.connect(db_path)
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        
-        # Create the vector table for chunks with composite primary key
-        db.execute(f"""
-            CREATE VIRTUAL TABLE IF NOT EXISTS note_chunk_embeddings_vec 
-            USING vec0(
-                embedding float[{settings.OLLAMA_EMBEDDING_SIZE}]
-            );
-        """)
-        
-        db.commit()
-        db.close()
-    
-    @staticmethod
-    def hasRTL(text):
-        """Check if text contains any Arabic RTL characters"""
-        # Reuse the existing method from NoteEmbedding
-        return NoteEmbedding.hasRTL(text)
-    
-    @staticmethod
-    def get_embedding(text):
-        """Get embedding for a chunk of text"""
-        # Reuse the existing method from NoteEmbedding
-        return NoteEmbedding.get_embedding(text)
-    
-    def create_embedding(self):
-        """Create an embedding for this chunk"""
-        try:
-            # Check if chunk contains non-ASCII characters
-            if self.hasRTL(self.chunk_text):
-                return None
-            
-            # Get embedding vector from ollama
-            vector = self.get_embedding(self.chunk_text)
-            
-            # Get database path and create new connection
-            db_path = NoteEmbedding.get_embedding_db_path()
-            db = sqlite3.connect(db_path)
-            db.enable_load_extension(True)
-            sqlite_vec.load(db)
-            
-            # Generate a unique rowid for this chunk
-            # Format: noteId + 10000 + chunkIndex (to avoid collisions with note IDs)
-            chunk_rowid = (self.note_id * 10000) + self.chunk_index
-            
-            # First delete any existing vector for this chunk
-            db.execute(
-                "DELETE FROM note_chunk_embeddings_vec WHERE rowid = ?",
-                [chunk_rowid]
-            )
-            
-            # Insert new vector
-            db.execute(
-                """
-                INSERT INTO note_chunk_embeddings_vec(rowid, embedding) 
-                VALUES (?, json(?))
-                """,
-                [chunk_rowid, json.dumps(vector)]
-            )
-            
-            db.commit()
-            db.close()
-            
-            return True
-            
-        except Exception as e:
-            # Log the error and re-raise
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to process embedding for chunk {self.id}: {str(e)}")
-            raise
-    
-    @staticmethod
-    def find_similar_chunks(chunk_text, limit=10, exclude_note_id=None):
-        """Find chunks similar to the given text"""
-        try:
-            # Get embedding for the input text
-            vector = NoteChunk.get_embedding(chunk_text)
-            
-            # Get database path and create new connection
-            db_path = NoteEmbedding.get_embedding_db_path()
-            db = sqlite3.connect(db_path)
-            db.enable_load_extension(True)
-            sqlite_vec.load(db)
-            
-            cursor = db.cursor()
-            
-            # Find similar chunks
-            query = """
-                SELECT 
-                    rowid,
-                    distance
-                FROM note_chunk_embeddings_vec
-                WHERE embedding MATCH ?
-                AND k = ?
-            """
-            params = [json.dumps(vector), limit]
-            
-            # If we need to exclude chunks from a specific note
-            if exclude_note_id is not None:
-                # Calculate the range of rowids to exclude
-                # Each note's chunks use IDs in the format noteId*10000 + chunkIndex
-                min_exclude = exclude_note_id * 10000
-                max_exclude = (exclude_note_id + 1) * 10000 - 1
-                
-                query += " AND (rowid < ? OR rowid > ?)"
-                params.extend([min_exclude, max_exclude])
-            
-            cursor.execute(query, params)
-            
-            # Process the results
-            results = []
-            for row in cursor.fetchall():
-                rowid = row[0]
-                distance = row[1]
-                
-                # Calculate the original note_id and chunk_index from the rowid
-                note_id = rowid // 10000
-                chunk_index = rowid % 10000
-                
-                results.append({
-                    'note_id': note_id,
-                    'chunk_index': chunk_index,
-                    'distance': distance
-                })
-            
-            db.close()
-            
-            # Fetch the actual chunks from the database
-            chunk_details = []
-            for result in results:
-                try:
-                    chunk = NoteChunk.objects.get(
-                        note_id=result['note_id'],
-                        chunk_index=result['chunk_index']
-                    )
-                    
-                    chunk_details.append({
-                        'note_id': result['note_id'],
-                        'chunk_index': result['chunk_index'],
-                        'chunk_text': chunk.chunk_text,
-                        'distance': result['distance']
-                    })
-                except NoteChunk.DoesNotExist:
-                    # Skip if the chunk doesn't exist anymore
-                    continue
-            
-            return chunk_details
-            
-        except Exception as e:
-            # Log the error and return empty list
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to find similar chunks: {str(e)}")
-            return []
 
 class Reminder(models.Model):
     FREQUENCY_CHOICES = [

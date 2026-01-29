@@ -11,6 +11,7 @@ export default function SemanticSearchResults({
   onDeleteNote,
   refreshNotes,
   showHidden,
+  listSlug,
 }) {
   const [semanticResults, setSemanticResults] = useState([]);
   const [showSemanticResults, setShowSemanticResults] = useState(false);
@@ -43,6 +44,15 @@ export default function SemanticSearchResults({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
+      const body = {
+        text: query,
+        limit: 20,
+      };
+
+      if (listSlug && listSlug !== "All") {
+        body.list_slug = listSlug;
+      }
+
       const response = await fetchWithAuth(
         "/api/note/similar/",
         {
@@ -50,10 +60,7 @@ export default function SemanticSearchResults({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            text: query,
-            limit: 20,
-          }),
+          body: JSON.stringify(body),
           signal: controller.signal,
         },
         60000,
@@ -83,7 +90,7 @@ export default function SemanticSearchResults({
 
   useEffect(() => {
     getSemanticResults(searchText);
-  }, [searchText, getSemanticResults]);
+  }, [searchText, listSlug, getSemanticResults]);
 
   useEffect(() => {
     return () => {
