@@ -36,6 +36,22 @@ const NoteCard = forwardRef(
     const [showReminderModal, setShowReminderModal] = useState(false);
     const [showOtherCategories, setShowOtherCategories] = useState(false);
 
+    const handleDeleteFile = (src) => {
+      // Remove the markdown link containing this src from the note text
+      const regex = new RegExp(
+        `!\\[.*?\\]\\(${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`,
+        "g",
+      );
+      const newText = note.text.replace(regex, "");
+      // Also remove plain links if any
+      const linkRegex = new RegExp(
+        `\\[.*?\\]\\(${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`,
+        "g",
+      );
+      const finalText = newText.replace(linkRegex, "");
+      onEditNote(note.id, finalText);
+    };
+
     useImperativeHandle(ref, () => ({
       hideEditModal: () => setShowEditModal(false),
     }));
@@ -180,6 +196,7 @@ const NoteCard = forwardRef(
                 onExpand={expandNote}
                 shouldLoadLinks={shouldLoadLinks}
                 showToast={showToast}
+                onDeleteFile={handleDeleteFile}
               />
             </div>
           </div>

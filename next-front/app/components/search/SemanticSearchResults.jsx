@@ -12,6 +12,7 @@ export default function SemanticSearchResults({
   refreshNotes,
   showHidden,
   listSlug,
+  hasFiles,
 }) {
   const [semanticResults, setSemanticResults] = useState([]);
   const [showSemanticResults, setShowSemanticResults] = useState(false);
@@ -47,6 +48,7 @@ export default function SemanticSearchResults({
       const body = {
         text: query,
         limit: 20,
+        has_files: hasFiles,
       };
 
       if (listSlug && listSlug !== "All") {

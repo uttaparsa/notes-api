@@ -1,11 +1,21 @@
-'use client'
+"use client";
 
-import React, { useState, useRef, useCallback } from 'react';
-import { Button, Form, Modal, Spinner } from 'react-bootstrap';
-import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
+import React, { useState, useRef, useCallback } from "react";
+import { Button, Form, Modal, Spinner } from "react-bootstrap";
+import { fetchWithAuth } from "../lib/api";
+import { handleApiError } from "../utils/errorHandler";
 
-const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, size, width = '24px', height = '24px', className = "" }) => {
+const FileUploadComponent = ({
+  onFileUploaded,
+  noteId,
+  onSuccess,
+  initialText = "",
+  onTextChange,
+  size,
+  width = "24px",
+  height = "24px",
+  className = "",
+}) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -18,29 +28,36 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
     if (!selectedFile) return;
 
     setUploading(true);
-    setUploadProgress('Uploading...');
+    setUploadProgress("Uploading...");
     const formData = new FormData();
-    formData.append('file', selectedFile);
-    formData.append('compress_image', compressImage);
+    formData.append("file", selectedFile);
+    formData.append("compress_image", compressImage);
+    if (noteId) {
+      formData.append("note_id", noteId);
+    }
 
     try {
-      const response = await fetchWithAuth('/api/note/upload/', {
-        method: 'POST',
+      const response = await fetchWithAuth("/api/note/upload/", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload file');
+        throw new Error("Failed to upload file");
       }
 
-      const { url } = await response.json();
-      onFileUploaded(url);
-      setUploadProgress('Upload complete!');
+      const data = await response.json();
+      if (onSuccess) {
+        onSuccess(data);
+      } else if (onFileUploaded) {
+        onFileUploaded(data.url);
+      }
+      setUploadProgress("Upload complete!");
       setSelectedFile(null);
     } catch (err) {
-      console.error('Error uploading file:', err);
+      console.error("Error uploading file:", err);
       handleApiError(err);
-      setUploadProgress('Upload failed');
+      setUploadProgress("Upload failed");
     } finally {
       setUploading(false);
       setTimeout(() => setUploadProgress(null), 3000);
@@ -50,9 +67,9 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
+    if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
-    } else if (e.type === 'dragleave') {
+    } else if (e.type === "dragleave") {
       setDragActive(false);
     }
   }, []);
@@ -77,7 +94,6 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
     fileInputRef.current.click();
   };
 
-
   return (
     <>
       <Button
@@ -90,9 +106,9 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
           xmlns="http://www.w3.org/2000/svg"
           width={width}
           height={height}
-          style={{ 
-                fill: 'var(--bs-body-color)' // This will use Bootstrap's body color variable
-              }}
+          style={{
+            fill: "var(--bs-body-color)", // This will use Bootstrap's body color variable
+          }}
           className="bi bi-paperclip"
           viewBox="0 0 16 16"
         >
@@ -112,15 +128,15 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
               onDragOver={handleDrag}
               onDrop={handleDrop}
               style={{
-                border: `2px dashed ${dragActive ? 'blue' : 'gray'}`,
-                borderRadius: '5px',
-                padding: '20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                minHeight: '200px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                border: `2px dashed ${dragActive ? "blue" : "gray"}`,
+                borderRadius: "5px",
+                padding: "20px",
+                textAlign: "center",
+                cursor: "pointer",
+                minHeight: "200px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
               onClick={onButtonClick}
             >
@@ -131,7 +147,7 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
                   ref={fileInputRef}
                   type="file"
                   onChange={handleChange}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
               </div>
             </div>
@@ -149,17 +165,20 @@ const FileUploadComponent = ({ onFileUploaded, initialText = '', onTextChange, s
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button 
-            variant="primary" 
-            onClick={handleFileUpload} 
+          <Button
+            variant="primary"
+            onClick={handleFileUpload}
             disabled={!selectedFile || uploading}
           >
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? "Uploading..." : "Upload"}
           </Button>
-          <Button variant="secondary" onClick={() => {
-            setShowModal(false);
-            setSelectedFile(null);
-          }}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowModal(false);
+              setSelectedFile(null);
+            }}
+          >
             Close
           </Button>
         </Modal.Footer>

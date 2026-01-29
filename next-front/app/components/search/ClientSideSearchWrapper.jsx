@@ -15,6 +15,7 @@ export default function ClientSideSearchWrapper() {
   const [totalCount, setTotalCount] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [hasFiles, setHasFiles] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [listSlug, setListSlug] = useState("All");
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function ClientSideSearchWrapper() {
     async (query, slugs, page) => {
       setIsBusy(true);
       try {
-        let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}`;
+        let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
         if (slugs && slugs !== "All") {
           url += `&list_slug=${encodeURIComponent(slugs)}`;
@@ -50,7 +51,7 @@ export default function ClientSideSearchWrapper() {
         setIsBusy(false);
       }
     },
-    [showHidden],
+    [showHidden, hasFiles],
   );
 
   const updateNote = async (noteId, updates) => {
@@ -70,9 +71,11 @@ export default function ClientSideSearchWrapper() {
     const query = searchParams.get("q");
     const slug = searchParams.get("list_slug") || "All";
     const page = searchParams.get("page");
-    if (query || slug !== "All") {
+    const hasFilesParam = searchParams.get("has_files") === "true";
+    if (query || slug !== "All" || hasFilesParam) {
       setSearchText(query);
       setListSlug(slug);
+      setHasFiles(hasFilesParam);
       if (page) {
         setCurrentPage(parseInt(page));
       }
@@ -85,22 +88,26 @@ export default function ClientSideSearchWrapper() {
   }, [searchParams, getRecords]);
 
   const handleSearch = useCallback(
-    (newSearchText, newListSlugs) => {
-      console.log("handleSearch", newSearchText, newListSlugs);
+    (newSearchText, newListSlugs, newHasFiles) => {
+      console.log("handleSearch", newSearchText, newListSlugs, newHasFiles);
 
-      if (newSearchText !== searchText || newListSlugs !== listSlug) {
+      if (newSearchText !== searchText || newListSlugs !== listSlug || newHasFiles !== hasFiles) {
         setSearchText(newSearchText);
         setListSlug(newListSlugs);
+        setHasFiles(newHasFiles);
         setCurrentPage(1);
 
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
         if (newListSlugs && newListSlugs !== "All") {
           url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
         }
+        if (newHasFiles) {
+          url += `&has_files=true`;
+        }
         router.push(url);
       }
     },
-    [searchText, listSlug, router],
+    [searchText, listSlug, hasFiles, router],
   );
 
   const handlePageChange = (newPage) => {
@@ -113,6 +120,9 @@ export default function ClientSideSearchWrapper() {
         url += `&list_slug=${encodeURIComponent(listSlug)}`;
       }
     }
+    if (hasFiles) {
+      url += `&has_files=true`;
+    }
     url += `&page=${newPage}`;
     router.push(url, undefined, { shallow: true });
   };
@@ -123,6 +133,8 @@ export default function ClientSideSearchWrapper() {
         onSearch={handleSearch}
         initialSearchText={searchText}
         initialListSlug={listSlug}
+        hasFiles={hasFiles}
+        onHasFilesChange={setHasFiles}
       />
       <div dir="ltr">
         <PaginationComponent
@@ -163,6 +175,7 @@ export default function ClientSideSearchWrapper() {
               refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
               showHidden={showHidden}
               listSlug={listSlug}
+              hasFiles={hasFiles}
             />
           </Col>
         </Row>

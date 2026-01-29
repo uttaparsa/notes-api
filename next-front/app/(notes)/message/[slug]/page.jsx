@@ -1,15 +1,14 @@
-'use client'
+"use client";
 
-
-import { useState, useEffect, useRef, useContext } from 'react';
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
-import NoteCard from '../../../components/notecard/NoteCard';
-import { CompactMarkdownRenderer } from '../../../components/notecard/markdown/MarkdownRenderers';
-import { fetchWithAuth } from '@/app/lib/api';
-import { handleApiError } from '@/app/utils/errorHandler';
-import { Spinner, Badge } from 'react-bootstrap';
-import { NoteListContext } from '../../layout';
+import { useState, useEffect, useRef, useContext } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import NoteCard from "../../../components/notecard/NoteCard";
+import { CompactMarkdownRenderer } from "../../../components/notecard/markdown/MarkdownRenderers";
+import { fetchWithAuth } from "@/app/lib/api";
+import { handleApiError } from "@/app/utils/errorHandler";
+import { Spinner, Badge } from "react-bootstrap";
+import { NoteListContext } from "../../layout";
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
@@ -29,12 +28,13 @@ const SingleNoteView = () => {
         // Load the main note
         const currentNote = await getCurrentNote();
         setNote(currentNote);
+
         setNoteBusy(false); // Set to false as soon as the note is loaded
-        
+
         if (currentNote?.text) {
           document.title = extractMarkdownTitleFromText(currentNote.text);
         }
-        
+
         // Always load similar notes for the current note
         if (currentNote) {
           await fetchSimilarNotes(currentNote.id);
@@ -42,8 +42,8 @@ const SingleNoteView = () => {
           setSimilarNotesLoaded(true);
         }
       } catch (error) {
-        console.error('Error fetching note:', error);
-        document.title = 'Note - Error';
+        console.error("Error fetching note:", error);
+        document.title = "Note - Error";
         setNoteBusy(false);
         setSimilarNotesLoaded(false);
       }
@@ -57,10 +57,16 @@ const SingleNoteView = () => {
     if (!note) return;
     const interval = setInterval(async () => {
       try {
-        const response = await fetchWithAuth(`/api/note/message/${params.slug}/`);
+        const response = await fetchWithAuth(
+          `/api/note/message/${params.slug}/`,
+        );
         if (!response.ok) return;
         const data = await response.json();
-        if (data.updated_at && note.updated_at && data.updated_at !== note.updated_at) {
+        if (
+          data.updated_at &&
+          note.updated_at &&
+          data.updated_at !== note.updated_at
+        ) {
           setShouldShowRefreshPrompt(true);
         }
       } catch {}
@@ -70,15 +76,22 @@ const SingleNoteView = () => {
 
   const fetchSimilarNotes = async (noteId) => {
     try {
-      const response = await fetchWithAuth(`/api/note/message/${noteId}/similar/`,{},10000);
+      const response = await fetchWithAuth(
+        `/api/note/message/${noteId}/similar/`,
+        {},
+        10000,
+      );
       if (!response.ok) {
-        throw new Error('Failed to fetch similar notes');
+        throw new Error("Failed to fetch similar notes");
       }
       const data = await response.json();
-      
+
       // Log distances for debugging
-      console.log('Similar notes distances:', data.map(note => ({ id: note.id, distance: note.distance })));
-      
+      console.log(
+        "Similar notes distances:",
+        data.map((note) => ({ id: note.id, distance: note.distance })),
+      );
+
       setSimilarNotes(data);
       // Trigger animation after a brief delay to ensure DOM is ready
       setTimeout(() => setSimilarNotesLoaded(true), 50);
@@ -90,18 +103,18 @@ const SingleNoteView = () => {
 
   const extractMarkdownTitleFromText = (text) => {
     let title = "Note";
-    
+
     if (text) {
-      const lines = text.split("\n").filter(line => line.trim());
+      const lines = text.split("\n").filter((line) => line.trim());
       const firstLine = lines[0] || "";
-      
+
       const headerMatch = firstLine.match(/^#{1,6}\s+(.+)$/);
       if (headerMatch) {
         title = headerMatch[1].trim();
         title += " - Note";
       }
     }
-    
+
     return title;
   };
 
@@ -109,7 +122,7 @@ const SingleNoteView = () => {
     try {
       const response = await fetchWithAuth(`/api/note/message/${params.slug}/`);
       if (!response.ok) {
-        throw new Error('Failed to fetch note');
+        throw new Error("Failed to fetch note");
       }
       const data = await response.json();
       return data;
@@ -120,40 +133,49 @@ const SingleNoteView = () => {
   };
 
   const editNote = async (targetNoteId, newText) => {
-    window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: 'Editing note' }));
+    window.dispatchEvent(
+      new CustomEvent("showWaitingModal", { detail: "Editing note" }),
+    );
     try {
-      const response = await fetchWithAuth(`/api/note/message/${targetNoteId}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetchWithAuth(
+        `/api/note/message/${targetNoteId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ text: newText, updated_at: note.updated_at }),
         },
-        body: JSON.stringify({ text: newText, updated_at: note.updated_at }),
-      });
+      );
       if (response.status === 409) {
         setNoteUpdateConflict(true);
-        window.dispatchEvent(new CustomEvent('showToast', {
-          detail: {
-            title: "Edit Rejected",
-            body: "This note was updated elsewhere. Please refresh.",
-            delay: 7000,
-            status: "danger",
-          }
-        }));
+        window.dispatchEvent(
+          new CustomEvent("showToast", {
+            detail: {
+              title: "Edit Rejected",
+              body: "This note was updated elsewhere. Please refresh.",
+              delay: 7000,
+              status: "danger",
+            },
+          }),
+        );
         return false;
       }
       if (!response.ok) {
-        throw new Error('Failed to edit note');
+        throw new Error("Failed to edit note");
       }
       const updatedNote = await response.json();
       setNote(updatedNote);
-      window.dispatchEvent(new CustomEvent('showToast', {
-        detail: {
-          title: "Success",
-          body: `Note Saved`,
-          delay: 5000,
-          variant: "success"
-        }
-      }));
+      window.dispatchEvent(
+        new CustomEvent("showToast", {
+          detail: {
+            title: "Success",
+            body: `Note Saved`,
+            delay: 5000,
+            variant: "success",
+          },
+        }),
+      );
       setNoteUpdateConflict(false);
       return true;
     } catch (err) {
@@ -161,12 +183,12 @@ const SingleNoteView = () => {
       handleApiError(err);
       return false;
     } finally {
-      window.dispatchEvent(new CustomEvent('hideWaitingModal'));
+      window.dispatchEvent(new CustomEvent("hideWaitingModal"));
     }
   };
 
   const formatSimilarityScore = (score) => {
-    return (score * 100).toFixed(0) + '%';
+    return (score * 100).toFixed(0) + "%";
   };
 
   return (
@@ -182,7 +204,7 @@ const SingleNoteView = () => {
             transform: translateY(0);
           }
         }
-        
+
         .similar-note-item {
           animation: slideInUp 0.5s ease-out forwards;
           opacity: 0;
@@ -236,7 +258,7 @@ const SingleNoteView = () => {
         }
 
         .similar-card::before {
-          content: '';
+          content: "";
           position: absolute;
           left: 0;
           top: 0;
@@ -262,16 +284,22 @@ const SingleNoteView = () => {
           padding-left: 0.5rem;
         }
       `}</style>
-      
+
       {shouldShowRefreshPrompt && (
-        <div className="alert alert-warning d-flex align-items-center my-2" role="alert">
+        <div
+          className="alert alert-warning d-flex align-items-center my-2"
+          role="alert"
+        >
           <span className="me-2">This note was updated elsewhere.</span>
-          <button className="btn btn-sm btn-outline-primary ms-auto" onClick={() => window.location.reload()}>
+          <button
+            className="btn btn-sm btn-outline-primary ms-auto"
+            onClick={() => window.location.reload()}
+          >
             Refresh
           </button>
         </div>
       )}
-      
+
       <div className="row">
         <div className="col-lg-2"></div>
         <div className="col-lg-8 position-relative" ref={noteContainerRef}>
@@ -293,8 +321,12 @@ const SingleNoteView = () => {
             <>
               <div className="section-header">Backlinks</div>
               <div className="d-flex flex-column gap-2 mb-4">
-                {note.source_links.map(link => (
-                  <Link href={`/message/${link.source_message.id}`} key={link.id} className="text-decoration-none">
+                {note.source_links.map((link) => (
+                  <Link
+                    href={`/message/${link.source_message.id}`}
+                    key={link.id}
+                    className="text-decoration-none"
+                  >
                     <div className="backlink-item">
                       <div className="small">
                         <CompactMarkdownRenderer>
@@ -307,22 +339,33 @@ const SingleNoteView = () => {
               </div>
             </>
           )}
-          
+
           {similarNotes.length > 0 && (
             <>
               <div className="section-header">Related Notes</div>
               <div className="d-flex flex-column gap-3">
                 {similarNotes.map((similarNote, index) => {
-                  const distanceClass = similarNote.distance < 1 ? 'high-similarity' : 
-                                       similarNote.distance < 2 ? 'medium-similarity' : 'low-similarity';
-                  
+                  const distanceClass =
+                    similarNote.distance < 1
+                      ? "high-similarity"
+                      : similarNote.distance < 2
+                        ? "medium-similarity"
+                        : "low-similarity";
+
                   return (
-                    <Link href={`/message/${similarNote.id}`} key={similarNote.id} className="text-decoration-none">
-                      <div 
+                    <Link
+                      href={`/message/${similarNote.id}`}
+                      key={similarNote.id}
+                      className="text-decoration-none"
+                    >
+                      <div
                         className={`similar-card similar-note-item ${distanceClass}`}
                         style={{
-                          animationDelay: similarNotesLoaded ? `${index * 0.1}s` : '0s'
-                        }}>
+                          animationDelay: similarNotesLoaded
+                            ? `${index * 0.1}s`
+                            : "0s",
+                        }}
+                      >
                         <div className="note-content">
                           <div className="small mb-2">
                             <CompactMarkdownRenderer>
@@ -344,8 +387,6 @@ const SingleNoteView = () => {
           )}
         </div>
       </div>
-      
-
     </div>
   );
 };

@@ -124,6 +124,7 @@ class LocalMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    files = models.ManyToManyField('File', related_name='notes', blank=True)
     
 
     def delete(self, *args, **kwargs):
@@ -167,6 +168,41 @@ class Link(models.Model):
     dest_message = models.ForeignKey(LocalMessage, on_delete=models.CASCADE, related_name='source_links')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class File(models.Model):
+    name = models.CharField(max_length=255)  # Display name
+    original_name = models.CharField(max_length=255)  # Original uploaded filename
+    size = models.PositiveIntegerField()  # File size in bytes
+    content_type = models.CharField(max_length=100)
+    minio_path = models.CharField(max_length=500, unique=True)  # Full MinIO path
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
+    
+    class Meta:
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return self.name
+    
+    def delete(self, *args, **kwargs):
+        # Delete from MinIO before deleting model
+        try:
+            from minio import Minio
+            from django.conf import settings
+            minio_client = Minio(
+                settings.MINIO_ENDPOINT,
+                access_key=settings.MINIO_ACCESS_KEY,
+                secret_key=settings.MINIO_SECRET_KEY,
+                secure=settings.MINIO_USE_SSL
+            )
+            minio_client.remove_object(settings.MINIO_BUCKET_NAME, self.minio_path)
+        except Exception as e:
+            # Log error but don't prevent deletion
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to delete file from MinIO: {self.minio_path}, {e}")
+        super().delete(*args, **kwargs)
 
 
 class NoteEmbedding(models.Model):

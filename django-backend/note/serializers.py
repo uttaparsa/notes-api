@@ -1,7 +1,17 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision, Reminder, Workspace
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, Reminder, Workspace, File
 import re
+
+class FileSerializer(serializers.ModelSerializer):
+    url = serializers.SerializerMethodField()
+
+    def get_url(self, obj):
+        return f"/api/note/files/{obj.minio_path}"
+
+    class Meta:
+        model = File
+        fields = ['id', 'name', 'original_name', 'size', 'content_type', 'uploaded_at', 'url']
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
     def truncate_text(self, value):
@@ -49,6 +59,7 @@ class SearchSerializer(serializers.Serializer):
         required=False,
         help_text="Workspace slug to filter search results"
     )
+    has_files = serializers.BooleanField(required=False, help_text="Only return messages that contain files")
     page = serializers.IntegerField(required=False, help_text="Page number for pagination")
 
     def validate_list_slug(self, value):

@@ -18,12 +18,16 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         list_slugs = self.request.GET.get("list_slug", "")
         workspace_slug = self.request.GET.get("workspace", "")
         show_hidden = self.request.GET.get('show_hidden', 'false').lower() == 'true'
+        has_files = self.request.GET.get('has_files', 'false').lower() == 'true'
 
         print(f"list_slugs {list_slugs} query is {query}")
         
         queryset = LocalMessage.objects.filter(user=self.request.user)
         if not show_hidden:
             queryset = queryset.filter(archived=False)
+        
+        if has_files:
+            queryset = queryset.filter(files__isnull=False).distinct()
         
         # Get workspace if specified
         workspace = None
@@ -87,6 +91,7 @@ class SearchResultsView(GenericAPIView, ListModelMixin):
         - list_slug: Single list slug or comma-separated list of slugs (e.g., 'list1,list2,list3')
                     Use 'All' or omit to search all lists
         - workspace: Workspace slug to filter search results
+        - has_files: Only return messages that contain files (true/false)
         """
     )
     def get(self, request, **kwargs):

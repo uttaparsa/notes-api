@@ -10,8 +10,13 @@ from minio.error import S3Error
 from minio import Minio
 import traceback
 from django.http import HttpResponse, Http404
+import random
+import string
 
 from ..file_utils import file_access_tracker
+from ..models import File, LocalMessage
+from django.shortcuts import get_object_or_404
+from ..serializers import FileSerializer
 
 minio_client = Minio(
     settings.MINIO_ENDPOINT,
@@ -177,15 +182,16 @@ class FileUploadView(APIView):
 
         file = request.FILES['file']
         compress_image = request.POST.get('compress_image', 'false').lower() == 'true'
+        random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
         if compress_image and file.content_type.startswith('image'):
             compressed_file, image_format = self.compress_image(file)
             extension = 'jpg' if image_format == 'jpeg' else image_format
-            object_name = f"uploads/compressed_{file.name.rsplit('.', 1)[0]}.{extension}"
+            object_name = f"uploads/compressed_{random_str}_{file.name.rsplit('.', 1)[0]}.{extension}"
             file_to_save = compressed_file
             content_type = f'image/{image_format}'
         else:
-            object_name = f"uploads/{file.name}"
+            object_name = f"uploads/{random_str}_{file.name}"
             file_to_save = file
             content_type = file.content_type
 
@@ -197,8 +203,86 @@ class FileUploadView(APIView):
         url = "/api/note/files/" + self.save_to_minio(file_data, object_name, content_type)
         
         if url:
-            return Response({'url': url}, status=status.HTTP_201_CREATED)
+            file_obj = File.objects.create(
+                name=file.name,
+                original_name=file.name,
+                size=file_data.getbuffer().nbytes,
+                content_type=content_type,
+                minio_path=object_name,
+                user=request.user
+            )
+            
+            note_id = request.POST.get('note_id')
+            if note_id:
+                try:
+                    from ..models import LocalMessage
+                    note = LocalMessage.objects.get(id=note_id, user=request.user)
+                    # Auto-rename if duplicate name
+                    existing_names = set(note.files.values_list('name', flat=True))
+                    base_name = file.name
+                    name = base_name
+                    counter = 1
+                    while name in existing_names:
+                        name = f"{base_name} ({counter})"
+                        counter += 1
+                    file_obj.name = name
+                    note.files.add(file_obj)
+                except LocalMessage.DoesNotExist:
+                    pass
+            
+            return Response({
+                'url': url, 
+                'file_id': file_obj.id, 
+                'file_name': file_obj.name,
+                'file': FileSerializer(file_obj).data
+            }, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'Failed to upload file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+
+class NoteFilesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, note_id):
+        note = get_object_or_404(LocalMessage, id=note_id, user=request.user)
+        files = note.files.all()
+        serializer = FileSerializer(files, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, note_id):
+        # Add existing file to note
+        file_id = request.data.get('file_id')
+        if not file_id:
+            return Response({'error': 'file_id required'}, status=400)
+        note = get_object_or_404(LocalMessage, id=note_id, user=request.user)
+        file_obj = get_object_or_404(File, id=file_id, user=request.user)
+        note.files.add(file_obj)
+        return Response(status=201)
+
+    def delete(self, request, note_id):
+        # Remove file from note
+        file_id = request.data.get('file_id')
+        if not file_id:
+            return Response({'error': 'file_id required'}, status=400)
+        note = get_object_or_404(LocalMessage, id=note_id, user=request.user)
+        file_obj = get_object_or_404(File, id=file_id, user=request.user)
+        note.files.remove(file_obj)
+        # If no notes reference the file, delete it
+        if not file_obj.notes.exists():
+            file_obj.delete()
+        return Response(status=204)
+
+
+class FileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, file_id):
+        file_obj = get_object_or_404(File, id=file_id, user=request.user)
+        # Delete all notes referring to this file
+        notes = list(file_obj.notes.all())  # copy list
+        for note in notes:
+            note.delete()
+        # File.delete() will handle MinIO
+        file_obj.delete()
+        return Response(status=204)
 

@@ -113,6 +113,7 @@ class SimilarNotesView(APIView):
         exclude_note_id = request.data.get('exclude_note_id')
         list_slugs = request.data.get('list_slug', 'All')
         workspace_slug = request.data.get('workspace')
+        has_files = request.data.get('has_files', False)
         
         # If not in data, try to extract from referer
         if list_slugs == 'All' and not workspace_slug:
@@ -137,6 +138,9 @@ class SimilarNotesView(APIView):
                 workspace_slug=workspace_slug,
                 user=request.user
             )
+            
+            if has_files:
+                all_found_items = [item for item in all_found_items if LocalMessage.objects.filter(id=item['id'], files__isnull=False).exists()]
             
             # Sort by similarity (higher score is better) and limit results
             all_found_items.sort(key=lambda x: x['distance'])
