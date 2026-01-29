@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Modal, Button } from "react-bootstrap";
 import { isRTL } from "../../utils/stringUtils";
 import FileUploadComponent from "../FileUploadComponent";
@@ -138,6 +138,57 @@ const EditNoteModal = ({
     const markdownLink = `[${fileName}](${encodedUrl})`;
 
     setEditText((prevText) => prevText + (prevText ? "\n" : "") + markdownLink);
+  };
+
+  const handlePaste = useCallback(async (e) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        e.preventDefault();
+        const blob = items[i].getAsFile();
+        await handleImageUpload(blob);
+        break;
+      }
+    }
+  }, []);
+
+  const handleImageUpload = async (file) => {
+    const formData = new FormData();
+
+    // Generate a unique name for the image
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace("T", "_")
+      .split(".")[0];
+    const uniqueFileName = `pasted_image_${timestamp}`;
+
+    // Create a new File object with the unique name
+    const renamedFile = new File([file], `${uniqueFileName}.png`, {
+      type: file.type,
+    });
+
+    formData.append("file", renamedFile);
+
+    try {
+      const response = await fetchWithAuth("/api/note/upload/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const data = await response.json();
+      const imageMarkdown = `![${data.file_name}](${data.url})`;
+      setEditText(
+        (prevText) => prevText + (prevText ? "\n" : "") + imageMarkdown,
+      );
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      handleApiError(err);
+    }
   };
 
   const increaseImportance = async () => {
@@ -413,6 +464,7 @@ const EditNoteModal = ({
                 value={editText}
                 onChange={handleChange}
                 onKeyDown={handleEnter}
+                onPaste={handlePaste}
                 className={`${styles.monospace} ${styles.editTextArea} w-100`}
               />
             )}
