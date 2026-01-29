@@ -206,7 +206,9 @@ export const createCustomRenderers = (
       const isFile = encodedSrc.includes("/api/note/files/");
       if (isFile && singleView) {
         return (
-          <div style={{ position: "relative", display: "inline-block" }}>
+          <div
+            style={{ position: "relative", display: "block", width: "100%" }}
+          >
             <ResponsiveImage {...props} src={encodedSrc} />
             <Button
               variant="danger"

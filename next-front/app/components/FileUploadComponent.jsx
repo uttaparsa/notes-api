@@ -153,7 +153,11 @@ const FileUploadComponent = ({
             </div>
           </Form.Group>
           {selectedFile && (
-            <p className="mt-3">Selected file: {selectedFile.name}</p>
+            <p className="mt-3">
+              Selected file:{" "}
+              {selectedFile.name.split(".").slice(0, -1).join(".") ||
+                selectedFile.name}
+            </p>
           )}
           <Form.Group className="mt-3">
             <Form.Check

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import styles from "../NoteCard.module.css";
 
 const ResponsiveImage = ({ src, alt, title }) => {
@@ -8,7 +8,7 @@ const ResponsiveImage = ({ src, alt, title }) => {
 
   React.useEffect(() => {
     if (containerRef.current) {
-      const resizeObserver = new ResizeObserver(entries => {
+      const resizeObserver = new ResizeObserver((entries) => {
         for (let entry of entries) {
           const { width, height } = entry.contentRect;
           setDimensions({ width, height });
@@ -27,24 +27,21 @@ const ResponsiveImage = ({ src, alt, title }) => {
 
   return (
     <>
-      <span 
-        ref={containerRef} 
-        className={`${styles.markdownImage} ${isFullscreen ? styles.fullscreenContainer : ''}`}
+      <span
+        ref={containerRef}
+        className={`${styles.markdownImage} ${isFullscreen ? styles.fullscreenContainer : ""}`}
         onClick={toggleFullscreen}
       >
         <img
           src={src}
-          alt={alt || ''}
-          title={title || ''}
-          className={`${styles.responsiveImage} ${isFullscreen ? styles.fullscreenImage : ''}`}
+          alt={alt || ""}
+          title={title || ""}
+          className={`${styles.responsiveImage} ${isFullscreen ? styles.fullscreenImage : ""}`}
         />
       </span>
 
       {isFullscreen && (
-        <div 
-          className={styles.overlay}
-          onClick={toggleFullscreen}
-        />
+        <div className={styles.overlay} onClick={toggleFullscreen} />
       )}
     </>
   );

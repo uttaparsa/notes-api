@@ -184,14 +184,20 @@ class FileUploadView(APIView):
         compress_image = request.POST.get('compress_image', 'false').lower() == 'true'
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
+        # Get display name without extension
+        if '.' in file.name:
+            display_name = file.name.rsplit('.', 1)[0]
+        else:
+            display_name = file.name
+
         if compress_image and file.content_type.startswith('image'):
             compressed_file, image_format = self.compress_image(file)
             extension = 'jpg' if image_format == 'jpeg' else image_format
-            object_name = f"uploads/compressed_{random_str}_{file.name.rsplit('.', 1)[0]}.{extension}"
+            object_name = f"uploads/{request.user.id}/compressed_{random_str}_{file.name.rsplit('.', 1)[0]}.{extension}"
             file_to_save = compressed_file
             content_type = f'image/{image_format}'
         else:
-            object_name = f"uploads/{random_str}_{file.name}"
+            object_name = f"uploads/{request.user.id}/{random_str}_{file.name}"
             file_to_save = file
             content_type = file.content_type
 
@@ -204,7 +210,7 @@ class FileUploadView(APIView):
         
         if url:
             file_obj = File.objects.create(
-                name=file.name,
+                name=display_name,
                 original_name=file.name,
                 size=file_data.getbuffer().nbytes,
                 content_type=content_type,
@@ -219,7 +225,7 @@ class FileUploadView(APIView):
                     note = LocalMessage.objects.get(id=note_id, user=request.user)
                     # Auto-rename if duplicate name
                     existing_names = set(note.files.values_list('name', flat=True))
-                    base_name = file.name
+                    base_name = display_name
                     name = base_name
                     counter = 1
                     while name in existing_names:
