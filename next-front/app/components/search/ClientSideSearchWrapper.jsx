@@ -7,6 +7,7 @@ import NoteList from "../NoteList";
 import SearchBar from "./SearchBar";
 import SemanticSearchResults from "./SemanticSearchResults";
 import PaginationComponent from "../PaginationComponent";
+import CategoryFilterModal from "./CategoryFilterModal";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 
@@ -18,9 +19,12 @@ export default function ClientSideSearchWrapper() {
   const [hasFiles, setHasFiles] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [listSlug, setListSlug] = useState("All");
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const perPage = 20;
+  const getRecordsRef = useRef();
 
   const [currentPage, setCurrentPage] = useState(() => {
     const page = searchParams.get("page");
@@ -28,13 +32,15 @@ export default function ClientSideSearchWrapper() {
   });
 
   const getRecords = useCallback(
-    async (query, slugs, page) => {
+    async (query, page) => {
       setIsBusy(true);
       try {
+        const categorySlugs =
+          selectedCategories.length > 0 ? selectedCategories.join(",") : "All";
         let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
-        if (slugs && slugs !== "All") {
-          url += `&list_slug=${encodeURIComponent(slugs)}`;
+        if (categorySlugs && categorySlugs !== "All") {
+          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
         }
 
         url += `&page=${page}`;
@@ -51,7 +57,31 @@ export default function ClientSideSearchWrapper() {
         setIsBusy(false);
       }
     },
-    [showHidden, hasFiles],
+    [showHidden, hasFiles, selectedCategories],
+  );
+
+  useEffect(() => {
+    getRecordsRef.current = getRecords;
+  }, [getRecords]);
+
+  const handleFiltersChangeFromModal = useCallback(
+    ({ categories, hasFiles: newHasFiles }) => {
+      setSelectedCategories(categories);
+      setHasFiles(newHasFiles);
+      setCurrentPage(1);
+
+      const categorySlugs =
+        categories.length > 0 ? categories.join(",") : "All";
+      let url = `/search/?q=${encodeURIComponent(searchText || "")}`;
+      if (categorySlugs && categorySlugs !== "All") {
+        url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+      }
+      if (newHasFiles) {
+        url += `&has_files=true`;
+      }
+      router.push(url);
+    },
+    [searchText, router],
   );
 
   const updateNote = async (noteId, updates) => {
@@ -64,7 +94,7 @@ export default function ClientSideSearchWrapper() {
 
   const deleteNote = async (noteId) => {
     setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
-    getRecords(searchText, listSlug, currentPage);
+    getRecordsRef.current(searchText, currentPage);
   };
 
   useEffect(() => {
@@ -72,10 +102,16 @@ export default function ClientSideSearchWrapper() {
     const slug = searchParams.get("list_slug") || "All";
     const page = searchParams.get("page");
     const hasFilesParam = searchParams.get("has_files") === "true";
-    if (query || slug !== "All" || hasFilesParam) {
+    if (searchParams.has("q") || slug !== "All" || hasFilesParam) {
       setSearchText(query);
-      setListSlug(slug);
       setHasFiles(hasFilesParam);
+      if (slug === "All") {
+        setSelectedCategories([]);
+      } else if (slug.includes(",")) {
+        setSelectedCategories(slug.split(","));
+      } else {
+        setSelectedCategories([slug]);
+      }
       if (page) {
         setCurrentPage(parseInt(page));
       }
@@ -83,31 +119,31 @@ export default function ClientSideSearchWrapper() {
       const slugsToSearch = slug.includes(",") ? slug.split(",") : slug;
       console.log("slugsToSearch", slugsToSearch);
 
-      getRecords(query, slugsToSearch, page || currentPage);
+      getRecordsRef.current(query, page || currentPage);
     }
-  }, [searchParams, getRecords]);
+  }, [searchParams]);
 
   const handleSearch = useCallback(
-    (newSearchText, newListSlugs, newHasFiles) => {
-      console.log("handleSearch", newSearchText, newListSlugs, newHasFiles);
+    (newSearchText) => {
+      console.log("handleSearch", newSearchText);
 
-      if (newSearchText !== searchText || newListSlugs !== listSlug || newHasFiles !== hasFiles) {
+      if (newSearchText !== searchText) {
         setSearchText(newSearchText);
-        setListSlug(newListSlugs);
-        setHasFiles(newHasFiles);
         setCurrentPage(1);
 
+        const categorySlugs =
+          selectedCategories.length > 0 ? selectedCategories.join(",") : "All";
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
-        if (newListSlugs && newListSlugs !== "All") {
-          url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
+        if (categorySlugs && categorySlugs !== "All") {
+          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
         }
-        if (newHasFiles) {
+        if (hasFiles) {
           url += `&has_files=true`;
         }
         router.push(url);
       }
     },
-    [searchText, listSlug, hasFiles, router],
+    [searchText, selectedCategories, hasFiles, router],
   );
 
   const handlePageChange = (newPage) => {
@@ -129,13 +165,7 @@ export default function ClientSideSearchWrapper() {
 
   return (
     <div dir="ltr">
-      <SearchBar
-        onSearch={handleSearch}
-        initialSearchText={searchText}
-        initialListSlug={listSlug}
-        hasFiles={hasFiles}
-        onHasFilesChange={setHasFiles}
-      />
+      <SearchBar onSearch={handleSearch} initialSearchText={searchText} />
       <div dir="ltr">
         <PaginationComponent
           currentPage={currentPage}
@@ -153,7 +183,7 @@ export default function ClientSideSearchWrapper() {
               onChange={(e) => {
                 setShowHidden(e.target.checked);
                 setCurrentPage(1);
-                getRecords(searchText, listSlug, 1);
+                getRecordsRef.current(searchText, 1);
               }}
               className="mb-3 text-body-emphasis mt-2"
             />
@@ -165,21 +195,57 @@ export default function ClientSideSearchWrapper() {
               showHidden={showHidden}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
-              refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
+              refreshNotes={() =>
+                getRecordsRef.current(searchText, currentPage)
+              }
             />
 
             <SemanticSearchResults
               searchText={searchText}
               onUpdateNote={updateNote}
               onDeleteNote={deleteNote}
-              refreshNotes={() => getRecords(searchText, listSlug, currentPage)}
+              refreshNotes={() =>
+                getRecordsRef.current(searchText, currentPage)
+              }
               showHidden={showHidden}
-              listSlug={listSlug}
+              listSlug={
+                selectedCategories.length > 0
+                  ? selectedCategories.join(",")
+                  : "All"
+              }
               hasFiles={hasFiles}
             />
           </Col>
         </Row>
       </div>
+
+      {/* Floating Action Button for Category Filter */}
+      <Button
+        variant="primary"
+        className="position-fixed bottom-0 end-0 m-3 rounded-circle"
+        style={{ width: "56px", height: "56px", zIndex: 1050 }}
+        onClick={() => setShowCategoryModal(true)}
+        title="Filter by Categories"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          fill="currentColor"
+          className="bi bi-funnel-fill"
+          viewBox="0 0 16 16"
+        >
+          <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2.05a2.5 2.5 0 0 1 0 4.9v2.05a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5v-2.05a2.5 2.5 0 0 1 0-4.9V1.5z" />
+        </svg>
+      </Button>
+
+      <CategoryFilterModal
+        show={showCategoryModal}
+        onHide={() => setShowCategoryModal(false)}
+        selectedCategories={selectedCategories}
+        hasFiles={hasFiles}
+        onFiltersChange={handleFiltersChangeFromModal}
+      />
     </div>
   );
 }
