@@ -5,6 +5,7 @@ from rest_framework import status
 from ..models import LocalMessage, NoteEmbedding, Link # Added Link
 from ..serializers import SimilarNoteSerializer
 import logging
+from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger("note")
 
@@ -112,6 +113,17 @@ class SimilarNotesView(APIView):
         exclude_note_id = request.data.get('exclude_note_id')
         list_slugs = request.data.get('list_slug', 'All')
         workspace_slug = request.data.get('workspace')
+        
+        # If not in data, try to extract from referer
+        if list_slugs == 'All' and not workspace_slug:
+            referer = request.META.get('HTTP_REFERER')
+            if referer:
+                parsed_url = urlparse(referer)
+                query_params = parse_qs(parsed_url.query)
+                if 'list_slug' in query_params and query_params['list_slug']:
+                    list_slugs = query_params['list_slug'][0]
+                if 'workspace_slug' in query_params and query_params['workspace_slug']:
+                    workspace_slug = query_params['workspace_slug'][0]
         
         if exclude_note_id:
             exclude_note_id = int(exclude_note_id)
