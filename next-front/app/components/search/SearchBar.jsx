@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Form, Button, InputGroup } from "react-bootstrap";
 
-export default function SearchBar({ onSearch, initialSearchText = "" }) {
+export default function SearchBar({
+  onSearch,
+  initialSearchText = "",
+  initialListSlug = "",
+}) {
   const [searchText, setSearchText] = useState("");
   const router = useRouter();
   const pathname = usePathname();
@@ -16,7 +20,11 @@ export default function SearchBar({ onSearch, initialSearchText = "" }) {
     if (pathname.startsWith("/search") && onSearch) {
       onSearch(searchText);
     } else {
-      router.push(`/search/?q=${encodeURIComponent(searchText)}`);
+      let url = `/search/?q=${encodeURIComponent(searchText)}`;
+      if (initialListSlug && initialListSlug !== "All") {
+        url += `&list_slug=${encodeURIComponent(initialListSlug)}`;
+      }
+      router.push(url);
     }
   };
 

@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useContext } from 'react';
-import { Form, FormCheck, Row, Col } from 'react-bootstrap';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useContext } from "react";
+import { Form, FormCheck, Row, Col } from "react-bootstrap";
+import { useRouter, useSearchParams } from "next/navigation";
 import NoteList from "../components/NoteList";
-import MessageInput from '../components/MessageInput';
-import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
-import SearchBar from '../components/search/SearchBar';
-import PaginationComponent from '../components/PaginationComponent';
-import ImportantNotesSidebar from '../components/ImportantNotesSidebar';
-import { SelectedWorkspaceContext } from './layout';
+import MessageInput from "../components/MessageInput";
+import { fetchWithAuth } from "../lib/api";
+import { handleApiError } from "../utils/errorHandler";
+import SearchBar from "../components/search/SearchBar";
+import PaginationComponent from "../components/PaginationComponent";
+import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
+import { SelectedWorkspaceContext } from "./layout";
 
 export default function NotesPage() {
   const router = useRouter();
@@ -20,16 +20,16 @@ export default function NotesPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [newNoteId, setNewNoteId] = useState(null);
   const [highlightNoteId, setHighlightNoteId] = useState(null);
   const perPage = 20;
-  const listSlug = 'All';
+  const listSlug = "All";
 
   useEffect(() => {
-    const page = searchParams.get('page');
-    const highlight = searchParams.get('highlight');
+    const page = searchParams.get("page");
+    const highlight = searchParams.get("highlight");
     if (page) {
       setCurrentPage(parseInt(page));
     }
@@ -37,9 +37,11 @@ export default function NotesPage() {
       setHighlightNoteId(highlight);
       // Clear highlight from URL after reading it
       const newParams = new URLSearchParams(searchParams);
-      newParams.delete('highlight');
-      const newUrl = newParams.toString() ? `?${newParams.toString()}` : window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+      newParams.delete("highlight");
+      const newUrl = newParams.toString()
+        ? `?${newParams.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
     }
   }, [searchParams]);
 
@@ -49,7 +51,8 @@ export default function NotesPage() {
   }, [showHidden, selectedWorkspace]);
 
   useEffect(() => {
-    if (currentPage !== 1 || showHidden) { // Avoid double call on initial load
+    if (currentPage !== 1 || showHidden) {
+      // Avoid double call on initial load
       getRecords();
     }
   }, [currentPage]);
@@ -69,24 +72,26 @@ export default function NotesPage() {
         ...(selectedDate && { date: selectedDate }),
         ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
       });
-      
+
       const response = await fetchWithAuth(`${url}?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch notes');
+      if (!response.ok) throw new Error("Failed to fetch notes");
       const data = await response.json();
 
-      setNotes(data.results.map(note => ({
-        ...note,
-        created_date: Date.parse(note.created_date)
-      })));
+      setNotes(
+        data.results.map((note) => ({
+          ...note,
+          created_date: Date.parse(note.created_date),
+        })),
+      );
 
       setTotalCount(data.count);
 
       if (selectedDate != null) {
         if (data.next !== null) {
-          const nextPage = new URL(data.next).searchParams.get('page');
+          const nextPage = new URL(data.next).searchParams.get("page");
           setCurrentPage(parseInt(nextPage) - 1);
         } else if (data.previous !== null) {
-          const prevPage = new URL(data.previous).searchParams.get('page');
+          const prevPage = new URL(data.previous).searchParams.get("page");
           setCurrentPage(parseInt(prevPage) + 1);
         }
         if (data.highlight_note_id) {
@@ -102,34 +107,41 @@ export default function NotesPage() {
   };
 
   const updateNote = async (noteId, updates) => {
-    setNotes(prevNotes => 
-      prevNotes.map(note => 
-        note.id === noteId ? { ...note, ...updates } : note
-      )
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === noteId ? { ...note, ...updates } : note,
+      ),
     );
   };
 
   const deleteNote = async (noteId) => {
-    setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId));
+    setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
   };
 
   const addNewNote = (note) => {
     // Add note at top initially (unsorted)
-    setNotes(prevNotes => [note, ...prevNotes]);
+    setNotes((prevNotes) => [note, ...prevNotes]);
     setNewNoteId(note.id);
-    
+
     // Clear the newNoteId after all animations complete
     setTimeout(() => setNewNoteId(null), 2000); // Extended from 1200ms to 2000ms
   };
 
-
-  const handleSearch = useCallback((newSearchText, newListSlugs) => {
-    let url = `/search/?q=${encodeURIComponent(newSearchText || '')}`;
-    if (newListSlugs && newListSlugs !== 'All') {
-      url += `&list_slug=${encodeURIComponent(newListSlugs)}`;
+  const handleSearch = useCallback(
+    (newSearchText, newListSlugs) => {
+      let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
+      if (selectedWorkspace && selectedWorkspace.categories) {
+        // If we have a workspace, include its categories in the search
+        const workspaceCategorySlugs = selectedWorkspace.categories
+          .map((cat) => cat.slug)
+          .join(",");
+        url += `&list_slug=${encodeURIComponent(workspaceCategorySlugs)}`;
+        url += `&workspace=${encodeURIComponent(selectedWorkspace.slug)}`;
+      }
       router.push(url);
-    }
-  }, [router]);
+    },
+    [router, selectedWorkspace],
+  );
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -137,7 +149,7 @@ export default function NotesPage() {
   };
 
   return (
-    <div dir="ltr" style={{ minHeight: '100vh', overflow: 'auto' }}>
+    <div dir="ltr" style={{ minHeight: "100vh", overflow: "auto" }}>
       <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
         <PaginationComponent
@@ -161,7 +173,9 @@ export default function NotesPage() {
               className="mb-3 text-body-emphasis mt-2"
             />
             <Form.Group>
-              <Form.Label className='text-body-secondary small'>Show messages for</Form.Label>
+              <Form.Label className="text-body-secondary small">
+                Show messages for
+              </Form.Label>
               <Form.Control
                 type="date"
                 value={date}
@@ -169,7 +183,12 @@ export default function NotesPage() {
               />
             </Form.Group>
           </Col>
-          <Col xs={12} lg={8} className="mx-0 px-3 px-lg-0 order-3 order-lg-2" dir="ltr">
+          <Col
+            xs={12}
+            lg={8}
+            className="mx-0 px-3 px-lg-0 order-3 order-lg-2"
+            dir="ltr"
+          >
             <NoteList
               notes={notes}
               isBusy={isBusy}
@@ -182,11 +201,18 @@ export default function NotesPage() {
             />
           </Col>
           <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
-            <ImportantNotesSidebar listSlug={listSlug} selectedWorkspace={selectedWorkspace} />
+            <ImportantNotesSidebar
+              listSlug={listSlug}
+              selectedWorkspace={selectedWorkspace}
+            />
           </Col>
         </Row>
       </div>
-      <MessageInput onNoteSaved={addNewNote} listSlug={'All'} selectedWorkspace={selectedWorkspace} />
+      <MessageInput
+        onNoteSaved={addNewNote}
+        listSlug={"All"}
+        selectedWorkspace={selectedWorkspace}
+      />
     </div>
   );
 }

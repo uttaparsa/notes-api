@@ -1,15 +1,15 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect, useContext } from 'react';
-import { Container, Card, Button, Badge, Spinner, Form } from 'react-bootstrap';
-import { fetchWithAuth } from '../../lib/api';
-import { ToastContext } from '../layout';
-import Link from 'next/link';
+import React, { useState, useEffect, useContext } from "react";
+import { Container, Card, Button, Badge, Spinner, Form } from "react-bootstrap";
+import { fetchWithAuth } from "../../lib/api";
+import { ToastContext } from "../layout";
+import Link from "next/link";
 
 export default function RemindersPage() {
   const [reminders, setReminders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState("all");
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
@@ -18,21 +18,22 @@ export default function RemindersPage() {
 
   const fetchReminders = async () => {
     try {
-      const url = filter === 'all' 
-        ? '/api/note/reminders/'
-        : `/api/note/reminders/?is_active=${filter === 'active'}`;
-        
+      const url =
+        filter === "all"
+          ? "/api/note/reminders/"
+          : `/api/note/reminders/?is_active=${filter === "active"}`;
+
       const response = await fetchWithAuth(url);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch reminders');
+        throw new Error("Failed to fetch reminders");
       }
-      
+
       const data = await response.json();
       setReminders(data);
     } catch (error) {
-      console.error('Error fetching reminders:', error);
-      showToast('Error', 'Failed to load reminders', 3000, 'danger');
+      console.error("Error fetching reminders:", error);
+      showToast("Error", "Failed to load reminders", 3000, "danger");
     } finally {
       setLoading(false);
     }
@@ -40,41 +41,47 @@ export default function RemindersPage() {
 
   const deleteReminder = async (reminderId) => {
     try {
-      const response = await fetchWithAuth(`/api/note/reminders/${reminderId}/`, {
-        method: 'DELETE',
-      });
+      const response = await fetchWithAuth(
+        `/api/note/reminders/${reminderId}/`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete reminder');
+        throw new Error("Failed to delete reminder");
       }
 
-      showToast('Success', 'Reminder deleted', 3000, 'success');
+      showToast("Success", "Reminder deleted", 3000, "success");
       fetchReminders();
     } catch (error) {
-      console.error('Error deleting reminder:', error);
-      showToast('Error', 'Failed to delete reminder', 3000, 'danger');
+      console.error("Error deleting reminder:", error);
+      showToast("Error", "Failed to delete reminder", 3000, "danger");
     }
   };
 
   const toggleActive = async (reminderId, currentStatus) => {
     try {
-      const response = await fetchWithAuth(`/api/note/reminders/${reminderId}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetchWithAuth(
+        `/api/note/reminders/${reminderId}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ is_active: !currentStatus }),
         },
-        body: JSON.stringify({ is_active: !currentStatus }),
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to update reminder');
+        throw new Error("Failed to update reminder");
       }
 
-      showToast('Success', 'Reminder updated', 3000, 'success');
+      showToast("Success", "Reminder updated", 3000, "success");
       fetchReminders();
     } catch (error) {
-      console.error('Error updating reminder:', error);
-      showToast('Error', 'Failed to update reminder', 3000, 'danger');
+      console.error("Error updating reminder:", error);
+      showToast("Error", "Failed to update reminder", 3000, "danger");
     }
   };
 
@@ -84,10 +91,10 @@ export default function RemindersPage() {
 
   const getFrequencyBadge = (frequency) => {
     const colors = {
-      once: 'secondary',
-      daily: 'primary',
-      weekly: 'info',
-      monthly: 'warning'
+      once: "secondary",
+      daily: "primary",
+      weekly: "info",
+      monthly: "warning",
     };
     return <Badge bg={colors[frequency]}>{frequency}</Badge>;
   };
@@ -104,8 +111,8 @@ export default function RemindersPage() {
     <Container className="mt-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>My Reminders</h2>
-        <Form.Select 
-          style={{ width: '200px' }}
+        <Form.Select
+          style={{ width: "200px" }}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
@@ -119,35 +126,44 @@ export default function RemindersPage() {
         <Card className="text-center p-5">
           <Card.Body>
             <p className="text-muted">No reminders found</p>
-            <p className="small">Create reminders from your notes by selecting text and choosing "Create Reminder"</p>
+            <p className="small">
+              Create reminders from your notes by selecting text and choosing
+              &quot;Create Reminder&quot;
+            </p>
           </Card.Body>
         </Card>
       ) : (
         <div className="row">
           {reminders.map((reminder) => (
             <div key={reminder.id} className="col-md-6 col-lg-4 mb-3">
-              <Card className={!reminder.is_active ? 'opacity-75' : ''}>
+              <Card className={!reminder.is_active ? "opacity-75" : ""}>
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-start mb-2">
                     {getFrequencyBadge(reminder.frequency)}
-                    <Badge bg={reminder.is_active ? 'success' : 'secondary'}>
-                      {reminder.is_active ? 'Active' : 'Inactive'}
+                    <Badge bg={reminder.is_active ? "success" : "secondary"}>
+                      {reminder.is_active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
 
                   <Card.Title className="h6">
-                    {reminder.description || 'No description'}
+                    {reminder.description || "No description"}
                   </Card.Title>
 
                   <Card.Text className="small text-muted mb-2">
                     {reminder.highlighted_text.substring(0, 100)}
-                    {reminder.highlighted_text.length > 100 && '...'}
+                    {reminder.highlighted_text.length > 100 && "..."}
                   </Card.Text>
 
                   <div className="small mb-3">
-                    <div><strong>Scheduled:</strong> {formatDate(reminder.scheduled_time)}</div>
+                    <div>
+                      <strong>Scheduled:</strong>{" "}
+                      {formatDate(reminder.scheduled_time)}
+                    </div>
                     {reminder.last_sent && (
-                      <div><strong>Last sent:</strong> {formatDate(reminder.last_sent)}</div>
+                      <div>
+                        <strong>Last sent:</strong>{" "}
+                        {formatDate(reminder.last_sent)}
+                      </div>
                     )}
                   </div>
 
@@ -157,15 +173,21 @@ export default function RemindersPage() {
                         View Note
                       </Button>
                     </Link>
-                    <Button 
-                      size="sm" 
-                      variant={reminder.is_active ? 'outline-warning' : 'outline-success'}
-                      onClick={() => toggleActive(reminder.id, reminder.is_active)}
+                    <Button
+                      size="sm"
+                      variant={
+                        reminder.is_active
+                          ? "outline-warning"
+                          : "outline-success"
+                      }
+                      onClick={() =>
+                        toggleActive(reminder.id, reminder.is_active)
+                      }
                     >
-                      {reminder.is_active ? 'Deactivate' : 'Activate'}
+                      {reminder.is_active ? "Deactivate" : "Activate"}
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline-danger"
                       onClick={() => deleteReminder(reminder.id)}
                     >

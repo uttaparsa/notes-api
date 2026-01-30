@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormCheck, Row, Col, Button, ProgressBar } from "react-bootstrap";
 import NoteList from "../NoteList";
@@ -10,21 +10,22 @@ import PaginationComponent from "../PaginationComponent";
 import CategoryFilterModal from "./CategoryFilterModal";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
+import { SelectedWorkspaceContext } from "../../(notes)/layout";
 
 export default function ClientSideSearchWrapper() {
   const [notes, setNotes] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
+  const [workspaceSlug, setWorkspaceSlug] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [hasFiles, setHasFiles] = useState(false);
   const [searchText, setSearchText] = useState("");
-  const [listSlug, setListSlug] = useState("All");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const perPage = 20;
   const getRecordsRef = useRef();
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const searchParams = useSearchParams();
 
   const [currentPage, setCurrentPage] = useState(() => {
     const page = searchParams.get("page");
@@ -36,11 +37,17 @@ export default function ClientSideSearchWrapper() {
       setIsBusy(true);
       try {
         const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "All";
+          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
-        if (categorySlugs && categorySlugs !== "All") {
+        if (categorySlugs) {
           url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+        }
+
+        if (workspaceSlug) {
+          url += `&workspace=${encodeURIComponent(workspaceSlug)}`;
+        } else if (selectedWorkspace && selectedWorkspace.slug) {
+          url += `&workspace=${encodeURIComponent(selectedWorkspace.slug)}`;
         }
 
         url += `&page=${page}`;
@@ -57,7 +64,13 @@ export default function ClientSideSearchWrapper() {
         setIsBusy(false);
       }
     },
-    [showHidden, hasFiles, selectedCategories],
+    [
+      showHidden,
+      hasFiles,
+      selectedCategories,
+      workspaceSlug,
+      selectedWorkspace,
+    ],
   );
 
   useEffect(() => {
@@ -70,18 +83,20 @@ export default function ClientSideSearchWrapper() {
       setHasFiles(newHasFiles);
       setCurrentPage(1);
 
-      const categorySlugs =
-        categories.length > 0 ? categories.join(",") : "All";
+      const categorySlugs = categories.length > 0 ? categories.join(",") : "";
       let url = `/search/?q=${encodeURIComponent(searchText || "")}`;
-      if (categorySlugs && categorySlugs !== "All") {
+      if (categorySlugs) {
         url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
       }
       if (newHasFiles) {
         url += `&has_files=true`;
       }
+      if (workspaceSlug || (selectedWorkspace && selectedWorkspace.slug)) {
+        url += `&workspace=${encodeURIComponent(workspaceSlug || selectedWorkspace.slug)}`;
+      }
       router.push(url);
     },
-    [searchText, router],
+    [searchText, router, workspaceSlug, selectedWorkspace],
   );
 
   const updateNote = async (noteId, updates) => {
@@ -99,29 +114,59 @@ export default function ClientSideSearchWrapper() {
 
   useEffect(() => {
     const query = searchParams.get("q");
-    const slug = searchParams.get("list_slug") || "All";
+    const slug = searchParams.get("list_slug") || "";
     const page = searchParams.get("page");
     const hasFilesParam = searchParams.get("has_files") === "true";
-    if (searchParams.has("q") || slug !== "All" || hasFilesParam) {
+    const workspaceParam = searchParams.get("workspace") || "";
+    if (searchParams.has("q") || slug || hasFilesParam || workspaceParam) {
       setSearchText(query);
       setHasFiles(hasFilesParam);
-      if (slug === "All") {
-        setSelectedCategories([]);
-      } else if (slug.includes(",")) {
-        setSelectedCategories(slug.split(","));
+      setWorkspaceSlug(workspaceParam);
+
+      if (slug) {
+        if (slug.includes(",")) {
+          setSelectedCategories(slug.split(","));
+        } else {
+          setSelectedCategories([slug]);
+        }
       } else {
-        setSelectedCategories([slug]);
+        // No specific categories in URL, check if we should default to workspace categories
+        if (
+          selectedWorkspace &&
+          selectedWorkspace.categories &&
+          !workspaceParam
+        ) {
+          // If we have a workspace but no workspace param in URL, this might be a fresh search
+          // Default to workspace categories
+          const workspaceCategorySlugs = selectedWorkspace.categories.map(
+            (cat) => cat.slug,
+          );
+          setSelectedCategories(workspaceCategorySlugs);
+          setWorkspaceSlug(selectedWorkspace.slug);
+        } else {
+          setSelectedCategories([]);
+        }
       }
+
       if (page) {
         setCurrentPage(parseInt(page));
       }
+
       // If slug contains commas, split it into an array
       const slugsToSearch = slug.includes(",") ? slug.split(",") : slug;
       console.log("slugsToSearch", slugsToSearch);
 
       getRecordsRef.current(query, page || currentPage);
+    } else {
+      // No search params, check if we should initialize with workspace categories
+      if (selectedWorkspace && selectedWorkspace.categories) {
+        setSelectedCategories(
+          selectedWorkspace.categories.map((cat) => cat.slug),
+        );
+        setWorkspaceSlug(selectedWorkspace.slug);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, selectedWorkspace]);
 
   const handleSearch = useCallback(
     (newSearchText) => {
@@ -132,32 +177,43 @@ export default function ClientSideSearchWrapper() {
         setCurrentPage(1);
 
         const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "All";
+          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
-        if (categorySlugs && categorySlugs !== "All") {
+        if (categorySlugs) {
           url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
         }
         if (hasFiles) {
           url += `&has_files=true`;
         }
+        if (workspaceSlug || (selectedWorkspace && selectedWorkspace.slug)) {
+          url += `&workspace=${encodeURIComponent(workspaceSlug || selectedWorkspace.slug)}`;
+        }
         router.push(url);
       }
     },
-    [searchText, selectedCategories, hasFiles, router],
+    [
+      searchText,
+      selectedCategories,
+      hasFiles,
+      router,
+      workspaceSlug,
+      selectedWorkspace,
+    ],
   );
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     let url = `/search/?q=${encodeURIComponent(searchText)}`;
-    if (listSlug && listSlug !== "All") {
-      if (Array.isArray(listSlug)) {
-        url += `&list_slug=${encodeURIComponent(listSlug.join(","))}`;
-      } else {
-        url += `&list_slug=${encodeURIComponent(listSlug)}`;
-      }
+    const categorySlugs =
+      selectedCategories.length > 0 ? selectedCategories.join(",") : "";
+    if (categorySlugs) {
+      url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
     }
     if (hasFiles) {
       url += `&has_files=true`;
+    }
+    if (workspaceSlug || (selectedWorkspace && selectedWorkspace.slug)) {
+      url += `&workspace=${encodeURIComponent(workspaceSlug || selectedWorkspace.slug)}`;
     }
     url += `&page=${newPage}`;
     router.push(url, undefined, { shallow: true });
@@ -211,7 +267,7 @@ export default function ClientSideSearchWrapper() {
               listSlug={
                 selectedCategories.length > 0
                   ? selectedCategories.join(",")
-                  : "All"
+                  : ""
               }
               hasFiles={hasFiles}
             />

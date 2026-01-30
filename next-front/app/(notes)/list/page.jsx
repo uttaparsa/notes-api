@@ -1,80 +1,112 @@
-'use client';
+"use client";
 
-import React, { useState, useContext, useEffect } from 'react';
-import Link from 'next/link';
-import { Container, ListGroup, Button, Modal, Form, Dropdown, Badge, Card, Row, Col } from 'react-bootstrap';
-import { NoteListContext, WorkspaceContext, ToastContext, SelectedWorkspaceContext } from '../layout';
-import { fetchWithAuth } from '../../lib/api';
+import React, { useState, useContext, useEffect } from "react";
+import Link from "next/link";
+import {
+  Container,
+  ListGroup,
+  Button,
+  Modal,
+  Form,
+  Dropdown,
+  Badge,
+  Card,
+  Row,
+  Col,
+} from "react-bootstrap";
+import {
+  NoteListContext,
+  WorkspaceContext,
+  ToastContext,
+  SelectedWorkspaceContext,
+} from "../layout";
+import { fetchWithAuth } from "../../lib/api";
 
 export default function CategoryList() {
-  const [newListName, setNewListName] = useState('');
+  const [newListName, setNewListName] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedList, setSelectedList] = useState(null);
-  const [renameListName, setRenameListName] = useState('');
-  
+  const [renameListName, setRenameListName] = useState("");
+
   // Workspace related state
-  const [newWorkspaceName, setNewWorkspaceName] = useState('');
-  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState('');
+  const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  const [newWorkspaceDescription, setNewWorkspaceDescription] = useState("");
   const [showWorkspaceModal, setShowWorkspaceModal] = useState(false);
-  const [showWorkspaceRenameModal, setShowWorkspaceRenameModal] = useState(false);
-  const [showWorkspaceDeleteModal, setShowWorkspaceDeleteModal] = useState(false);
+  const [showWorkspaceRenameModal, setShowWorkspaceRenameModal] =
+    useState(false);
+  const [showWorkspaceDeleteModal, setShowWorkspaceDeleteModal] =
+    useState(false);
   const [localSelectedWorkspace, setLocalSelectedWorkspace] = useState(null);
-  const [renameWorkspaceName, setRenameWorkspaceName] = useState('');
-  const [renameWorkspaceDescription, setRenameWorkspaceDescription] = useState('');
-  
+  const [renameWorkspaceName, setRenameWorkspaceName] = useState("");
+  const [renameWorkspaceDescription, setRenameWorkspaceDescription] =
+    useState("");
+
   const noteLists = useContext(NoteListContext);
   const workspaces = useContext(WorkspaceContext);
   const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
   const showToast = useContext(ToastContext);
 
-  const filteredNoteLists = selectedWorkspace && !selectedWorkspace.is_default ? noteLists.filter(lst => lst.workspaces.some(ws => ws.id === selectedWorkspace.id)) : noteLists;
+  const filteredNoteLists =
+    selectedWorkspace && !selectedWorkspace.is_default
+      ? noteLists.filter((lst) =>
+          lst.workspaces.some((ws) => ws.id === selectedWorkspace.id),
+        )
+      : noteLists;
 
   useEffect(() => {
-    window.dispatchEvent(new Event('updateNoteLists'));
-    window.dispatchEvent(new Event('updateWorkspaces'));
+    window.dispatchEvent(new Event("updateNoteLists"));
+    window.dispatchEvent(new Event("updateWorkspaces"));
   }, []);
 
   const handleApiCall = async (apiCall, successMessage, errorMessage) => {
     try {
-      window.dispatchEvent(new CustomEvent('showWaitingModal', { detail: { title: 'Waiting for server response' } }));
+      window.dispatchEvent(
+        new CustomEvent("showWaitingModal", {
+          detail: { title: "Waiting for server response" },
+        }),
+      );
       const response = await apiCall();
       if (!response.ok) throw new Error(errorMessage);
-      window.dispatchEvent(new Event('hideWaitingModal'));
-      window.dispatchEvent(new Event('updateNoteLists'));
-      if (successMessage) showToast('Success', successMessage, 3000, 'success');
+      window.dispatchEvent(new Event("hideWaitingModal"));
+      window.dispatchEvent(new Event("updateNoteLists"));
+      if (successMessage) showToast("Success", successMessage, 3000, "success");
     } catch (err) {
-      window.dispatchEvent(new Event('hideWaitingModal'));
-      showToast('Error', errorMessage, 3000, 'danger');
+      window.dispatchEvent(new Event("hideWaitingModal"));
+      showToast("Error", errorMessage, 3000, "danger");
     }
   };
 
-  const sendNewListName = () => handleApiCall(
-    () => fetchWithAuth('/api/note/list/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newListName }),
-    }),
-    'New list created',
-    'Failed to create new list'
-  ).then(() => {
-    setShowModal(false);
-    setNewListName('');
-  });
+  const sendNewListName = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth("/api/note/list/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newListName }),
+        }),
+      "New list created",
+      "Failed to create new list",
+    ).then(() => {
+      setShowModal(false);
+      setNewListName("");
+    });
 
-  const renameList = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${selectedList.id}/`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: renameListName }),
-    }),
-    'List renamed',
-    'Failed to rename list'
-  ).then(() => {
-    setShowRenameModal(false);
-    setRenameListName('');
-  });
+  const renameList = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth(`/api/note/list/${selectedList.id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: renameListName }),
+        }),
+      "List renamed",
+      "Failed to rename list",
+    ).then(() => {
+      setShowRenameModal(false);
+      setRenameListName("");
+    });
 
   const openRenameModal = (list) => {
     setSelectedList(list);
@@ -87,56 +119,62 @@ export default function CategoryList() {
     setShowDeleteModal(true);
   };
 
-  const deleteList = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/list/${selectedList.id}/delete`, {
-      method: 'DELETE',
-    }),
-    'List deleted',
-    'Failed to delete list'
-  ).then(() => {
-    setShowDeleteModal(false);
-    setSelectedList(null);
-  });
+  const deleteList = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth(`/api/note/list/${selectedList.id}/delete`, {
+          method: "DELETE",
+        }),
+      "List deleted",
+      "Failed to delete list",
+    ).then(() => {
+      setShowDeleteModal(false);
+      setSelectedList(null);
+    });
 
   // Workspace functions
-  const createWorkspace = () => handleApiCall(
-    () => fetchWithAuth('/api/note/workspaces/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        name: newWorkspaceName,
-        description: newWorkspaceDescription 
-      }),
-    }),
-    'Workspace created',
-    'Failed to create workspace'
-  ).then(() => {
-    setShowWorkspaceModal(false);
-    setNewWorkspaceName('');
-    setNewWorkspaceDescription('');
-  });
+  const createWorkspace = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth("/api/note/workspaces/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: newWorkspaceName,
+            description: newWorkspaceDescription,
+          }),
+        }),
+      "Workspace created",
+      "Failed to create workspace",
+    ).then(() => {
+      setShowWorkspaceModal(false);
+      setNewWorkspaceName("");
+      setNewWorkspaceDescription("");
+    });
 
-  const renameWorkspace = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        name: renameWorkspaceName,
-        description: renameWorkspaceDescription 
-      }),
-    }),
-    'Workspace renamed',
-    'Failed to rename workspace'
-  ).then(() => {
-    setShowWorkspaceRenameModal(false);
-    setRenameWorkspaceName('');
-    setRenameWorkspaceDescription('');
-  });
+  const renameWorkspace = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: renameWorkspaceName,
+            description: renameWorkspaceDescription,
+          }),
+        }),
+      "Workspace renamed",
+      "Failed to rename workspace",
+    ).then(() => {
+      setShowWorkspaceRenameModal(false);
+      setRenameWorkspaceName("");
+      setRenameWorkspaceDescription("");
+    });
 
   const openWorkspaceRenameModal = (workspace) => {
     setLocalSelectedWorkspace(workspace);
     setRenameWorkspaceName(workspace.name);
-    setRenameWorkspaceDescription(workspace.description || '');
+    setRenameWorkspaceDescription(workspace.description || "");
     setShowWorkspaceRenameModal(true);
   };
 
@@ -145,16 +183,18 @@ export default function CategoryList() {
     setShowWorkspaceDeleteModal(true);
   };
 
-  const deleteWorkspace = () => handleApiCall(
-    () => fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
-      method: 'DELETE',
-    }),
-    'Workspace deleted',
-    'Failed to delete workspace'
-  ).then(() => {
-    setShowWorkspaceDeleteModal(false);
-    setLocalSelectedWorkspace(null);
-  });
+  const deleteWorkspace = () =>
+    handleApiCall(
+      () =>
+        fetchWithAuth(`/api/note/workspaces/${localSelectedWorkspace.id}/`, {
+          method: "DELETE",
+        }),
+      "Workspace deleted",
+      "Failed to delete workspace",
+    ).then(() => {
+      setShowWorkspaceDeleteModal(false);
+      setLocalSelectedWorkspace(null);
+    });
 
   return (
     <Container className="py-4">
@@ -168,12 +208,15 @@ export default function CategoryList() {
               <ListGroup variant="flush">
                 {filteredNoteLists.map((lst, lst_idx) => (
                   <React.Fragment key={lst.id}>
-                    <ListGroup.Item 
+                    <ListGroup.Item
                       className="d-flex justify-content-between align-items-center mb-2"
                       variant="secondary"
                     >
                       <div className="d-flex align-items-center gap-2">
-                        <Link href={`/list/${lst.slug}/`} className="text-decoration-none">
+                        <Link
+                          href={`/list/${lst.slug}/`}
+                          className="text-decoration-none"
+                        >
                           {lst.name}
                         </Link>
                         {lst.workspaces && lst.workspaces.length > 0 && (
@@ -191,7 +234,7 @@ export default function CategoryList() {
                             Rename
                           </Dropdown.Item>
                           <Dropdown.Divider />
-                          <Dropdown.Item 
+                          <Dropdown.Item
                             onClick={() => openDeleteModal(lst)}
                             className="text-danger"
                           >
@@ -205,7 +248,11 @@ export default function CategoryList() {
               </ListGroup>
 
               <div className="text-center mt-4">
-                <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowModal(true)}
+                >
                   Create New Category
                 </Button>
               </div>
@@ -221,21 +268,28 @@ export default function CategoryList() {
             <Card.Body>
               <ListGroup variant="flush">
                 {workspaces.map((workspace) => (
-                  <ListGroup.Item 
+                  <ListGroup.Item
                     key={workspace.id}
                     className="d-flex justify-content-between align-items-center mb-2"
                   >
                     <div>
                       <div className="fw-bold">
-                        <Link href={`/workspace/${workspace.slug}/`} className="text-decoration-none">
+                        <Link
+                          href={`/workspace/${workspace.slug}/`}
+                          className="text-decoration-none"
+                        >
                           {workspace.name}
                         </Link>
                         {workspace.is_default && (
-                          <Badge bg="success" className="ms-2">Default</Badge>
+                          <Badge bg="success" className="ms-2">
+                            Default
+                          </Badge>
                         )}
                       </div>
                       {workspace.description && (
-                        <small className="text-muted">{workspace.description}</small>
+                        <small className="text-muted">
+                          {workspace.description}
+                        </small>
                       )}
                       <div className="mt-1">
                         <small className="text-muted">
@@ -248,11 +302,13 @@ export default function CategoryList() {
                         Actions
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => openWorkspaceRenameModal(workspace)}>
+                        <Dropdown.Item
+                          onClick={() => openWorkspaceRenameModal(workspace)}
+                        >
                           Rename
                         </Dropdown.Item>
                         <Dropdown.Divider />
-                        <Dropdown.Item 
+                        <Dropdown.Item
                           onClick={() => openWorkspaceDeleteModal(workspace)}
                           className="text-danger"
                         >
@@ -265,7 +321,11 @@ export default function CategoryList() {
               </ListGroup>
 
               <div className="text-center mt-4">
-                <Button variant="success" size="sm" onClick={() => setShowWorkspaceModal(true)}>
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => setShowWorkspaceModal(true)}
+                >
                   Create New Workspace
                 </Button>
               </div>
@@ -329,8 +389,14 @@ export default function CategoryList() {
           <Modal.Title>Delete Category</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Are you sure you want to delete the category "{selectedList?.name}"?</p>
-          <p className="text-danger">This action cannot be undone. The category must be empty to be deleted.</p>
+          <p>
+            Are you sure you want to delete the category &quot;
+            {selectedList?.name}&quot;?
+          </p>
+          <p className="text-danger">
+            This action cannot be undone. The category must be empty to be
+            deleted.
+          </p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
@@ -343,7 +409,10 @@ export default function CategoryList() {
       </Modal>
 
       {/* Workspace Modals */}
-      <Modal show={showWorkspaceModal} onHide={() => setShowWorkspaceModal(false)}>
+      <Modal
+        show={showWorkspaceModal}
+        onHide={() => setShowWorkspaceModal(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Create New Workspace</Modal.Title>
         </Modal.Header>
@@ -369,7 +438,10 @@ export default function CategoryList() {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowWorkspaceModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowWorkspaceModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="success" onClick={createWorkspace}>
@@ -378,7 +450,10 @@ export default function CategoryList() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showWorkspaceRenameModal} onHide={() => setShowWorkspaceRenameModal(false)}>
+      <Modal
+        show={showWorkspaceRenameModal}
+        onHide={() => setShowWorkspaceRenameModal(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Rename Workspace</Modal.Title>
         </Modal.Header>
@@ -404,7 +479,10 @@ export default function CategoryList() {
           </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowWorkspaceRenameModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowWorkspaceRenameModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="primary" onClick={renameWorkspace}>
@@ -413,16 +491,28 @@ export default function CategoryList() {
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showWorkspaceDeleteModal} onHide={() => setShowWorkspaceDeleteModal(false)}>
+      <Modal
+        show={showWorkspaceDeleteModal}
+        onHide={() => setShowWorkspaceDeleteModal(false)}
+      >
         <Modal.Header closeButton>
           <Modal.Title>Delete Workspace</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Are you sure you want to delete the workspace "{localSelectedWorkspace?.name}"?</p>
-          <p className="text-danger">This action cannot be undone. Categories in this workspace will remain but won't be associated with any workspace.</p>
+          <p>
+            Are you sure you want to delete the workspace &quot;
+            {localSelectedWorkspace?.name}&quot;?
+          </p>
+          <p className="text-danger">
+            This action cannot be undone. Categories in this workspace will
+            remain but won&apos;t be associated with any workspace.
+          </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowWorkspaceDeleteModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowWorkspaceDeleteModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="danger" onClick={deleteWorkspace}>
