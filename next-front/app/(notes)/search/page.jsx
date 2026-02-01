@@ -9,6 +9,7 @@ import SemanticSearchResults from "../../components/search/SemanticSearchResults
 import PaginationComponent from "../../components/PaginationComponent";
 import CategoryFilterModal from "../../components/search/CategoryFilterModal";
 import SearchFilters from "../../components/search/SearchFilters";
+import FloatingFilterButton from "../../components/FloatingFilterButton";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import { SelectedWorkspaceContext } from "../layout";
@@ -231,24 +232,7 @@ export default function SearchPage() {
         </Row>
       </div>
 
-      <Button
-        variant="primary"
-        className="d-lg-none position-fixed bottom-0 end-0 m-3 rounded-circle"
-        style={{ width: "56px", height: "56px", zIndex: 1050 }}
-        onClick={() => setShowCategoryModal(true)}
-        title="Filter by Categories"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          fill="currentColor"
-          className="bi bi-funnel-fill"
-          viewBox="0 0 16 16"
-        >
-          <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2.05a2.5 2.5 0 0 1 0 4.9v2.05a.5.5 0 0 1-.5.5H2a.5.5 0 0 1-.5-.5v-2.05a2.5 2.5 0 0 1 0-4.9V1.5z" />
-        </svg>
-      </Button>
+      <FloatingFilterButton onClick={() => setShowCategoryModal(true)} />
 
       <CategoryFilterModal
         show={showCategoryModal}
