@@ -49,12 +49,13 @@ class SimilarNotesView(APIView):
                 except Exception as e:
                     logger.error(f"Error creating embedding for note {note_id}: {str(e)}")
 
-            # Get IDs of notes that link to the current note (backlinks)
+            # Get IDs of linked notes (both directions)
             backlink_ids = set(Link.objects.filter(dest_message_id=note_id).values_list('source_message_id', flat=True))
+            forward_link_ids = set(Link.objects.filter(source_message_id=note_id).values_list('dest_message_id', flat=True))
+            linked_note_ids = backlink_ids | forward_link_ids
 
-            # Fetch more items to account for filtering out backlinks and workspace categories, ensure we can meet the limit
-            # Add buffer for backlinks and workspace filtering
-            effective_limit = (limit + len(backlink_ids)) * 2 
+            # Fetch more items to account for filtering out linked notes and workspace categories
+            effective_limit = (limit + len(linked_note_ids)) * 2 
 
             # Get similar notes based on embeddings
             similar_notes_results = NoteEmbedding.find_similar_notes(note_id, limit=effective_limit)
@@ -63,8 +64,8 @@ class SimilarNotesView(APIView):
             for result in similar_notes_results:
                 try:
                     similar_note_id = result['note_id']
-                    # Exclude if the similar note is the note itself or if it's a backlink
-                    if similar_note_id == note.id or similar_note_id in backlink_ids:
+                    # Exclude if the similar note is the note itself or if it's linked (either direction)
+                    if similar_note_id == note.id or similar_note_id in linked_note_ids:
                         continue
 
                     similar_note = LocalMessage.objects.get(id=similar_note_id)

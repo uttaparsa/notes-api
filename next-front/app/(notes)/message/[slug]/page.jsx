@@ -91,14 +91,7 @@ const SingleNoteView = () => {
       }
       const data = await response.json();
 
-      // Log distances for debugging
-      console.log(
-        "Similar notes distances:",
-        data.map((note) => ({ id: note.id, distance: note.distance })),
-      );
-
       setSimilarNotes(data);
-      // Trigger animation after a brief delay to ensure DOM is ready
       setTimeout(() => setSimilarNotesLoaded(true), 50);
     } catch (error) {
       console.error("Error fetching similar notes:", error);
