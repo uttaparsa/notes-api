@@ -8,12 +8,11 @@ export default function CategorySelector({ selectedSlug, onSelectCategory }) {
   const noteLists = useContext(NoteListContext);
   const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
 
-  const availableCategories =
-    selectedWorkspace && !selectedWorkspace.is_default
-      ? noteLists.filter((list) =>
-          selectedWorkspace.categories.some((c) => c.id === list.id),
-        )
-      : noteLists;
+  const availableCategories = selectedWorkspace
+    ? noteLists.filter((list) =>
+        selectedWorkspace.categories.some((c) => c.id === list.id),
+      )
+    : noteLists;
 
   return (
     <Form.Group className="mb-3">
