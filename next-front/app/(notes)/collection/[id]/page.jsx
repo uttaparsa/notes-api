@@ -36,7 +36,10 @@ export default function CollectionPage() {
 
   const loadCollection = async () => {
     try {
-      const data = await fetchWithAuth(`/api/note/collections/${params.id}/`);
+      const response = await fetchWithAuth(
+        `/api/note/collections/${params.id}/`,
+      );
+      const data = await response.json();
       setCollection(data);
       setCollectionName(data.name);
       setCollectionDescription(data.description);
@@ -49,9 +52,11 @@ export default function CollectionPage() {
   const loadFiles = async () => {
     try {
       setLoading(true);
-      const data = await fetchWithAuth(
+      const response = await fetchWithAuth(
         `/api/note/collections/${params.id}/files/`,
       );
+      const data = await response.json();
+      console.log("Loaded files:", data);
       setFiles(Array.isArray(data) ? data : []);
     } catch (error) {
       handleApiError(error, showToast);
@@ -61,23 +66,45 @@ export default function CollectionPage() {
     }
   };
 
-  const handleFileUploaded = async (uploadedFiles) => {
-    for (const file of uploadedFiles) {
-      try {
-        await fetchWithAuth(`/api/note/collections/${params.id}/files/`, {
+  const handleFileUploaded = async (uploadedFile) => {
+    console.log("File uploaded:", uploadedFile);
+    console.log("Collection ID:", params.id);
+    console.log("File ID from uploadedFile.file_id:", uploadedFile.file_id);
+    console.log("File ID from uploadedFile.file?.id:", uploadedFile.file?.id);
+
+    const fileId = uploadedFile.file_id || uploadedFile.file?.id;
+
+    if (!fileId) {
+      showToast("Error: No file ID received from upload", "error");
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/note/collections/${params.id}/files/`,
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ file_id: file.id }),
-        });
-      } catch (error) {
-        handleApiError(error, showToast);
+          body: JSON.stringify({ file_id: fileId }),
+        },
+      );
+
+      console.log("Response status:", response.status);
+      const data = await response.json();
+      console.log("Response data:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to add file");
       }
+
+      loadFiles();
+      showToast("File added to collection", "success");
+      setShowUploadModal(false);
+    } catch (error) {
+      handleApiError(error, showToast);
     }
-    setShowUploadModal(false);
-    loadFiles();
-    showToast("Files added to collection", "success");
   };
 
   const handleDeleteFile = async (fileId) => {
@@ -100,16 +127,26 @@ export default function CollectionPage() {
 
   const handleUpdateCollection = async () => {
     try {
-      await fetchWithAuth(`/api/note/collections/${params.id}/`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetchWithAuth(
+        `/api/note/collections/${params.id}/`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: collectionName,
+            description: collectionDescription,
+          }),
         },
-        body: JSON.stringify({
-          name: collectionName,
-          description: collectionDescription,
-        }),
-      });
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update collection");
+      }
+
+      const data = await response.json();
       setCollection({
         ...collection,
         name: collectionName,
@@ -262,7 +299,7 @@ export default function CollectionPage() {
         </Modal.Header>
         <Modal.Body>
           <FileUploadComponent
-            onFilesUploaded={handleFileUploaded}
+            onSuccess={handleFileUploaded}
             showToast={showToast}
           />
         </Modal.Body>

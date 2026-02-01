@@ -66,10 +66,28 @@ class CollectionFilesView(APIView):
 
     def post(self, request, collection_id):
         collection = get_object_or_404(FileCollection, id=collection_id, user=request.user)
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Request data: {request.data}")
+        logger.error(f"Content-Type: {request.content_type}")
+        logger.error(f"Request META: {request.META.get('CONTENT_LENGTH')}")
+        
+        try:
+            import json
+            body = request.body.decode('utf-8') if hasattr(request, '_body') else 'no body'
+            logger.error(f"Raw body: {body}")
+        except:
+            logger.error("Could not read body")
+        
         file_id = request.data.get('file_id')
         
         if not file_id:
-            return Response({'error': 'file_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': 'file_id is required',
+                'received_data': str(request.data),
+                'content_type': request.content_type
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
         collection.files.add(file_obj)
