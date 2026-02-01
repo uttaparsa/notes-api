@@ -1,6 +1,6 @@
 from django.urls import path, re_path
 
-from .views.file_view import FileUploadView, serve_minio_file, NoteFilesView, FileDetailView
+from .views.file_view import FileUploadView, serve_minio_file, NoteFilesView, FileDetailView, FileListView
 from .views.list_view import NoteListView, DeleteMessageListView
 from .views.search_view import SearchResultsView
 from .views.note_view import NoteView, SingleNoteView, MoveMessageView, IncreaseImportanceView, DecreaseImportanceView, ArchiveMessageView, UnArchiveMessageView, NoteRevisionView, ImportantNotesView, NotePageView
@@ -33,6 +33,7 @@ urlpatterns = [
     path('feed/<slug>/', UnifiedFeedView.as_view(), name='unified-feed-by-category'),
     
     path('upload/', FileUploadView.as_view(), name='file-upload'),
+    path('all-files/', FileListView.as_view(), name='all-files'),
     path('message/<int:note_id>/files/', NoteFilesView.as_view(), name='note-files'),
     path('files/<int:file_id>/', FileDetailView.as_view(), name='file-detail'),
     path('files/<path:file_path>', serve_minio_file, name='serve_minio_file'),

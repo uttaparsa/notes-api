@@ -49,8 +49,13 @@ export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
               </Link>
             </Nav.Item>
             <Nav.Item>
-              <Link href="/list" passHref legacyBehavior>
-                <Nav.Link>Notes</Nav.Link>
+              <Link href="/files" passHref legacyBehavior>
+                <Nav.Link>Files</Nav.Link>
+              </Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Link href="/manage" passHref legacyBehavior>
+                <Nav.Link>Manage</Nav.Link>
               </Link>
             </Nav.Item>
             <Nav.Item>

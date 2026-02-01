@@ -292,3 +292,40 @@ class FileDetailView(APIView):
         file_obj.delete()
         return Response(status=204)
 
+
+class FileListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        files = File.objects.filter(user=request.user).prefetch_related('notes', 'collections')
+        
+        file_data = []
+        for file in files:
+            notes = file.notes.filter(user=request.user)
+            collections = file.collections.filter(user=request.user)
+            
+            file_data.append({
+                'id': file.id,
+                'name': file.name,
+                'original_name': file.original_name,
+                'size': file.size,
+                'content_type': file.content_type,
+                'uploaded_at': file.uploaded_at,
+                'url': f"/api/note/files/{file.minio_path}",
+                'note_count': notes.count(),
+                'collection_count': collections.count(),
+                'notes': [{
+                    'id': note.id,
+                    'text': note.text[:100] + ('...' if len(note.text) > 100 else ''),
+                    'category': note.list.name,
+                    'category_slug': note.list.slug
+                } for note in notes[:5]],
+                'collections': [{
+                    'id': collection.id,
+                    'name': collection.name,
+                    'category': collection.list.name,
+                    'category_slug': collection.list.slug
+                } for collection in collections[:5]]
+            })
+        
+        return Response(file_data)
