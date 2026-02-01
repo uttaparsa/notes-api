@@ -18,12 +18,23 @@ class SimilarNotesView(APIView):
         
         # Get query parameters
         limit = int(request.query_params.get('limit', 4))
+        workspace_slug = request.query_params.get('workspace')
         
-        # Get workspaces of the current note's category
-        workspaces = note.list.workspaces.all()
+        # Determine which workspace to filter by
         workspace_category_ids = set()
-        for ws in workspaces:
-            workspace_category_ids.update(ws.categories.values_list('id', flat=True))
+        if workspace_slug:
+            from ..models import Workspace
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=request.user)
+                workspace_category_ids.update(workspace.categories.values_list('id', flat=True))
+            except Workspace.DoesNotExist:
+                pass
+        
+        # If no workspace specified or workspace not found, use all categories from all workspaces
+        if not workspace_category_ids:
+            workspaces = note.list.workspaces.all()
+            for ws in workspaces:
+                workspace_category_ids.update(ws.categories.values_list('id', flat=True))
         
         try:
             results = []

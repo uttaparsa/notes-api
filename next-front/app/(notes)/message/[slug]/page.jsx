@@ -8,7 +8,7 @@ import { CompactMarkdownRenderer } from "../../../components/notecard/markdown/M
 import { fetchWithAuth } from "@/app/lib/api";
 import { handleApiError } from "@/app/utils/errorHandler";
 import { Spinner, Badge } from "react-bootstrap";
-import { NoteListContext } from "../../layout";
+import { NoteListContext, SelectedWorkspaceContext } from "../../layout";
 
 const SingleNoteView = () => {
   const [noteBusy, setNoteBusy] = useState(true);
@@ -21,6 +21,7 @@ const SingleNoteView = () => {
   const noteContainerRef = useRef(null);
   const params = useParams();
   const noteLists = useContext(NoteListContext);
+  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,8 +77,11 @@ const SingleNoteView = () => {
 
   const fetchSimilarNotes = async (noteId) => {
     try {
+      const workspaceParam = selectedWorkspace?.slug
+        ? `?workspace=${encodeURIComponent(selectedWorkspace.slug)}`
+        : "";
       const response = await fetchWithAuth(
-        `/api/note/message/${noteId}/similar/`,
+        `/api/note/message/${noteId}/similar/${workspaceParam}`,
         {},
         10000,
       );
