@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Button } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import styles from "../NoteCard.module.css";
 import { isRTL } from "../../../utils/stringUtils";
 import { copyTextToClipboard } from "../../../utils/clipboardUtils";
@@ -345,6 +345,21 @@ const DisplayRenderer = ({
   onDeleteFile = () => {},
 }) => {
   const { openExternalLink } = useExternalLink();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+
+  const handleDeleteClick = (fileSrc) => {
+    setFileToDelete(fileSrc);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (fileToDelete) {
+      onDeleteFile(fileToDelete);
+    }
+    setShowDeleteModal(false);
+    setFileToDelete(null);
+  };
 
   const highlightPlugin = useMemo(
     () => createHighlightPlugin(highlightStart, highlightEnd),
@@ -357,7 +372,7 @@ const DisplayRenderer = ({
     shouldLoadLinks,
     showToast,
     openExternalLink,
-    onDeleteFile,
+    handleDeleteClick,
   );
 
   let textToRender =
@@ -368,27 +383,45 @@ const DisplayRenderer = ({
   textToRender = processTextForHashtags(textToRender);
 
   return (
-    <span
-      className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
-      dir={isRTL(note.text) ? "rtl" : "ltr"}
-    >
-      <ReactMarkdown
-        components={customRenderers}
-        remarkPlugins={[remarkGfm, highlightPlugin]}
-        className={`${isRTL(note.text) ? styles.rtlMarkdown : ""}`}
+    <>
+      <span
+        className={`card-text ${isRTL(note.text) ? "text-end" : ""}`}
+        dir={isRTL(note.text) ? "rtl" : "ltr"}
       >
-        {textToRender}
-      </ReactMarkdown>
-
-      {!singleView && note.text.length > 1000 && !isExpanded && (
-        <span
-          onClick={() => onExpand()}
-          className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap"
+        <ReactMarkdown
+          components={customRenderers}
+          remarkPlugins={[remarkGfm, highlightPlugin]}
+          className={`${isRTL(note.text) ? styles.rtlMarkdown : ""}`}
         >
-          <b>...</b>
-        </span>
-      )}
-    </span>
+          {textToRender}
+        </ReactMarkdown>
+
+        {!singleView && note.text.length > 1000 && !isExpanded && (
+          <span
+            onClick={() => onExpand()}
+            className="h4 mx-2 px-1 rounded py-0 text-secondary border flex-sn-wrap"
+          >
+            <b>...</b>
+          </span>
+        )}
+      </span>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to remove this file from the note?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

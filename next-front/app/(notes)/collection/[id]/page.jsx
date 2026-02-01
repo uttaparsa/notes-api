@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Container,
@@ -28,6 +28,8 @@ export default function CollectionPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [collectionName, setCollectionName] = useState("");
   const [collectionDescription, setCollectionDescription] = useState("");
+  const [dragActive, setDragActive] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     loadCollection();
@@ -159,6 +161,82 @@ export default function CollectionPage() {
     }
   };
 
+  const handleDrag = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const droppedFiles = Array.from(e.dataTransfer.files);
+
+        for (const file of droppedFiles) {
+          await uploadFile(file);
+        }
+      }
+    },
+    [params.id],
+  );
+
+  const uploadFile = async (file) => {
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("compress_image", false);
+
+    try {
+      const response = await fetchWithAuth("/api/note/upload/", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      const data = await response.json();
+      const fileId = data.file_id || data.file?.id;
+
+      if (!fileId) {
+        throw new Error("No file ID received from upload");
+      }
+
+      const addResponse = await fetchWithAuth(
+        `/api/note/collections/${params.id}/files/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ file_id: fileId }),
+        },
+      );
+
+      if (!addResponse.ok) {
+        const errorData = await addResponse.json();
+        throw new Error(errorData.error || "Failed to add file to collection");
+      }
+
+      loadFiles();
+      showToast(`File "${file.name}" added successfully`, "success");
+    } catch (error) {
+      handleApiError(error, showToast);
+      showToast(`Failed to upload "${file.name}"`, "error");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -212,82 +290,139 @@ export default function CollectionPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-5">
-          <Spinner animation="border" />
-        </div>
-      ) : files.length === 0 ? (
-        <Card className="text-center py-5">
-          <Card.Body>
-            <p className="text-muted">No files in this collection yet.</p>
-            <Button variant="primary" onClick={() => setShowUploadModal(true)}>
-              Add Files
-            </Button>
-          </Card.Body>
-        </Card>
-      ) : (
-        <Row className="g-3">
-          {files.map((file) => (
-            <Col key={file.id} xs={12} sm={6} md={4} lg={3}>
-              <Card className="h-100">
-                {file.content_type?.startsWith("image/") ? (
-                  <Card.Img
-                    variant="top"
-                    src={file.url}
-                    alt={file.name}
-                    style={{
-                      height: "200px",
-                      objectFit: "cover",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => window.open(file.url, "_blank")}
-                  />
-                ) : (
-                  <div
-                    className="d-flex align-items-center justify-content-center bg-light"
-                    style={{
-                      height: "200px",
-                      fontSize: "4rem",
-                      cursor: "pointer",
-                    }}
-                    onClick={() => window.open(file.url, "_blank")}
-                  >
-                    {getFileIcon(file.content_type)}
-                  </div>
-                )}
-                <Card.Body>
-                  <Card.Title
-                    className="text-truncate"
-                    title={file.name}
-                    style={{ fontSize: "0.9rem" }}
-                  >
-                    {file.name}
-                  </Card.Title>
-                  <Card.Text className="small text-muted">
-                    {formatFileSize(file.size)}
-                  </Card.Text>
-                  <div className="d-flex gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
+      <div
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        style={{
+          position: "relative",
+          minHeight: "400px",
+        }}
+      >
+        {dragActive && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 1000,
+              backgroundColor: "rgba(0, 123, 255, 0.1)",
+              border: "3px dashed #007bff",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                padding: "30px 50px",
+                borderRadius: "10px",
+                fontSize: "1.5rem",
+                fontWeight: "bold",
+                color: "#007bff",
+              }}
+            >
+              Drop files here to upload
+            </div>
+          </div>
+        )}
+
+        {uploading && (
+          <div className="text-center py-3">
+            <Spinner animation="border" size="sm" className="me-2" />
+            <span>Uploading...</span>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="text-center py-5">
+            <Spinner animation="border" />
+          </div>
+        ) : files.length === 0 ? (
+          <Card className="text-center py-5">
+            <Card.Body>
+              <p className="text-muted">No files in this collection yet.</p>
+              <p className="text-muted small">
+                Drag and drop files here or click the button below
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => setShowUploadModal(true)}
+              >
+                Add Files
+              </Button>
+            </Card.Body>
+          </Card>
+        ) : (
+          <Row className="g-3">
+            {files.map((file) => (
+              <Col key={file.id} xs={12} sm={6} md={4} lg={3}>
+                <Card className="h-100">
+                  {file.content_type?.startsWith("image/") ? (
+                    <Card.Img
+                      variant="top"
+                      src={file.url}
+                      alt={file.name}
+                      style={{
+                        height: "200px",
+                        objectFit: "cover",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => window.open(file.url, "_blank")}
+                    />
+                  ) : (
+                    <div
+                      className="d-flex align-items-center justify-content-center bg-light"
+                      style={{
+                        height: "200px",
+                        fontSize: "4rem",
+                        cursor: "pointer",
+                      }}
                       onClick={() => window.open(file.url, "_blank")}
                     >
-                      View
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleDeleteFile(file.id)}
+                      {getFileIcon(file.content_type)}
+                    </div>
+                  )}
+                  <Card.Body>
+                    <Card.Title
+                      className="text-truncate"
+                      title={file.name}
+                      style={{ fontSize: "0.9rem" }}
                     >
-                      Remove
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
+                      {file.name}
+                    </Card.Title>
+                    <Card.Text className="small text-muted">
+                      {formatFileSize(file.size)}
+                    </Card.Text>
+                    <div className="d-flex gap-2">
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => window.open(file.url, "_blank")}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleDeleteFile(file.id)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
+      </div>
 
       <Modal
         show={showUploadModal}

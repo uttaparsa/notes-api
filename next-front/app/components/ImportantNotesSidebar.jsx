@@ -83,9 +83,11 @@ export default function ImportantNotesSidebar({
       if (!response.ok) throw new Error("Failed to get note page");
       const data = await response.json();
 
+      const categoryParam =
+        listSlug && listSlug !== "All" ? `&category=${listSlug}` : "";
       const targetPath = basePath
-        ? `${basePath}?page=${data.page}&highlight=${noteId}`
-        : `?page=${data.page}&highlight=${noteId}`;
+        ? `${basePath}?page=${data.page}${categoryParam}&highlight=${noteId}`
+        : `?page=${data.page}${categoryParam}&highlight=${noteId}`;
       router.push(targetPath);
     } catch (err) {
       console.error("Error navigating to note:", err);

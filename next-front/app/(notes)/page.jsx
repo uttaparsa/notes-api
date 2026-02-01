@@ -12,12 +12,14 @@ import { handleApiError } from "../utils/errorHandler";
 import SearchBar from "../components/search/SearchBar";
 import PaginationComponent from "../components/PaginationComponent";
 import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
-import { SelectedWorkspaceContext } from "./layout";
+import CategorySelector from "../components/CategorySelector";
+import { SelectedWorkspaceContext, NoteListContext } from "./layout";
 
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,18 +30,19 @@ export default function NotesPage() {
   const [highlightNoteId, setHighlightNoteId] = useState(null);
   const [showCreateCollectionModal, setShowCreateCollectionModal] =
     useState(false);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState(null);
   const perPage = 20;
-  const listSlug = null;
 
   useEffect(() => {
     const page = searchParams.get("page");
     const highlight = searchParams.get("highlight");
+    const category = searchParams.get("category");
+
     if (page) {
       setCurrentPage(parseInt(page));
     }
     if (highlight) {
       setHighlightNoteId(highlight);
-      // Clear highlight from URL after reading it
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("highlight");
       const newUrl = newParams.toString()
@@ -47,12 +50,17 @@ export default function NotesPage() {
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
+    if (category) {
+      setSelectedCategorySlug(category);
+    } else {
+      setSelectedCategorySlug(null);
+    }
   }, [searchParams]);
 
   useEffect(() => {
     setCurrentPage(1);
     getRecords();
-  }, [showHidden, selectedWorkspace]);
+  }, [showHidden, selectedWorkspace, selectedCategorySlug]);
 
   useEffect(() => {
     if (currentPage !== 1 || showHidden) {
@@ -69,7 +77,9 @@ export default function NotesPage() {
   const getRecords = async (selectedDate = null) => {
     setIsBusy(true);
     try {
-      let url = `/api/note/feed/`;
+      let url = selectedCategorySlug
+        ? `/api/note/feed/${selectedCategorySlug}/`
+        : `/api/note/feed/`;
       const params = new URLSearchParams({
         page: currentPage,
         archived: showHidden,
@@ -139,23 +149,49 @@ export default function NotesPage() {
   const handleSearch = useCallback(
     (newSearchText, newListSlugs) => {
       let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
-      if (selectedWorkspace && selectedWorkspace.categories) {
-        // If we have a workspace, include its categories in the search
+      if (selectedCategorySlug) {
+        url += `&list_slug=${encodeURIComponent(selectedCategorySlug)}`;
+      } else if (selectedWorkspace && selectedWorkspace.categories) {
         const workspaceCategorySlugs = selectedWorkspace.categories
           .map((cat) => cat.slug)
           .join(",");
         url += `&list_slug=${encodeURIComponent(workspaceCategorySlugs)}`;
+      }
+      if (selectedWorkspace) {
         url += `&workspace=${encodeURIComponent(selectedWorkspace.slug)}`;
       }
       router.push(url);
     },
-    [router, selectedWorkspace],
+    [router, selectedWorkspace, selectedCategorySlug],
   );
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    router.push(`?page=${newPage}`, undefined, { shallow: true });
+    const params = new URLSearchParams(searchParams);
+    params.set("page", newPage);
+    router.push(`?${params.toString()}`, undefined, { shallow: true });
   };
+
+  const handleCategoryChange = (categorySlug) => {
+    setSelectedCategorySlug(categorySlug);
+    setCurrentPage(1);
+    const params = new URLSearchParams();
+    if (categorySlug) {
+      params.set("category", categorySlug);
+    }
+    router.push(`?${params.toString()}`, undefined, { shallow: true });
+  };
+
+  useEffect(() => {
+    const selectedList = selectedCategorySlug
+      ? noteLists.find((lst) => lst.slug === selectedCategorySlug)
+      : null;
+    if (selectedList) {
+      document.title = `${selectedList.name} - Notes`;
+    } else {
+      document.title = "Feed - Notes";
+    }
+  }, [selectedCategorySlug, noteLists]);
 
   return (
     <div dir="ltr" style={{ minHeight: "100vh", overflow: "auto" }}>
@@ -170,6 +206,10 @@ export default function NotesPage() {
 
         <Row className="m-0 p-0">
           <Col xs={12} lg={2} className="mx-0 mb-3 mb-lg-0 order-2 order-lg-1">
+            <CategorySelector
+              selectedSlug={selectedCategorySlug}
+              onSelectCategory={handleCategoryChange}
+            />
             <FormCheck
               type="checkbox"
               id="show-hidden"
@@ -234,21 +274,27 @@ export default function NotesPage() {
               + New Collection
             </Button>
             <ImportantNotesSidebar
-              listSlug={listSlug}
+              listSlug={selectedCategorySlug}
               selectedWorkspace={selectedWorkspace}
               showHidden={showHidden}
+              basePath="/"
             />
           </Col>
         </Row>
       </div>
       <MessageInput
         onNoteSaved={addNewNote}
-        listSlug={"All"}
+        listSlug={selectedCategorySlug || "All"}
         selectedWorkspace={selectedWorkspace}
       />
       <CreateCollectionModal
         show={showCreateCollectionModal}
         onHide={() => setShowCreateCollectionModal(false)}
+        defaultCategory={
+          selectedCategorySlug
+            ? noteLists.find((lst) => lst.slug === selectedCategorySlug)?.id
+            : null
+        }
         onCreated={getRecords}
       />
     </div>

@@ -29,7 +29,8 @@ const NoteCardBottomBar = forwardRef(({ note, singleView }, ref) => {
       );
       if (!response.ok) throw new Error("Failed to get note page");
       const data = await response.json();
-      router.push(`/list/${listSlug}?page=${data.page}&highlight=${note.id}`);
+      const categoryParam = listSlug !== "All" ? `&category=${listSlug}` : "";
+      router.push(`/?page=${data.page}${categoryParam}&highlight=${note.id}`);
     } catch (err) {
       console.error("Error navigating to note:", err);
       handleApiError(err);
@@ -92,7 +93,10 @@ const NoteCardBottomBar = forwardRef(({ note, singleView }, ref) => {
       </div>
 
       <div className="me-2">
-        <Link href={`/list/${getListSlug()}/`} className={styles.categoryLink}>
+        <Link
+          href={`/?category=${getListSlug()}`}
+          className={styles.categoryLink}
+        >
           {getListName()}
         </Link>
       </div>

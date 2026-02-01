@@ -214,7 +214,7 @@ export default function CategoryList() {
                     >
                       <div className="d-flex align-items-center gap-2">
                         <Link
-                          href={`/list/${lst.slug}/`}
+                          href={`/?category=${lst.slug}`}
                           className="text-decoration-none"
                         >
                           {lst.name}
