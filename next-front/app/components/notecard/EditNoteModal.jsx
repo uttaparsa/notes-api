@@ -255,6 +255,30 @@ const EditNoteModal = ({
     }
   };
 
+  const handleQuoteToggle = () => {
+    if (!editMessageTextAreaRef.current) return;
+    const textarea = editMessageTextAreaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = editText;
+    const lines = text.split("\n");
+    const startLine = text.substring(0, start).split("\n").length - 1;
+    const endLine = text.substring(0, end).split("\n").length - 1;
+    const selectedLines = lines.slice(startLine, endLine + 1);
+    const isQuoted = selectedLines.every((line) => line.startsWith("> "));
+    const newLines = selectedLines.map((line) =>
+      isQuoted ? line.substring(2) : "> " + line,
+    );
+    lines.splice(startLine, selectedLines.length, ...newLines);
+    const newText = lines.join("\n");
+    setEditText(newText);
+    textarea.focus();
+    const newStart =
+      startLine === endLine ? start + (isQuoted ? -2 : 2) : start;
+    const newEnd = end + (isQuoted ? -2 : 2) * selectedLines.length;
+    textarea.setSelectionRange(newStart, newEnd);
+  };
+
   return (
     <>
       <Modal show={show} onHide={handleClose} fullscreen="xxl-down" size="lg">
@@ -280,6 +304,7 @@ const EditNoteModal = ({
             hideMessage={hideMessage}
             unHideMessage={unHideMessage}
             setShowRevisionModal={setShowRevisionModal}
+            handleQuoteToggle={handleQuoteToggle}
           />
 
           <div className="position-relative">

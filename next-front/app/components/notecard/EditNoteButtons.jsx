@@ -8,6 +8,7 @@ import PreviewToggleButton from "../buttons/edit_buttons/PreviewToggleButton";
 import IncreaseImportanceButton from "../buttons/edit_buttons/IncreaseImportanceButton";
 import DecreaseImportanceButton from "../buttons/edit_buttons/DecreaseImportanceButton";
 import RevisionHistoryButton from "../buttons/edit_buttons/RevisionHistoryButton";
+import QuoteToggleButton from "../buttons/edit_buttons/QuoteToggleButton";
 
 const EditNoteButtons = ({
   note,
@@ -26,6 +27,7 @@ const EditNoteButtons = ({
   hideMessage,
   unHideMessage,
   setShowRevisionModal,
+  handleQuoteToggle,
 }) => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -33,19 +35,19 @@ const EditNoteButtons = ({
     <>
       {/* Desktop button layout */}
       <div className="mb-3 mt-0 px-2 d-none d-lg-flex justify-content-between">
-        <div>
+        <div className="d-flex gap-2">
           {!singleView && (
             <>
               {note.importance < 4 && (
                 <IncreaseImportanceButton
                   onClick={increaseImportance}
-                  className="mr-2 btn-sm"
+                  className="btn-sm"
                 />
               )}
               {note.importance > 0 && (
                 <DecreaseImportanceButton
                   onClick={decreaseImportance}
-                  className="mr-2 btn-sm"
+                  className="btn-sm"
                 />
               )}
             </>
@@ -56,7 +58,7 @@ const EditNoteButtons = ({
                 <Button
                   variant="outline-secondary"
                   onClick={hideMessage}
-                  className="me-2 btn-sm"
+                  className="btn-sm"
                 >
                   Hide
                 </Button>
@@ -64,7 +66,7 @@ const EditNoteButtons = ({
                 <Button
                   variant="outline-secondary"
                   onClick={unHideMessage}
-                  className="me-2 btn-sm"
+                  className="btn-sm"
                 >
                   Unhide
                 </Button>
@@ -76,11 +78,11 @@ const EditNoteButtons = ({
             className="btn-sm"
           />
         </div>
-        <div>
+        <div className="d-flex gap-2">
           <SaveButton
             hasUnsavedChanges={hasUnsavedChanges}
             onClick={handleSave}
-            className="me-2 btn-sm"
+            className="btn-sm"
           />
           <FileUploadComponent
             onSuccess={handleFileUpload}
@@ -88,22 +90,17 @@ const EditNoteButtons = ({
             onTextChange={setEditText}
             size="sm"
             className="btn-sm"
-            width="20px"
-            height="20px"
           />
           <RtlToggleButton
             onClick={toggleEditorRtl}
             isRTL={isRTL}
-            className="mx-2 btn-sm"
-            width="20px"
-            height="20px"
+            className="btn-sm"
           />
+          <QuoteToggleButton onClick={handleQuoteToggle} className="btn-sm" />
           <PreviewToggleButton
             className="btn-sm"
             isPreviewMode={isPreviewMode}
             onClick={() => setIsPreviewMode(!isPreviewMode)}
-            width="20px"
-            height="20px"
           />
         </div>
       </div>
@@ -140,16 +137,12 @@ const EditNoteButtons = ({
                     <IncreaseImportanceButton
                       onClick={increaseImportance}
                       className="btn-sm"
-                      width={16}
-                      height={16}
                     />
                   )}
                   {note.importance > 0 && (
                     <DecreaseImportanceButton
                       onClick={decreaseImportance}
                       className="btn-sm"
-                      width={16}
-                      height={16}
                     />
                   )}
                 </>
@@ -178,8 +171,6 @@ const EditNoteButtons = ({
               <RevisionHistoryButton
                 onClick={() => setShowRevisionModal(true)}
                 className="btn-sm"
-                width={16}
-                height={16}
               />
             </div>
             <div className="d-flex flex-wrap gap-2">
@@ -189,15 +180,15 @@ const EditNoteButtons = ({
                 onTextChange={setEditText}
                 size="sm"
                 className="btn-sm"
-                width={16}
-                height={16}
               />
               <RtlToggleButton
                 onClick={toggleEditorRtl}
                 isRTL={isRTL}
                 className="btn-sm"
-                width={16}
-                height={16}
+              />
+              <QuoteToggleButton
+                onClick={handleQuoteToggle}
+                className="btn-sm"
               />
             </div>
           </div>
