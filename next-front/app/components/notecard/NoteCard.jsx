@@ -13,6 +13,7 @@ import { SelectedWorkspaceContext } from "../../(notes)/layout";
 import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
+import { extractMarkdownTitle } from "../../utils/stringUtils";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 import EditNoteModal from "./EditNoteModal";
 import NoteTextRenderer from "./markdown/MarkdownRenderers";
@@ -92,7 +93,8 @@ const NoteCard = forwardRef(
     };
 
     const copyNoteLink = () => {
-      const noteLink = `[related](/message/${note.id})`;
+      const title = extractMarkdownTitle(note.text);
+      const noteLink = `[${title}](/message/${note.id})`;
       copyTextToClipboard(noteLink);
       showToast("Success", "Note link copied to clipboard", 3000, "success");
     };

@@ -7,6 +7,7 @@ import NoteCard from "../../../components/notecard/NoteCard";
 import { CompactMarkdownRenderer } from "../../../components/notecard/markdown/MarkdownRenderers";
 import { fetchWithAuth } from "@/app/lib/api";
 import { handleApiError } from "@/app/utils/errorHandler";
+import { extractMarkdownTitle } from "@/app/utils/stringUtils";
 import { Spinner, Badge } from "react-bootstrap";
 import { NoteListContext, SelectedWorkspaceContext } from "../../layout";
 
@@ -106,20 +107,8 @@ const SingleNoteView = () => {
   };
 
   const extractMarkdownTitleFromText = (text) => {
-    let title = "Note";
-
-    if (text) {
-      const lines = text.split("\n").filter((line) => line.trim());
-      const firstLine = lines[0] || "";
-
-      const headerMatch = firstLine.match(/^#{1,6}\s+(.+)$/);
-      if (headerMatch) {
-        title = headerMatch[1].trim();
-        title += " - Note";
-      }
-    }
-
-    return title;
+    const title = extractMarkdownTitle(text);
+    return title === "related" ? "Note" : title + " - Note";
   };
 
   const getCurrentNote = async () => {

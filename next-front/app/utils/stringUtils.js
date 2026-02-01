@@ -12,3 +12,14 @@ export function toFarsiNumber(n) {
 export function linkify(text) {
   return text.replace(/(?:(https?\:\/\/[^\s]+))/g, '<a href="$1">$1</a>');
 }
+
+export function extractMarkdownTitle(text) {
+  if (!text) return "related";
+  const lines = text.split("\n").filter((line) => line.trim());
+  const firstLine = lines[0] || "";
+  const headerMatch = firstLine.match(/^#{1,6}\s+(.+)$/);
+  if (headerMatch) {
+    return headerMatch[1].trim();
+  }
+  return "related";
+}
