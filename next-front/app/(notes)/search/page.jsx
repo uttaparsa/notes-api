@@ -17,7 +17,6 @@ export default function SearchPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [isBusy, setIsBusy] = useState(false);
   const [showHidden, setShowHidden] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState([]);
   const [hasFiles, setHasFiles] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -32,12 +31,23 @@ export default function SearchPage() {
     return page ? parseInt(page) : 1;
   });
 
+  const getSelectedCategories = useCallback(() => {
+    const slug = searchParams.get("list_slug");
+    if (slug) {
+      return slug.includes(",") ? slug.split(",") : [slug];
+    }
+    if (selectedWorkspace?.categories) {
+      return selectedWorkspace.categories.map((cat) => cat.slug);
+    }
+    return [];
+  }, [searchParams, selectedWorkspace]);
+
   const getRecords = useCallback(
     async (query, page) => {
+      const categories = getSelectedCategories();
       setIsBusy(true);
       try {
-        const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
+        const categorySlugs = categories.length > 0 ? categories.join(",") : "";
         let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
         if (categorySlugs) {
@@ -61,7 +71,7 @@ export default function SearchPage() {
         setIsBusy(false);
       }
     },
-    [showHidden, hasFiles, selectedCategories, selectedWorkspace],
+    [showHidden, hasFiles, getSelectedCategories, selectedWorkspace],
   );
 
   useEffect(() => {
@@ -70,7 +80,6 @@ export default function SearchPage() {
 
   const handleFiltersChangeFromModal = useCallback(
     ({ categories, hasFiles: newHasFiles }) => {
-      setSelectedCategories(categories);
       setHasFiles(newHasFiles);
       setCurrentPage(1);
 
@@ -105,42 +114,23 @@ export default function SearchPage() {
 
   useEffect(() => {
     const query = searchParams.get("q");
-    const slug = searchParams.get("list_slug") || "";
     const page = searchParams.get("page");
     const hasFilesParam = searchParams.get("has_files") === "true";
-    if (searchParams.has("q") || slug || hasFilesParam) {
+
+    if (
+      searchParams.has("q") ||
+      searchParams.has("list_slug") ||
+      hasFilesParam
+    ) {
       setSearchText(query);
       setHasFiles(hasFilesParam);
-      if (slug) {
-        if (slug.includes(",")) {
-          setSelectedCategories(slug.split(","));
-        } else {
-          setSelectedCategories([slug]);
-        }
-      } else {
-        // Default to workspace categories if no specific categories selected
-        if (selectedWorkspace && selectedWorkspace.categories) {
-          const workspaceCategorySlugs = selectedWorkspace.categories.map(
-            (cat) => cat.slug,
-          );
-          setSelectedCategories(workspaceCategorySlugs);
-        } else {
-          setSelectedCategories([]);
-        }
-      }
+
       if (page) {
         setCurrentPage(parseInt(page));
       }
       getRecordsRef.current(query, page || currentPage);
-    } else {
-      // Initialize with workspace categories if available
-      if (selectedWorkspace && selectedWorkspace.categories) {
-        setSelectedCategories(
-          selectedWorkspace.categories.map((cat) => cat.slug),
-        );
-      }
     }
-  }, [searchParams, selectedWorkspace]);
+  }, [searchParams, currentPage]);
 
   const handleSearch = useCallback(
     (newSearchText) => {
@@ -148,6 +138,7 @@ export default function SearchPage() {
         setSearchText(newSearchText);
         setCurrentPage(1);
 
+        const selectedCategories = getSelectedCategories();
         const categorySlugs =
           selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
@@ -163,11 +154,12 @@ export default function SearchPage() {
         router.push(url);
       }
     },
-    [searchText, selectedCategories, hasFiles, router, selectedWorkspace],
+    [searchText, getSelectedCategories, hasFiles, router, selectedWorkspace],
   );
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
+    const selectedCategories = getSelectedCategories();
     let url = `/search/?q=${encodeURIComponent(searchText)}`;
     const categorySlugs =
       selectedCategories.length > 0 ? selectedCategories.join(",") : "";
@@ -230,8 +222,8 @@ export default function SearchPage() {
               }
               showHidden={showHidden}
               listSlug={
-                selectedCategories.length > 0
-                  ? selectedCategories.join(",")
+                getSelectedCategories().length > 0
+                  ? getSelectedCategories().join(",")
                   : ""
               }
               hasFiles={hasFiles}
@@ -263,7 +255,7 @@ export default function SearchPage() {
       <CategoryFilterModal
         show={showCategoryModal}
         onHide={() => setShowCategoryModal(false)}
-        selectedCategories={selectedCategories}
+        selectedCategories={getSelectedCategories()}
         hasFiles={hasFiles}
         onFiltersChange={handleFiltersChangeFromModal}
       />
