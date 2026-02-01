@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import ListAPIView
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from itertools import chain
@@ -9,6 +10,7 @@ from operator import attrgetter
 
 from ..models import FileCollection, LocalMessage, File, LocalMessageList, Workspace
 from ..serializers import FileCollectionSerializer, MessageSerializer
+from .pagination import DateBasedPagination
 
 
 class FileCollectionView(APIView):
@@ -107,13 +109,15 @@ class CollectionFilesView(APIView):
         return Response({'message': 'File removed from collection'}, status=status.HTTP_200_OK)
 
 
-class UnifiedFeedView(APIView):
+class UnifiedFeedView(ListAPIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = DateBasedPagination
 
-    def get(self, request, slug=None):
+    def get_queryset(self):
+        return []
+
+    def list(self, request, slug=None):
         user = request.user
-        page = int(request.query_params.get('page', 1))
-        page_size = 20
         archived = request.query_params.get('archived', 'false').lower() == 'true'
         workspace_slug = request.query_params.get('workspace')
         
@@ -150,9 +154,8 @@ class UnifiedFeedView(APIView):
             reverse=True
         )
         
-        start = (page - 1) * page_size
-        end = start + page_size
-        paginated_items = combined[start:end]
+        paginator = self.pagination_class()
+        paginated_items = paginator.paginate_queryset(combined, request, view=self)
         
         result = []
         for item in paginated_items:
@@ -165,9 +168,4 @@ class UnifiedFeedView(APIView):
                 serializer = FileCollectionSerializer(item)
                 result.append(serializer.data)
         
-        return Response({
-            'results': result,
-            'count': len(combined),
-            'page': page,
-            'page_size': page_size
-        })
+        return paginator.get_paginated_response(result)

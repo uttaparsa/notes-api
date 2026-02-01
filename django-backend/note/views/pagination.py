@@ -12,18 +12,26 @@ class DateBasedPagination(PageNumberPagination):
         if 'date' in request.GET:
             selected_date = date(*map(int, request.GET.get("date").split('-')))
             
-            # Get the slug from the request to determine if we're viewing a specific list
-            slug = request.resolver_match.kwargs.get('slug') if hasattr(request, 'resolver_match') else None
+            object_list = paginator.object_list
             
-            # No need to exclude archived lists anymore
-            queryset = paginator.object_list.order_by('-created_at')
-            
-            notes_before = queryset.filter(created_at__gt=selected_date)
-            page_number = notes_before.count() // self.page_size + 1
-            
-            first_note_on_date = queryset.filter(created_at__date=selected_date).order_by('-created_at').first()
-            if first_note_on_date:
-                request._highlight_note_id = first_note_on_date.id
+            if isinstance(object_list, list):
+                notes_before = [item for item in object_list if item.created_at.date() > selected_date]
+                page_number = len(notes_before) // self.page_size + 1
+                
+                first_item_on_date = next(
+                    (item for item in object_list if item.created_at.date() == selected_date),
+                    None
+                )
+                if first_item_on_date:
+                    request._highlight_note_id = first_item_on_date.id
+            else:
+                queryset = object_list.order_by('-created_at')
+                notes_before = queryset.filter(created_at__gt=selected_date)
+                page_number = notes_before.count() // self.page_size + 1
+                
+                first_note_on_date = queryset.filter(created_at__date=selected_date).order_by('-created_at').first()
+                if first_note_on_date:
+                    request._highlight_note_id = first_note_on_date.id
             
             return page_number
         return super().get_page_number(request, paginator)

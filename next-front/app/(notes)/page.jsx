@@ -78,11 +78,21 @@ export default function NotesPage() {
 
       if (selectedDate != null) {
         if (data.next !== null) {
-          const nextPage = new URL(data.next).searchParams.get("page");
-          updateUrlParams({ page: parseInt(nextPage) - 1 });
+          const nextPage = new URL(
+            data.next,
+            window.location.origin,
+          ).searchParams.get("page");
+          if (nextPage) {
+            updateUrlParams({ page: parseInt(nextPage) - 1 });
+          }
         } else if (data.previous !== null) {
-          const prevPage = new URL(data.previous).searchParams.get("page");
-          updateUrlParams({ page: parseInt(prevPage) + 1 });
+          const prevPage = new URL(
+            data.previous,
+            window.location.origin,
+          ).searchParams.get("page");
+          if (prevPage) {
+            updateUrlParams({ page: parseInt(prevPage) + 1 });
+          }
         }
         if (data.highlight_note_id) {
           setHighlightNoteId(data.highlight_note_id);
