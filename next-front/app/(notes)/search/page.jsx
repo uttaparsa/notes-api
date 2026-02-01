@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef, useContext } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormCheck, Row, Col, Button } from "react-bootstrap";
+import { FormCheck, Row, Col, Button, Card } from "react-bootstrap";
 import NoteList from "../../components/NoteList";
 import SearchBar from "../../components/search/SearchBar";
 import SemanticSearchResults from "../../components/search/SemanticSearchResults";
 import PaginationComponent from "../../components/PaginationComponent";
 import CategoryFilterModal from "../../components/search/CategoryFilterModal";
+import SearchFilters from "../../components/search/SearchFilters";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import { SelectedWorkspaceContext } from "../layout";
@@ -36,22 +37,18 @@ export default function SearchPage() {
     if (slug) {
       return slug.includes(",") ? slug.split(",") : [slug];
     }
-    if (selectedWorkspace?.categories) {
-      return selectedWorkspace.categories.map((cat) => cat.slug);
-    }
     return [];
-  }, [searchParams, selectedWorkspace]);
+  }, [searchParams]);
 
   const getRecords = useCallback(
     async (query, page) => {
       const categories = getSelectedCategories();
       setIsBusy(true);
       try {
-        const categorySlugs = categories.length > 0 ? categories.join(",") : "";
         let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
-        if (categorySlugs) {
-          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+        if (categories.length > 0) {
+          url += `&list_slug=${encodeURIComponent(categories.join(","))}`;
         }
 
         if (selectedWorkspace?.slug) {
@@ -83,10 +80,9 @@ export default function SearchPage() {
       setHasFiles(newHasFiles);
       setCurrentPage(1);
 
-      const categorySlugs = categories.length > 0 ? categories.join(",") : "";
       let url = `/search/?q=${encodeURIComponent(searchText || "")}`;
-      if (categorySlugs) {
-        url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+      if (categories.length > 0) {
+        url += `&list_slug=${encodeURIComponent(categories.join(","))}`;
       }
       if (newHasFiles) {
         url += `&has_files=true`;
@@ -117,19 +113,13 @@ export default function SearchPage() {
     const page = searchParams.get("page");
     const hasFilesParam = searchParams.get("has_files") === "true";
 
-    if (
-      searchParams.has("q") ||
-      searchParams.has("list_slug") ||
-      hasFilesParam
-    ) {
-      setSearchText(query);
-      setHasFiles(hasFilesParam);
+    setSearchText(query || "");
+    setHasFiles(hasFilesParam);
 
-      if (page) {
-        setCurrentPage(parseInt(page));
-      }
-      getRecordsRef.current(query, page || currentPage);
+    if (page) {
+      setCurrentPage(parseInt(page));
     }
+    getRecordsRef.current(query, page || currentPage);
   }, [searchParams, currentPage]);
 
   const handleSearch = useCallback(
@@ -139,11 +129,9 @@ export default function SearchPage() {
         setCurrentPage(1);
 
         const selectedCategories = getSelectedCategories();
-        const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
-        if (categorySlugs) {
-          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+        if (selectedCategories.length > 0) {
+          url += `&list_slug=${encodeURIComponent(selectedCategories.join(","))}`;
         }
         if (hasFiles) {
           url += `&has_files=true`;
@@ -161,10 +149,8 @@ export default function SearchPage() {
     setCurrentPage(newPage);
     const selectedCategories = getSelectedCategories();
     let url = `/search/?q=${encodeURIComponent(searchText)}`;
-    const categorySlugs =
-      selectedCategories.length > 0 ? selectedCategories.join(",") : "";
-    if (categorySlugs) {
-      url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+    if (selectedCategories.length > 0) {
+      url += `&list_slug=${encodeURIComponent(selectedCategories.join(","))}`;
     }
     if (hasFiles) {
       url += `&has_files=true`;
@@ -200,6 +186,19 @@ export default function SearchPage() {
               }}
               className="mb-3 text-body-emphasis mt-2"
             />
+
+            <Card className="d-none d-lg-block">
+              <Card.Header>
+                <strong>Filters</strong>
+              </Card.Header>
+              <Card.Body>
+                <SearchFilters
+                  selectedCategories={getSelectedCategories()}
+                  hasFiles={hasFiles}
+                  onFiltersChange={handleFiltersChangeFromModal}
+                />
+              </Card.Body>
+            </Card>
           </Col>
           <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
             <NoteList
@@ -232,10 +231,9 @@ export default function SearchPage() {
         </Row>
       </div>
 
-      {/* Floating Action Button for Category Filter */}
       <Button
         variant="primary"
-        className="position-fixed bottom-0 end-0 m-3 rounded-circle"
+        className="d-lg-none position-fixed bottom-0 end-0 m-3 rounded-circle"
         style={{ width: "56px", height: "56px", zIndex: 1050 }}
         onClick={() => setShowCategoryModal(true)}
         title="Filter by Categories"

@@ -110,8 +110,6 @@ class SimilarNotesView(APIView):
             )
     
     def post(self, request):
-        """Find similar notes for a given text input"""
-        # Get the text from the request
         text = request.data.get('text')
         if not text or len(text) < 10:
             return Response(
@@ -119,23 +117,18 @@ class SimilarNotesView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Get optional parameters
         limit = int(request.data.get('limit', 3))
         exclude_note_id = request.data.get('exclude_note_id')
-        list_slugs = request.data.get('list_slug', 'All')
-        workspace_slug = request.data.get('workspace')
+        list_slugs = request.data.get('list_slug', '')
         has_files = request.data.get('has_files', False)
         
-        # If not in data, try to extract from referer
-        if list_slugs == 'All' and not workspace_slug:
+        if not list_slugs:
             referer = request.META.get('HTTP_REFERER')
             if referer:
                 parsed_url = urlparse(referer)
                 query_params = parse_qs(parsed_url.query)
                 if 'list_slug' in query_params and query_params['list_slug']:
                     list_slugs = query_params['list_slug'][0]
-                if 'workspace_slug' in query_params and query_params['workspace_slug']:
-                    workspace_slug = query_params['workspace_slug'][0]
         
         if exclude_note_id:
             exclude_note_id = int(exclude_note_id)
@@ -143,21 +136,18 @@ class SimilarNotesView(APIView):
         try:
             all_found_items = self._find_similars_by_text(
                 text=text,
-                limit_per_type=limit, # This is the desired count for each type
+                limit_per_type=limit,
                 exclude_note_id=exclude_note_id,
                 list_slugs=list_slugs,
-                workspace_slug=workspace_slug,
                 user=request.user
             )
             
             if has_files:
                 all_found_items = [item for item in all_found_items if LocalMessage.objects.filter(id=item['id'], files__isnull=False).exists()]
             
-            # Sort by similarity (higher score is better) and limit results
             all_found_items.sort(key=lambda x: x['distance'])
-            results = all_found_items[:limit] # Apply final limit
+            results = all_found_items[:limit]
             
-            # Serialize
             serializer = SimilarNoteSerializer(results, many=True)
             return Response(serializer.data)
             
@@ -173,53 +163,27 @@ class SimilarNotesView(APIView):
         max_distance = 4.0
         return max(0, 1 - (distance / max_distance))
     
-    def _get_allowed_category_ids(self, list_slugs, workspace_slug, user):
-        """Get allowed category IDs based on list_slugs and workspace_slug"""
-        from ..models import LocalMessageList, Workspace
+    def _get_allowed_category_ids(self, list_slugs, user):
+        from ..models import LocalMessageList
         
-        if list_slugs.lower() == 'all' and not workspace_slug:
-            # No filtering needed
+        if not list_slugs:
             return None
         
-        allowed_ids = set()
-        
-        # Get workspace if specified
-        workspace = None
-        if workspace_slug:
-            try:
-                workspace = Workspace.objects.get(slug=workspace_slug, user=user)
-            except Workspace.DoesNotExist:
-                return set()  # No allowed categories
-        
-        if list_slugs and list_slugs.lower() != 'all':
-            slug_list = [slug.strip() for slug in list_slugs.split(',')]
-            lists = LocalMessageList.objects.filter(slug__in=slug_list, user=user)
-            
-            if workspace:
-                visible_lists = workspace.get_visible_categories()
-                lists = lists.filter(id__in=visible_lists.values_list('id', flat=True))
-            
-            allowed_ids.update(lists.values_list('id', flat=True))
-        elif workspace:
-            # If workspace is specified but no specific lists, use all visible categories
-            visible_list_ids = workspace.get_visible_categories().values_list('id', flat=True)
-            allowed_ids.update(visible_list_ids)
+        slug_list = [slug.strip() for slug in list_slugs.split(',')]
+        lists = LocalMessageList.objects.filter(slug__in=slug_list, user=user)
+        allowed_ids = set(lists.values_list('id', flat=True))
         
         return allowed_ids if allowed_ids else None
     
-    def _find_similars_by_text(self, text, limit_per_type, exclude_note_id=None, list_slugs='All', workspace_slug=None, user=None):
-        """Helper method to find similar notes for arbitrary text"""
-        # Get allowed category IDs based on list_slugs and workspace_slug
-        allowed_category_ids = self._get_allowed_category_ids(list_slugs, workspace_slug, user)
+    def _find_similars_by_text(self, text, limit_per_type, exclude_note_id=None, list_slugs='', user=None):
+        allowed_category_ids = self._get_allowed_category_ids(list_slugs, user)
         
         all_results = []
-        # Keep track of note IDs added to avoid duplicates
         added_note_ids = set()
 
-        # Find similar notes
         try:
             text_embedding = NoteEmbedding.get_embedding(text)
-            if text_embedding: # Proceed if embedding was successful
+            if text_embedding:
                 similar_notes_data = NoteEmbedding.find_similar_notes_by_embedding(
                     text_embedding,
                     limit=limit_per_type, 
@@ -235,12 +199,11 @@ class SimilarNotesView(APIView):
                     if sim_score >= 0.65 and note_id not in added_note_ids:
                         try:
                             similar_note = LocalMessage.objects.get(id=note_id)
-                            # Filter by allowed categories
                             if allowed_category_ids is not None and similar_note.list_id not in allowed_category_ids:
                                 continue
                             all_results.append({
                                 'id': similar_note.id,
-                                'text': similar_note.text, # Full note text
+                                'text': similar_note.text,
                                 'similarity_score': sim_score,
                                 'distance': distance,
                                 'is_full_note': True,
@@ -265,5 +228,4 @@ class SimilarNotesView(APIView):
         except Exception as e:
             logger.error(f"Error finding similar notes for text '{text[:50]}...': {str(e)}")
             
-        # sort all results by distance (lower is better)
         return all_results

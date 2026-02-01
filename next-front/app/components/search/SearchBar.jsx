@@ -17,11 +17,11 @@ export default function SearchBar({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (pathname.startsWith("/search") && onSearch) {
+    if (onSearch) {
       onSearch(searchText);
     } else {
       let url = `/search/?q=${encodeURIComponent(searchText)}`;
-      if (initialListSlug && initialListSlug !== "All") {
+      if (initialListSlug) {
         url += `&list_slug=${encodeURIComponent(initialListSlug)}`;
       }
       router.push(url);

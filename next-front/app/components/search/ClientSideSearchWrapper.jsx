@@ -36,12 +36,10 @@ export default function ClientSideSearchWrapper() {
     async (query, page) => {
       setIsBusy(true);
       try {
-        const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/api/note/search/?q=${encodeURIComponent(query || "")}&show_hidden=${showHidden}&has_files=${hasFiles}`;
 
-        if (categorySlugs) {
-          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+        if (selectedCategories.length > 0) {
+          url += `&list_slug=${encodeURIComponent(selectedCategories.join(","))}`;
         }
 
         if (workspaceSlug) {
@@ -83,10 +81,9 @@ export default function ClientSideSearchWrapper() {
       setHasFiles(newHasFiles);
       setCurrentPage(1);
 
-      const categorySlugs = categories.length > 0 ? categories.join(",") : "";
       let url = `/search/?q=${encodeURIComponent(searchText || "")}`;
-      if (categorySlugs) {
-        url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+      if (categories.length > 0) {
+        url += `&list_slug=${encodeURIComponent(categories.join(","))}`;
       }
       if (newHasFiles) {
         url += `&has_files=true`;
@@ -118,55 +115,23 @@ export default function ClientSideSearchWrapper() {
     const page = searchParams.get("page");
     const hasFilesParam = searchParams.get("has_files") === "true";
     const workspaceParam = searchParams.get("workspace") || "";
-    if (searchParams.has("q") || slug || hasFilesParam || workspaceParam) {
-      setSearchText(query);
-      setHasFiles(hasFilesParam);
-      setWorkspaceSlug(workspaceParam);
 
-      if (slug) {
-        if (slug.includes(",")) {
-          setSelectedCategories(slug.split(","));
-        } else {
-          setSelectedCategories([slug]);
-        }
-      } else {
-        // No specific categories in URL, check if we should default to workspace categories
-        if (
-          selectedWorkspace &&
-          selectedWorkspace.categories &&
-          !workspaceParam
-        ) {
-          // If we have a workspace but no workspace param in URL, this might be a fresh search
-          // Default to workspace categories
-          const workspaceCategorySlugs = selectedWorkspace.categories.map(
-            (cat) => cat.slug,
-          );
-          setSelectedCategories(workspaceCategorySlugs);
-          setWorkspaceSlug(selectedWorkspace.slug);
-        } else {
-          setSelectedCategories([]);
-        }
-      }
+    setSearchText(query || "");
+    setHasFiles(hasFilesParam);
+    setWorkspaceSlug(workspaceParam);
 
-      if (page) {
-        setCurrentPage(parseInt(page));
-      }
-
-      // If slug contains commas, split it into an array
-      const slugsToSearch = slug.includes(",") ? slug.split(",") : slug;
-      console.log("slugsToSearch", slugsToSearch);
-
-      getRecordsRef.current(query, page || currentPage);
+    if (slug) {
+      setSelectedCategories(slug.includes(",") ? slug.split(",") : [slug]);
     } else {
-      // No search params, check if we should initialize with workspace categories
-      if (selectedWorkspace && selectedWorkspace.categories) {
-        setSelectedCategories(
-          selectedWorkspace.categories.map((cat) => cat.slug),
-        );
-        setWorkspaceSlug(selectedWorkspace.slug);
-      }
+      setSelectedCategories([]);
     }
-  }, [searchParams, selectedWorkspace]);
+
+    if (page) {
+      setCurrentPage(parseInt(page));
+    }
+
+    getRecordsRef.current(query, page || currentPage);
+  }, [searchParams, currentPage]);
 
   const handleSearch = useCallback(
     (newSearchText) => {
@@ -176,11 +141,9 @@ export default function ClientSideSearchWrapper() {
         setSearchText(newSearchText);
         setCurrentPage(1);
 
-        const categorySlugs =
-          selectedCategories.length > 0 ? selectedCategories.join(",") : "";
         let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
-        if (categorySlugs) {
-          url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+        if (selectedCategories.length > 0) {
+          url += `&list_slug=${encodeURIComponent(selectedCategories.join(","))}`;
         }
         if (hasFiles) {
           url += `&has_files=true`;
@@ -204,10 +167,8 @@ export default function ClientSideSearchWrapper() {
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     let url = `/search/?q=${encodeURIComponent(searchText)}`;
-    const categorySlugs =
-      selectedCategories.length > 0 ? selectedCategories.join(",") : "";
-    if (categorySlugs) {
-      url += `&list_slug=${encodeURIComponent(categorySlugs)}`;
+    if (selectedCategories.length > 0) {
+      url += `&list_slug=${encodeURIComponent(selectedCategories.join(","))}`;
     }
     if (hasFiles) {
       url += `&has_files=true`;

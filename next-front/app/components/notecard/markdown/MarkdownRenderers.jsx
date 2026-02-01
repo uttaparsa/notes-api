@@ -293,15 +293,12 @@ export const processTextForHashtags = (text) => {
   // Split by code blocks and process only non-code parts
   const parts = text.split(/(```[\s\S]*?```)/);
   const processed = parts.map((part, index) => {
-    // Even indices are non-code blocks
     if (index % 2 === 0) {
-      // Use negative lookbehind to avoid matching hashtags in URLs
       return part.replace(
         /(?<!https?:\/\/[^\s]*)#(\w+)/g,
-        (match, tag) => `[${match}](/search?q=%23${tag}&list_slug=All)`,
+        (match, tag) => `[${match}](/search?q=%23${tag})`,
       );
     }
-    // Odd indices are code blocks - leave unchanged
     return part;
   });
 

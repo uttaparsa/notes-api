@@ -51,7 +51,7 @@ export default function SemanticSearchResults({
         has_files: hasFiles,
       };
 
-      if (listSlug && listSlug !== "All") {
+      if (listSlug) {
         body.list_slug = listSlug;
       }
 
