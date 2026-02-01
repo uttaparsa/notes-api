@@ -9,6 +9,7 @@ from .views.stats_view import RevisionStatsView, NoteStatsView, FileAccessStatsV
 from .views.similar_note_view import SimilarNotesView
 from .views.reminder_view import ReminderView, SingleReminderView
 from .views.workspace_view import WorkspaceListView, WorkspaceDetailView, WorkspaceCategoriesView, DefaultWorkspaceView
+from .views.collection_view import FileCollectionView, CollectionFilesView, UnifiedFeedView
 
 
 urlpatterns = [
@@ -21,6 +22,15 @@ urlpatterns = [
     # Reminder endpoints
     path('reminders/', ReminderView.as_view(), name='reminders'),
     path('reminders/<int:reminder_id>/', SingleReminderView.as_view(), name='reminder-detail'),
+    
+    # File Collection endpoints
+    path('collections/', FileCollectionView.as_view(), name='collections'),
+    path('collections/<int:collection_id>/', FileCollectionView.as_view(), name='collection-detail'),
+    path('collections/<int:collection_id>/files/', CollectionFilesView.as_view(), name='collection-files'),
+    
+    # Unified feed endpoint
+    path('feed/', UnifiedFeedView.as_view(), name='unified-feed'),
+    path('feed/<slug>/', UnifiedFeedView.as_view(), name='unified-feed-by-category'),
     
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('message/<int:note_id>/files/', NoteFilesView.as_view(), name='note-files'),

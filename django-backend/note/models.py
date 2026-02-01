@@ -452,3 +452,29 @@ class Reminder(models.Model):
         if self.highlight_start is not None and self.highlight_end is not None:
             return self.note.text[self.highlight_start:self.highlight_end]
         return self.note.text
+
+
+class FileCollection(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    list = models.ForeignKey(LocalMessageList, on_delete=models.CASCADE, related_name='file_collections')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='file_collections')
+    files = models.ManyToManyField('File', related_name='collections', blank=True)
+    importance = models.IntegerField(default=0)
+    archived = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+    def get_thumbnail_files(self, limit=4):
+        """Get first N files for thumbnail preview"""
+        return self.files.all()[:limit]
+
+    def get_file_count(self):
+        """Get total number of files in collection"""
+        return self.files.count()

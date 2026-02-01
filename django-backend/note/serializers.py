@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import LocalMessage, LocalMessageList, Link, NoteRevision, Reminder, Workspace, File
+from .models import LocalMessage, LocalMessageList, Link, NoteRevision, Reminder, Workspace, File, FileCollection
 import re
 
 class FileSerializer(serializers.ModelSerializer):
@@ -12,6 +12,28 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = ['id', 'name', 'original_name', 'size', 'content_type', 'uploaded_at', 'url']
+
+class FileCollectionSerializer(serializers.ModelSerializer):
+    thumbnail_files = serializers.SerializerMethodField()
+    file_count = serializers.SerializerMethodField()
+    list_name = serializers.CharField(source='list.name', read_only=True)
+    type = serializers.SerializerMethodField()
+
+    def get_thumbnail_files(self, obj):
+        files = obj.get_thumbnail_files(4)
+        return FileSerializer(files, many=True).data
+
+    def get_file_count(self, obj):
+        return obj.get_file_count()
+
+    def get_type(self, obj):
+        return 'collection'
+
+    class Meta:
+        model = FileCollection
+        fields = ['id', 'name', 'description', 'list', 'list_name', 'importance', 'archived', 
+                  'created_at', 'updated_at', 'thumbnail_files', 'file_count', 'type']
+        read_only_fields = ['user']
 
 class NoteShortViewSerializer(serializers.ModelSerializer):
     def truncate_text(self, value):

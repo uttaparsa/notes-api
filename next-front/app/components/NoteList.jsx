@@ -240,9 +240,6 @@ export default function NoteList({
           </div>
         )}
       </div>
-      <br className="my-5" />
-      <br className="my-5" />
-      <br className="my-5" />
     </div>
   );
 }
