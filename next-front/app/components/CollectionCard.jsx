@@ -42,7 +42,7 @@ const CollectionCard = ({
         },
         body: JSON.stringify({ list: newListId }),
       });
-      showToast("Collection moved successfully", "success");
+      showToast("Success", "Collection moved successfully", 3000, "success");
       setShowMoveModal(false);
       if (refreshCollections) refreshCollections();
     } catch (error) {
@@ -53,7 +53,7 @@ const CollectionCard = ({
   const handleCopyLink = () => {
     const link = `${window.location.origin}/collection/${collection.id}`;
     copyTextToClipboard(link);
-    showToast("Link copied to clipboard", "success");
+    showToast("Success", "Link copied to clipboard", 3000, "success");
   };
 
   const handleDeleteCollection = async () => {
@@ -61,7 +61,7 @@ const CollectionCard = ({
       await fetchWithAuth(`/api/note/collections/${collection.id}/`, {
         method: "DELETE",
       });
-      showToast("Collection deleted", "success");
+      showToast("Success", "Collection deleted", 3000, "success");
       setShowDeleteModal(false);
       if (onDeleteCollection) onDeleteCollection(collection.id);
     } catch (error) {

@@ -102,7 +102,7 @@ export default function CollectionPage() {
       }
 
       loadFiles();
-      showToast("File added to collection", "success");
+      showToast("Success", "File added to collection", 3000, "success");
       setShowUploadModal(false);
     } catch (error) {
       handleApiError(error, showToast);
@@ -121,7 +121,7 @@ export default function CollectionPage() {
         body: JSON.stringify({ file_id: fileId }),
       });
       setFiles(files.filter((f) => f.id !== fileId));
-      showToast("File removed from collection", "success");
+      showToast("Success", "File removed from collection", 3000, "success");
     } catch (error) {
       handleApiError(error, showToast);
     }
@@ -155,7 +155,7 @@ export default function CollectionPage() {
         description: collectionDescription,
       });
       setShowEditModal(false);
-      showToast("Collection updated", "success");
+      showToast("Success", "Collection updated", 3000, "success");
     } catch (error) {
       handleApiError(error, showToast);
     }
@@ -228,7 +228,12 @@ export default function CollectionPage() {
       }
 
       loadFiles();
-      showToast(`File "${file.name}" added successfully`, "success");
+      showToast(
+        "Success",
+        `File "${file.name}" added successfully`,
+        3000,
+        "success",
+      );
     } catch (error) {
       handleApiError(error, showToast);
       showToast(`Failed to upload "${file.name}"`, "error");

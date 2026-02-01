@@ -47,7 +47,7 @@ export default function CreateCollectionModal({
       });
 
       const result = await data.json();
-      showToast("Collection created successfully", "success");
+      showToast("Success", "Collection created successfully", 3000, "success");
       setName("");
       setDescription("");
       setCategoryId(defaultCategory || "");

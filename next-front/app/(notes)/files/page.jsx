@@ -108,7 +108,7 @@ export default function FilesPage() {
       );
 
       if (response.ok) {
-        showToast("File added to collection", "success");
+        showToast("Success", "File added to collection", 3000, "success");
         setShowAddToCollectionModal(false);
         loadFiles();
       } else {
