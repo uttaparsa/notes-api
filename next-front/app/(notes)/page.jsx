@@ -22,7 +22,6 @@ export default function NotesPage() {
   const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isBusy, setIsBusy] = useState(true);
   const [date, setDate] = useState("");
   const [showHidden, setShowHidden] = useState(false);
@@ -30,17 +29,13 @@ export default function NotesPage() {
   const [highlightNoteId, setHighlightNoteId] = useState(null);
   const [showCreateCollectionModal, setShowCreateCollectionModal] =
     useState(false);
-  const [selectedCategorySlug, setSelectedCategorySlug] = useState(null);
   const perPage = 20;
 
-  useEffect(() => {
-    const page = searchParams.get("page");
-    const highlight = searchParams.get("highlight");
-    const category = searchParams.get("category");
+  const currentPage = parseInt(searchParams.get("page") || "1");
+  const selectedCategorySlug = searchParams.get("category") || null;
 
-    if (page) {
-      setCurrentPage(parseInt(page));
-    }
+  useEffect(() => {
+    const highlight = searchParams.get("highlight");
     if (highlight) {
       setHighlightNoteId(highlight);
       const newParams = new URLSearchParams(searchParams);
@@ -50,24 +45,11 @@ export default function NotesPage() {
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
-    if (category) {
-      setSelectedCategorySlug(category);
-    } else {
-      setSelectedCategorySlug(null);
-    }
   }, [searchParams]);
 
   useEffect(() => {
-    setCurrentPage(1);
     getRecords();
-  }, [showHidden, selectedWorkspace, selectedCategorySlug]);
-
-  useEffect(() => {
-    if (currentPage !== 1 || showHidden) {
-      // Avoid double call on initial load
-      getRecords();
-    }
-  }, [currentPage]);
+  }, [currentPage, showHidden, selectedWorkspace, selectedCategorySlug]);
 
   const showMessagesForDate = (selectedDate) => {
     setDate(selectedDate);
@@ -97,10 +79,10 @@ export default function NotesPage() {
       if (selectedDate != null) {
         if (data.next !== null) {
           const nextPage = new URL(data.next).searchParams.get("page");
-          setCurrentPage(parseInt(nextPage) - 1);
+          updateUrlParams({ page: parseInt(nextPage) - 1 });
         } else if (data.previous !== null) {
           const prevPage = new URL(data.previous).searchParams.get("page");
-          setCurrentPage(parseInt(prevPage) + 1);
+          updateUrlParams({ page: parseInt(prevPage) + 1 });
         }
         if (data.highlight_note_id) {
           setHighlightNoteId(data.highlight_note_id);
@@ -112,6 +94,18 @@ export default function NotesPage() {
     } finally {
       setIsBusy(false);
     }
+  };
+
+  const updateUrlParams = (updates) => {
+    const params = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === undefined) {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+    router.push(`?${params.toString()}`, undefined, { shallow: true });
   };
 
   const updateNote = async (noteId, updates) => {
@@ -166,20 +160,11 @@ export default function NotesPage() {
   );
 
   const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    const params = new URLSearchParams(searchParams);
-    params.set("page", newPage);
-    router.push(`?${params.toString()}`, undefined, { shallow: true });
+    updateUrlParams({ page: newPage });
   };
 
   const handleCategoryChange = (categorySlug) => {
-    setSelectedCategorySlug(categorySlug);
-    setCurrentPage(1);
-    const params = new URLSearchParams();
-    if (categorySlug) {
-      params.set("category", categorySlug);
-    }
-    router.push(`?${params.toString()}`, undefined, { shallow: true });
+    updateUrlParams({ category: categorySlug, page: 1 });
   };
 
   useEffect(() => {
@@ -215,10 +200,7 @@ export default function NotesPage() {
               id="show-hidden"
               label="Show Hidden"
               checked={showHidden}
-              onChange={(e) => {
-                setShowHidden(!showHidden);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setShowHidden(e.target.checked)}
               className="mb-3 text-body-emphasis mt-2"
             />
             <Form.Group>
