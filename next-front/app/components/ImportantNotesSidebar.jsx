@@ -1,14 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Spinner } from 'react-bootstrap';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { fetchWithAuth } from '../lib/api';
-import { handleApiError } from '../utils/errorHandler';
-import { CompactMarkdownRenderer } from './notecard/markdown/MarkdownRenderers';
+import React, { useState, useEffect } from "react";
+import { Spinner } from "react-bootstrap";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "../lib/api";
+import { handleApiError } from "../utils/errorHandler";
+import { CompactMarkdownRenderer } from "./notecard/markdown/MarkdownRenderers";
 
-export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '', selectedWorkspace = null }) {
+export default function ImportantNotesSidebar({
+  listSlug = null,
+  basePath = "",
+  selectedWorkspace = null,
+  showHidden = true,
+}) {
   const [importantNotes, setImportantNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -17,17 +22,23 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
 
   useEffect(() => {
     fetchImportantNotes();
-  }, [listSlug, selectedWorkspace]);
+  }, [listSlug, selectedWorkspace, showHidden]);
 
   useEffect(() => {
     const handleRefreshImportantNotes = () => {
       fetchImportantNotes();
     };
 
-    window.addEventListener('refreshImportantNotes', handleRefreshImportantNotes);
+    window.addEventListener(
+      "refreshImportantNotes",
+      handleRefreshImportantNotes,
+    );
 
     return () => {
-      window.removeEventListener('refreshImportantNotes', handleRefreshImportantNotes);
+      window.removeEventListener(
+        "refreshImportantNotes",
+        handleRefreshImportantNotes,
+      );
     };
   }, []);
 
@@ -35,20 +46,21 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
     setIsLoading(true);
     setLoaded(false);
     try {
-      const slug = listSlug || 'All';
+      const slug = listSlug || "All";
       const params = new URLSearchParams();
       if (selectedWorkspace) {
-        params.append('workspace', selectedWorkspace.slug);
+        params.append("workspace", selectedWorkspace.slug);
       }
+      params.append("show_hidden", showHidden ? "true" : "false");
       const queryString = params.toString();
-      const url = `/api/note/important/${slug}/${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/note/important/${slug}/${queryString ? `?${queryString}` : ""}`;
       const response = await fetchWithAuth(url);
-      if (!response.ok) throw new Error('Failed to fetch important notes');
+      if (!response.ok) throw new Error("Failed to fetch important notes");
       const data = await response.json();
       setImportantNotes(data);
       setTimeout(() => setLoaded(true), 50);
     } catch (err) {
-      console.error('Error fetching important notes:', err);
+      console.error("Error fetching important notes:", err);
       handleApiError(err);
     } finally {
       setIsLoading(false);
@@ -57,15 +69,26 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
 
   const handleNavigateToNote = async (noteId) => {
     try {
-      const slug = listSlug || 'All';
-      const response = await fetchWithAuth(`/api/note/message/${noteId}/page/?slug=${slug}`);
-      if (!response.ok) throw new Error('Failed to get note page');
+      const params = new URLSearchParams();
+      if (listSlug) {
+        params.append("slug", listSlug);
+      } else if (selectedWorkspace) {
+        params.append("workspace", selectedWorkspace.slug);
+      }
+      params.append("show_hidden", showHidden ? "true" : "false");
+      const queryString = params.toString();
+      const response = await fetchWithAuth(
+        `/api/note/message/${noteId}/page/?${queryString}`,
+      );
+      if (!response.ok) throw new Error("Failed to get note page");
       const data = await response.json();
-      
-      const targetPath = basePath ? `${basePath}?page=${data.page}&highlight=${noteId}` : `?page=${data.page}&highlight=${noteId}`;
+
+      const targetPath = basePath
+        ? `${basePath}?page=${data.page}&highlight=${noteId}`
+        : `?page=${data.page}&highlight=${noteId}`;
       router.push(targetPath);
     } catch (err) {
-      console.error('Error navigating to note:', err);
+      console.error("Error navigating to note:", err);
       handleApiError(err);
     }
   };
@@ -87,7 +110,7 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
             transform: translateY(0);
           }
         }
-        
+
         .important-note-item {
           animation: slideInUp 0.5s ease-out forwards;
           opacity: 0;
@@ -142,7 +165,7 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
         }
 
         .important-card::before {
-          content: '';
+          content: "";
           position: absolute;
           left: 0;
           top: 0;
@@ -181,38 +204,55 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
           max-height: 2000px;
         }
       `}</style>
-      
+
       {/* Desktop header - always visible */}
       <div className="section-header d-none d-lg-block">
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" className="bi bi-star-fill me-1" viewBox="0 0 16 16">
-          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12"
+          height="12"
+          fill="currentColor"
+          className="bi bi-star-fill me-1"
+          viewBox="0 0 16 16"
+        >
+          <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
         </svg>
         Important
       </div>
 
       {/* Mobile header - collapsible */}
-      <div 
+      <div
         className="section-header-mobile d-lg-none"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" className="bi bi-star-fill me-1" viewBox="0 0 16 16">
-            <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            fill="currentColor"
+            className="bi bi-star-fill me-1"
+            viewBox="0 0 16 16"
+          >
+            <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
           </svg>
           Important ({importantNotes.length})
         </span>
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          width="16" 
-          height="16" 
-          fill="currentColor" 
-          className={`bi bi-chevron-down collapse-icon ${isCollapsed ? 'collapsed' : ''}`}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          className={`bi bi-chevron-down collapse-icon ${isCollapsed ? "collapsed" : ""}`}
           viewBox="0 0 16 16"
         >
-          <path fillRule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+          <path
+            fillRule="evenodd"
+            d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"
+          />
         </svg>
       </div>
-      
+
       {isLoading ? (
         <div className="text-center py-3">
           <Spinner animation="border" size="sm" variant="primary" />
@@ -226,7 +266,7 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
                 key={note.id}
                 className="important-card important-note-item"
                 onClick={() => handleNavigateToNote(note.id)}
-                style={{ animationDelay: loaded ? `${index * 0.1}s` : '0s' }}
+                style={{ animationDelay: loaded ? `${index * 0.1}s` : "0s" }}
               >
                 <div className="note-content">
                   <div className="small mb-2">
@@ -234,7 +274,11 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
                       {note.text}
                     </CompactMarkdownRenderer>
                   </div>
-                  <Link href={`/message/${note.id}`} className="view-link" onClick={(e) => e.stopPropagation()}>
+                  <Link
+                    href={`/message/${note.id}`}
+                    className="view-link"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     View note →
                   </Link>
                 </div>
@@ -243,14 +287,19 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
           </div>
 
           {/* Mobile list - collapsible */}
-          <div className={`d-lg-none important-list ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+          <div
+            className={`d-lg-none important-list ${isCollapsed ? "collapsed" : "expanded"}`}
+          >
             <div className="d-flex flex-column gap-3">
               {importantNotes.map((note, index) => (
                 <div
                   key={note.id}
                   className="important-card important-note-item"
                   onClick={() => handleNavigateToNote(note.id)}
-                  style={{ animationDelay: loaded && !isCollapsed ? `${index * 0.1}s` : '0s' }}
+                  style={{
+                    animationDelay:
+                      loaded && !isCollapsed ? `${index * 0.1}s` : "0s",
+                  }}
                 >
                   <div className="note-content">
                     <div className="small mb-2">
@@ -258,7 +307,11 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
                         {note.text}
                       </CompactMarkdownRenderer>
                     </div>
-                    <Link href={`/message/${note.id}`} className="view-link" onClick={(e) => e.stopPropagation()}>
+                    <Link
+                      href={`/message/${note.id}`}
+                      className="view-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       View note →
                     </Link>
                   </div>
@@ -271,4 +324,3 @@ export default function ImportantNotesSidebar({ listSlug = 'All', basePath = '',
     </>
   );
 }
-

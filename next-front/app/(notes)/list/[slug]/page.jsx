@@ -266,6 +266,7 @@ export default function NoteListPage({ params }) {
               listSlug={slug}
               basePath={`/list/${slug}`}
               selectedWorkspace={selectedWorkspace}
+              showHidden={showHidden}
             />
           </Col>
         </Row>

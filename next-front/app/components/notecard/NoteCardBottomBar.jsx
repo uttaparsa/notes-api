@@ -25,7 +25,7 @@ const NoteCardBottomBar = forwardRef(({ note, singleView }, ref) => {
     try {
       const listSlug = getListSlug() || "All";
       const response = await fetchWithAuth(
-        `/api/note/message/${note.id}/page/?slug=${listSlug}`,
+        `/api/note/message/${note.id}/page/?slug=${listSlug}&show_hidden=false`,
       );
       if (!response.ok) throw new Error("Failed to get note page");
       const data = await response.json();

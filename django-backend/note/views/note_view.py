@@ -374,9 +374,7 @@ def get_target_list_for_creation(slug, user, workspace):
         return get_list_by_slug(slug, user)
 
 def filter_notes_by_slug(queryset, slug, user, workspace=None):
-    if not slug:
-        return LocalMessage.objects.none()
-    if slug == "All":
+    if not slug or slug == "All":
         list_ids = get_shown_list_ids(user, workspace)
         return queryset.filter(list__in=list_ids)
     lst = get_list_by_slug(slug, user)
@@ -511,9 +509,19 @@ class NotePageView(APIView):
         except LocalMessage.DoesNotExist:
             return Response({"error": "Note not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        slug = request.query_params.get('slug', 'All')
+        slug = request.query_params.get('slug')
+        show_hidden = request.query_params.get('show_hidden', 'true').lower() == 'true'
+        workspace_slug = request.query_params.get('workspace')
+        workspace = None
+        if workspace_slug:
+            try:
+                workspace = Workspace.objects.get(slug=workspace_slug, user=request.user)
+            except Workspace.DoesNotExist:
+                pass
         base_queryset = LocalMessage.objects.filter(user=request.user).order_by('-created_at')
-        queryset = filter_notes_by_slug(base_queryset, slug, request.user)
+        if not show_hidden:
+            base_queryset = base_queryset.filter(archived=False)
+        queryset = filter_notes_by_slug(base_queryset, slug, request.user, workspace)
 
         count_before = queryset.filter(created_at__gt=target_note.created_at).count()
         page_size = settings.NOTES_PAGE_SIZE

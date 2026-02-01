@@ -29,7 +29,7 @@ export default function NotesPage() {
   const [showCreateCollectionModal, setShowCreateCollectionModal] =
     useState(false);
   const perPage = 20;
-  const listSlug = "All";
+  const listSlug = null;
 
   useEffect(() => {
     const page = searchParams.get("page");
@@ -236,6 +236,7 @@ export default function NotesPage() {
             <ImportantNotesSidebar
               listSlug={listSlug}
               selectedWorkspace={selectedWorkspace}
+              showHidden={showHidden}
             />
           </Col>
         </Row>
