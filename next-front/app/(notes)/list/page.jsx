@@ -198,6 +198,12 @@ export default function CategoryList() {
 
   return (
     <Container className="py-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Categories and Workspaces</h2>
+        <Link href="/reminders" className="btn btn-outline-primary">
+          Reminders
+        </Link>
+      </div>
       <Row>
         <Col md={6}>
           <Card className="mb-4">

@@ -54,11 +54,6 @@ export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
               </Link>
             </Nav.Item>
             <Nav.Item>
-              <Link href="/reminders" passHref legacyBehavior>
-                <Nav.Link>Reminders</Nav.Link>
-              </Link>
-            </Nav.Item>
-            <Nav.Item>
               <Link href="/settings" passHref legacyBehavior>
                 <Nav.Link>Settings</Nav.Link>
               </Link>
