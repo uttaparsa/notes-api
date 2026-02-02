@@ -39,14 +39,6 @@ export default function CategoryList() {
           <WorkspaceSection workspaces={workspaces} showToast={showToast} />
         </Col>
       </Row>
-
-      <Row className="mt-4">
-        <Col>
-          <Link href="/reminders" className="btn btn-outline-primary">
-            Manage Reminders
-          </Link>
-        </Col>
-      </Row>
     </Container>
   );
 }
