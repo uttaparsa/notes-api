@@ -19,6 +19,7 @@ I have a notes app.
 - there is a similar notes feature that basically shows a similar notes. I'm still working to improve this
 - don't write comments.
 - there is a workspaces feature that lets you group categories into workspaces and allows you to focus on certain categories at a time.
+  - each category can belong to 0 to many workspaces
 
 This is main dirs
 .

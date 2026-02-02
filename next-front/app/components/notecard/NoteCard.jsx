@@ -199,6 +199,7 @@ const NoteCard = forwardRef(
                 shouldLoadLinks={shouldLoadLinks}
                 showToast={showToast}
                 onDeleteFile={handleDeleteFile}
+                workspaceSlug={selectedWorkspace?.slug}
               />
             </div>
           </div>
@@ -302,6 +303,7 @@ const NoteCard = forwardRef(
           singleView={singleView}
           showToast={showToast}
           refreshNotes={refreshNotes}
+          workspaceSlug={selectedWorkspace?.slug}
         />
 
         <ReminderModal

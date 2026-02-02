@@ -166,31 +166,38 @@ DATABASE_ROUTERS = [
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
     'handlers': {
         'logfile': {
             'level': 'WARNING',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR / 'data/django.log',
+            'formatter': 'verbose',
         },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['logfile', 'console'],
-            'level': 'INFO',  # Add this line
-            'propagate': False,  # Add this line
+            'level': 'INFO',
+            'propagate': False,
         },
-        # Add a specific logger for your app
         'note': {
             'handlers': ['console', 'logfile'],
             'level': 'INFO',
             'propagate': False,
         },
     },
-    # Add root logger configuration
     'root': {
         'level': 'INFO',
         'handlers': ['console'],

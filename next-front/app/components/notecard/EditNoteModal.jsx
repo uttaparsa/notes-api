@@ -19,6 +19,7 @@ const EditNoteModal = ({
   singleView,
   showToast,
   refreshNotes,
+  workspaceSlug = null,
 }) => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [lastSavedText, setLastSavedText] = useState(editText);
@@ -315,6 +316,7 @@ const EditNoteModal = ({
                   singleView={true}
                   shouldLoadLinks={false}
                   showToast={showToast}
+                  workspaceSlug={workspaceSlug}
                 />
               </div>
             ) : (

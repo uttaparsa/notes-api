@@ -275,6 +275,7 @@ export default function MessageInput({
                   note={{ text }}
                   singleView={true}
                   shouldLoadLinks={false}
+                  workspaceSlug={selectedWorkspace?.slug}
                 />
               </div>
             ) : (

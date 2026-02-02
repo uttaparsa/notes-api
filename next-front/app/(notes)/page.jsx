@@ -47,63 +47,66 @@ export default function NotesPage() {
     }
   }, [searchParams]);
 
+  const getRecords = useCallback(
+    async (selectedDate = null) => {
+      setIsBusy(true);
+      try {
+        let url = selectedCategorySlug
+          ? `/api/note/feed/${selectedCategorySlug}/`
+          : `/api/note/feed/`;
+        const params = new URLSearchParams({
+          page: currentPage,
+          archived: showHidden,
+          ...(selectedDate && { date: selectedDate }),
+          ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
+        });
+
+        const response = await fetchWithAuth(`${url}?${params}`);
+        if (!response.ok) throw new Error("Failed to fetch feed");
+        const data = await response.json();
+
+        setItems(data.results);
+        setTotalCount(data.count);
+
+        if (selectedDate != null) {
+          if (data.next !== null) {
+            const nextPage = new URL(
+              data.next,
+              window.location.origin,
+            ).searchParams.get("page");
+            if (nextPage) {
+              updateUrlParams({ page: parseInt(nextPage) - 1 });
+            }
+          } else if (data.previous !== null) {
+            const prevPage = new URL(
+              data.previous,
+              window.location.origin,
+            ).searchParams.get("page");
+            if (prevPage) {
+              updateUrlParams({ page: parseInt(prevPage) + 1 });
+            }
+          }
+          if (data.highlight_note_id) {
+            setHighlightNoteId(data.highlight_note_id);
+          }
+        }
+      } catch (err) {
+        console.error(`Error: ${err}`);
+        handleApiError(err);
+      } finally {
+        setIsBusy(false);
+      }
+    },
+    [currentPage, showHidden, selectedWorkspace, selectedCategorySlug],
+  );
+
   useEffect(() => {
     getRecords();
-  }, [currentPage, showHidden, selectedWorkspace, selectedCategorySlug]);
+  }, [getRecords]);
 
   const showMessagesForDate = (selectedDate) => {
     setDate(selectedDate);
     getRecords(selectedDate);
-  };
-
-  const getRecords = async (selectedDate = null) => {
-    setIsBusy(true);
-    try {
-      let url = selectedCategorySlug
-        ? `/api/note/feed/${selectedCategorySlug}/`
-        : `/api/note/feed/`;
-      const params = new URLSearchParams({
-        page: currentPage,
-        archived: showHidden,
-        ...(selectedDate && { date: selectedDate }),
-        ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
-      });
-
-      const response = await fetchWithAuth(`${url}?${params}`);
-      if (!response.ok) throw new Error("Failed to fetch feed");
-      const data = await response.json();
-
-      setItems(data.results);
-      setTotalCount(data.count);
-
-      if (selectedDate != null) {
-        if (data.next !== null) {
-          const nextPage = new URL(
-            data.next,
-            window.location.origin,
-          ).searchParams.get("page");
-          if (nextPage) {
-            updateUrlParams({ page: parseInt(nextPage) - 1 });
-          }
-        } else if (data.previous !== null) {
-          const prevPage = new URL(
-            data.previous,
-            window.location.origin,
-          ).searchParams.get("page");
-          if (prevPage) {
-            updateUrlParams({ page: parseInt(prevPage) + 1 });
-          }
-        }
-        if (data.highlight_note_id) {
-          setHighlightNoteId(data.highlight_note_id);
-        }
-      }
-    } catch (err) {
-      console.error(`Error: ${err}`);
-      handleApiError(err);
-    } finally {
-      setIsBusy(false);
-    }
   };
 
   const updateUrlParams = (updates) => {
@@ -160,9 +163,6 @@ export default function NotesPage() {
           .map((cat) => cat.slug)
           .join(",");
         url += `&list_slug=${encodeURIComponent(workspaceCategorySlugs)}`;
-      }
-      if (selectedWorkspace) {
-        url += `&workspace=${encodeURIComponent(selectedWorkspace.slug)}`;
       }
       router.push(url);
     },
