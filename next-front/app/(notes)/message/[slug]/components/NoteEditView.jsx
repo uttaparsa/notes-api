@@ -27,6 +27,7 @@ const NoteEditView = ({ note, editNote, onDone, refreshNotes }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [isSplitView, setIsSplitView] = useState(true);
   const editMessageTextAreaRef = useRef(null);
 
   useEffect(() => {
@@ -259,6 +260,24 @@ const NoteEditView = ({ note, editNote, onDone, refreshNotes }) => {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-0">Edit Note</h5>
           <div className="d-flex gap-2">
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="d-none d-lg-inline-block"
+              onClick={() => setIsSplitView((v) => !v)}
+              title={isSplitView ? "Single pane" : "Side by side"}
+            >
+              {isSplitView ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                  <path d="M8 1v14" stroke="currentColor" strokeWidth="1"/>
+                </svg>
+              )}
+            </Button>
             <Button variant="outline-secondary" size="sm" onClick={handleDone}>
               ← Back
             </Button>
@@ -288,32 +307,59 @@ const NoteEditView = ({ note, editNote, onDone, refreshNotes }) => {
           handleQuoteToggle={handleQuoteToggle}
         />
 
-        {/* Desktop: side-by-side */}
+        {/* Desktop layout */}
         <Row className="d-none d-lg-flex flex-grow-1">
-          <Col lg={6} className="d-flex flex-column">
-            <textarea
-              ref={editMessageTextAreaRef}
-              value={editText}
-              onChange={handleChange}
-              onKeyDown={handleEnter}
-              onPaste={handlePaste}
-              className={`${styles.monospace} ${editStyles.editTextAreaFullpage} w-100 flex-grow-1`}
-            />
-          </Col>
-          <Col
-            lg={6}
-            className={`${editStyles.previewPane} d-flex flex-column`}
-          >
-            <div className={`${editStyles.previewContent} flex-grow-1`}>
-              <NoteTextRenderer
-                note={{ ...note, text: editText }}
-                singleView={true}
-                shouldLoadLinks={false}
-                showToast={showToast}
-                workspaceSlug={selectedWorkspace?.slug}
-              />
-            </div>
-          </Col>
+          {isSplitView ? (
+            <>
+              <Col lg={6} className="d-flex flex-column">
+                <textarea
+                  ref={editMessageTextAreaRef}
+                  value={editText}
+                  onChange={handleChange}
+                  onKeyDown={handleEnter}
+                  onPaste={handlePaste}
+                  className={`${styles.monospace} ${editStyles.editTextAreaFullpage} w-100 flex-grow-1`}
+                />
+              </Col>
+              <Col
+                lg={6}
+                className={`${editStyles.previewPane} d-flex flex-column`}
+              >
+                <div className={`${editStyles.previewContent} flex-grow-1`}>
+                  <NoteTextRenderer
+                    note={{ ...note, text: editText }}
+                    singleView={true}
+                    shouldLoadLinks={false}
+                    showToast={showToast}
+                    workspaceSlug={selectedWorkspace?.slug}
+                  />
+                </div>
+              </Col>
+            </>
+          ) : (
+            <Col lg={12} className="d-flex flex-column">
+              {isPreviewMode ? (
+                <div className={`${editStyles.previewContent} flex-grow-1`}>
+                  <NoteTextRenderer
+                    note={{ ...note, text: editText }}
+                    singleView={true}
+                    shouldLoadLinks={false}
+                    showToast={showToast}
+                    workspaceSlug={selectedWorkspace?.slug}
+                  />
+                </div>
+              ) : (
+                <textarea
+                  ref={editMessageTextAreaRef}
+                  value={editText}
+                  onChange={handleChange}
+                  onKeyDown={handleEnter}
+                  onPaste={handlePaste}
+                  className={`${styles.monospace} ${editStyles.editTextAreaFullpage} w-100 flex-grow-1`}
+                />
+              )}
+            </Col>
+          )}
         </Row>
 
         {/* Mobile: toggle between editor and preview */}
