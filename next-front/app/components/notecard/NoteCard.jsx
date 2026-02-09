@@ -168,7 +168,7 @@ const NoteCard = forwardRef(
                   <Dropdown.Item onClick={copyNoteLink}>
                     Copy Link
                   </Dropdown.Item>
-                  {!hideEdits && (
+                  {!hideEdits && !singleView && (
                     <Dropdown.Item onClick={showEditModalHandler}>
                       Edit
                     </Dropdown.Item>

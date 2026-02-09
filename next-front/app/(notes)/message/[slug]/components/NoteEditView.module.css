@@ -1,0 +1,80 @@
+.editViewContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 120px);
+  padding: 0 4px;
+}
+
+.editTextAreaFullpage {
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.6;
+  min-height: 60vh;
+  padding: 12px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.editTextAreaFullpage:focus {
+  outline: none;
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.15);
+}
+
+.previewPane {
+  border-left: 1px solid var(--bs-border-color);
+}
+
+.previewContent {
+  padding: 12px;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 6px;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+  min-height: 60vh;
+}
+
+.editFab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1050;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.editFab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.editFab:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 991.98px) {
+  .editTextAreaFullpage {
+    min-height: 50vh;
+  }
+
+  .previewContent {
+    max-height: 70vh;
+    min-height: 50vh;
+  }
+
+  .editFab {
+    bottom: 20px;
+    right: 20px;
+  }
+}
