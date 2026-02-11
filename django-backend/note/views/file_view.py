@@ -12,6 +12,7 @@ import traceback
 from django.http import HttpResponse, Http404
 import random
 import string
+import hashlib
 
 from ..file_utils import file_access_tracker
 from ..models import File, LocalMessage
@@ -128,6 +129,14 @@ def serve_minio_file(request, file_path):
 class FileUploadView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def compute_file_hash(self, file_data):
+        hasher = hashlib.sha256()
+        file_data.seek(0)
+        while chunk := file_data.read(8192):
+            hasher.update(chunk)
+        file_data.seek(0)
+        return hasher.hexdigest()
+
     def compress_image(self, image, max_size=(1600, 1200), quality=95):
         img = Image.open(image)
         
@@ -184,7 +193,6 @@ class FileUploadView(APIView):
         compress_image = request.POST.get('compress_image', 'false').lower() == 'true'
         random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
-        # Get display name without extension
         if '.' in file.name:
             display_name = file.name.rsplit('.', 1)[0]
         else:
@@ -206,6 +214,36 @@ class FileUploadView(APIView):
         else:
             file_data = io.BytesIO(file_to_save.read())
 
+        file_hash = self.compute_file_hash(file_data)
+        
+        existing_file = File.objects.filter(file_hash=file_hash, user=request.user).first()
+        
+        if existing_file:
+            note_id = request.POST.get('note_id')
+            if note_id:
+                try:
+                    from ..models import LocalMessage
+                    note = LocalMessage.objects.get(id=note_id, user=request.user)
+                    existing_names = set(note.files.values_list('name', flat=True))
+                    base_name = display_name
+                    name = base_name
+                    counter = 1
+                    while name in existing_names:
+                        name = f"{base_name} ({counter})"
+                        counter += 1
+                    existing_file.name = name
+                    note.files.add(existing_file)
+                except LocalMessage.DoesNotExist:
+                    pass
+            
+            return Response({
+                'url': f"/api/note/files/{existing_file.minio_path}", 
+                'file_id': existing_file.id, 
+                'file_name': existing_file.name,
+                'file': FileSerializer(existing_file).data,
+                'duplicate': True
+            }, status=status.HTTP_200_OK)
+
         url = "/api/note/files/" + self.save_to_minio(file_data, object_name, content_type)
         
         if url:
@@ -215,7 +253,8 @@ class FileUploadView(APIView):
                 size=file_data.getbuffer().nbytes,
                 content_type=content_type,
                 minio_path=object_name,
-                user=request.user
+                user=request.user,
+                file_hash=file_hash
             )
             
             note_id = request.POST.get('note_id')
@@ -223,7 +262,6 @@ class FileUploadView(APIView):
                 try:
                     from ..models import LocalMessage
                     note = LocalMessage.objects.get(id=note_id, user=request.user)
-                    # Auto-rename if duplicate name
                     existing_names = set(note.files.values_list('name', flat=True))
                     base_name = display_name
                     name = base_name
@@ -240,7 +278,8 @@ class FileUploadView(APIView):
                 'url': url, 
                 'file_id': file_obj.id, 
                 'file_name': file_obj.name,
-                'file': FileSerializer(file_obj).data
+                'file': FileSerializer(file_obj).data,
+                'duplicate': False
             }, status=status.HTTP_201_CREATED)
         else:
             return Response({'error': 'Failed to upload file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

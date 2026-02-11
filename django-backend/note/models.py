@@ -178,6 +178,7 @@ class File(models.Model):
     minio_path = models.CharField(max_length=500, unique=True)  # Full MinIO path
     uploaded_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
+    file_hash = models.CharField(max_length=64, db_index=True, null=True, blank=True)
     
     class Meta:
         ordering = ['-uploaded_at']
