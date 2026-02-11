@@ -150,7 +150,7 @@ export default function SearchPage() {
           onPageChange={handlePageChange}
         />
         <Row className="m-0 p-0">
-          <Col lg={2} className="mx-0 mb-3 mb-lg-0">
+          <Col xs={12} lg={3} className="mb-3 mb-lg-0 pe-lg-3">
             <FormCheck
               type="checkbox"
               id="show-hidden"
@@ -161,7 +161,7 @@ export default function SearchPage() {
                   buildUrl({ show_hidden: e.target.checked, page: 1 }),
                 );
               }}
-              className="mb-3 text-body-emphasis mt-2"
+              className="mb-2 text-body-emphasis mt-2"
             />
 
             <Card className="d-none d-lg-block">
@@ -177,7 +177,7 @@ export default function SearchPage() {
               </Card.Body>
             </Card>
           </Col>
-          <Col lg={8} className="mx-0 px-3 px-lg-0" dir="ltr">
+          <Col xs={12} lg={9} className="px-3 px-lg-0" dir="ltr">
             <NoteList
               notes={notes}
               isBusy={isBusy}

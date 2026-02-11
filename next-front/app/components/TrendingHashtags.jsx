@@ -17,7 +17,7 @@ export default function TrendingHashtags({ hashtags, loading }) {
   }
 
   return (
-    <div className="mt-3">
+    <div className="mt-2">
       <div className="text-body-secondary small mb-2">Trending Tags</div>
       <div className="d-flex flex-wrap gap-1">
         {hashtags.map(({ tag, count }) => (

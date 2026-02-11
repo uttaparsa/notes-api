@@ -15,7 +15,7 @@ export default function CategorySelector({ selectedSlug, onSelectCategory }) {
     : noteLists;
 
   return (
-    <Form.Group className="mb-3">
+    <Form.Group className="mb-2">
       <Form.Label className="text-body-secondary small">Category</Form.Label>
       <Form.Select
         value={selectedSlug || "All"}

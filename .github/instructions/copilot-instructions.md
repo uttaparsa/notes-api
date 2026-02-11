@@ -45,6 +45,24 @@ I have a notes app.
   ## File Handling
   - file management: handles file uploads, listing, details, and serving from MinIO storage. Backend: django-backend/note/models.py (File), views/file_view.py, URLs: upload/, files/, etc.
 
+  ### File Collections
+
+  File collections are a separate content type from notes that organize files without text content:
+  - **Model**: `FileCollection` in `django-backend/note/models.py`
+  - **Display**: Collections appear in the unified feed alongside notes in chronological order
+    - Shows thumbnail preview of first 4 files
+    - Displays file count and category name
+    - Clicking opens dedicated file manager page at `/collection/{id}`
+  - **File Manager**: Grid view page for managing collection files
+    - Upload files (drag-and-drop supported)
+    - Remove files from collection (doesn't delete file itself)
+    - View file thumbnails for images, icons for other types
+  - **File Sharing**: Files stored in MinIO can be:
+    - Referenced in notes via markdown
+    - Added to multiple collections
+    - Shared across collections and notes (same physical file, multiple references)
+    - Files stored at `uploads/{user_id}/{random_str}_{filename}` regardless of collection
+
   ## UI/UX
   - dark mode toggle. This is being handled using boostrap. So don't use dark, light variant
   - session management: manages user sessions. Frontend: next-front/app/(auth)/ components
@@ -65,25 +83,6 @@ nuxt is just old and deprecated and I'm not developing react native for now
 some words are used interchangably as the code have evaloved.
 category: LocalMessageList, note list
 note: LocalMessage
-
-## File Collections
-
-File collections are a separate content type from notes that organize files without text content:
-
-- **Model**: `FileCollection` in `django-backend/note/models.py`
-- **Display**: Collections appear in the unified feed alongside notes in chronological order
-  - Shows thumbnail preview of first 4 files
-  - Displays file count and category name
-  - Clicking opens dedicated file manager page at `/collection/{id}`
-- **File Manager**: Grid view page for managing collection files
-  - Upload files (drag-and-drop supported)
-  - Remove files from collection (doesn't delete file itself)
-  - View file thumbnails for images, icons for other types
-- **File Sharing**: Files stored in MinIO can be:
-  - Referenced in notes via markdown
-  - Added to multiple collections
-  - Shared across collections and notes (same physical file, multiple references)
-  - Files stored at `uploads/{user_id}/{random_str}_{filename}` regardless of collection
 
 ## Development Operations
 

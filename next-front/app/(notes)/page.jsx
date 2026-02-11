@@ -13,8 +13,7 @@ import SearchBar from "../components/search/SearchBar";
 import PaginationComponent from "../components/PaginationComponent";
 import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
 import ImportantNotesCenter from "../components/ImportantNotesCenter";
-import CategorySelector from "../components/CategorySelector";
-import TrendingHashtags from "../components/TrendingHashtags";
+import FiltersBar from "../components/FiltersBar";
 import {
   useImportantNotes,
   useImportantNotesDisplayMode,
@@ -209,48 +208,35 @@ export default function NotesPage() {
     <div dir="ltr" style={{ minHeight: "100vh", overflow: "auto" }}>
       <SearchBar onSearch={handleSearch} />
       <div dir="ltr">
-        <PaginationComponent
-          currentPage={currentPage}
-          totalCount={totalCount}
-          perPage={perPage}
-          onPageChange={handlePageChange}
-        />
-
         <Row className="m-0 p-0">
-          <Col xs={12} lg={2} className="mx-0 mb-3 mb-lg-0 order-2 order-lg-1">
-            <CategorySelector
-              selectedSlug={selectedCategorySlug}
-              onSelectCategory={handleCategoryChange}
-            />
-            <FormCheck
-              type="checkbox"
-              id="show-hidden"
-              label="Show Hidden"
-              checked={showHidden}
-              onChange={(e) => setShowHidden(e.target.checked)}
-              className="mb-3 text-body-emphasis mt-2"
-            />
-            <Form.Group>
-              <Form.Label className="text-body-secondary small">
-                Show messages for
-              </Form.Label>
-              <Form.Control
-                type="date"
-                value={date}
-                onChange={(e) => showMessagesForDate(e.target.value)}
-              />
-            </Form.Group>
-            <TrendingHashtags
-              hashtags={trendingHashtags}
-              loading={hashtagsLoading}
+          <Col
+            xs={12}
+            lg={3}
+            className="mb-3 mb-lg-0 order-2 order-lg-1 pe-lg-3"
+          >
+            <FiltersBar
+              selectedCategorySlug={selectedCategorySlug}
+              onCategoryChange={handleCategoryChange}
+              showHidden={showHidden}
+              onShowHiddenChange={setShowHidden}
+              date={date}
+              onDateChange={showMessagesForDate}
+              trendingHashtags={trendingHashtags}
+              hashtagsLoading={hashtagsLoading}
             />
           </Col>
           <Col
             xs={12}
-            lg={8}
-            className="mx-0 px-3 px-lg-0 order-3 order-lg-2"
+            lg={7}
+            className="px-3 px-lg-0 order-3 order-lg-2"
             dir="ltr"
           >
+            <PaginationComponent
+              currentPage={currentPage}
+              totalCount={totalCount}
+              perPage={perPage}
+              onPageChange={handlePageChange}
+            />
             {displayMode === DISPLAY_MODES.CENTER && (
               <ImportantNotesCenter
                 importantNotes={importantNotes}
@@ -289,7 +275,11 @@ export default function NotesPage() {
               )
             )}
           </Col>
-          <Col xs={12} lg={2} className="mb-3 mb-lg-0 order-1 order-lg-3">
+          <Col
+            xs={12}
+            lg={2}
+            className="mb-3 mb-lg-0 order-1 order-lg-3 ps-lg-3"
+          >
             <Button
               variant="outline-primary"
               className="w-100 mb-3"
