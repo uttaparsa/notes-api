@@ -34,7 +34,6 @@ urlpatterns = [
     
     # Unified feed endpoint
     path('feed/', UnifiedFeedView.as_view(), name='unified-feed'),
-    path('feed/<slug>/', UnifiedFeedView.as_view(), name='unified-feed-by-category'),
     
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('all-files/', FileListView.as_view(), name='all-files'),

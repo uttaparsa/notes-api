@@ -68,14 +68,13 @@ export default function NotesPage() {
     async (selectedDate = null) => {
       setIsBusy(true);
       try {
-        let url = selectedCategorySlug
-          ? `/api/note/feed/${selectedCategorySlug}/`
-          : `/api/note/feed/`;
+        let url = `/api/note/feed/`;
         const params = new URLSearchParams({
           page: currentPage,
           archived: showHidden,
           ...(selectedDate && { date: selectedDate }),
           ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
+          ...(selectedCategorySlug && { category: selectedCategorySlug }),
         });
 
         const response = await fetchWithAuth(`${url}?${params}`);

@@ -120,6 +120,7 @@ class UnifiedFeedView(ListAPIView):
         user = request.user
         archived = request.query_params.get('archived', 'false').lower() == 'true'
         workspace_slug = request.query_params.get('workspace')
+        category_slug = request.query_params.get('category') or slug
         
         notes_query = LocalMessage.objects.filter(user=user)
         collections_query = FileCollection.objects.filter(user=user)
@@ -133,9 +134,9 @@ class UnifiedFeedView(ListAPIView):
             except Workspace.DoesNotExist:
                 pass
         
-        if slug:
+        if category_slug:
             try:
-                category = LocalMessageList.objects.get(slug=slug, user=user)
+                category = LocalMessageList.objects.get(slug=category_slug, user=user)
                 notes_query = notes_query.filter(list=category)
                 collections_query = collections_query.filter(list=category)
             except LocalMessageList.DoesNotExist:
