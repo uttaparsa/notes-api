@@ -3,17 +3,25 @@
 import { Button } from "react-bootstrap";
 import NewIcon from "./icons/NewIcon";
 
-export default function FloatingNoteButton({ onClick, justSent = false }) {
+export default function FloatingNoteButton({
+  onClick,
+  justSent = false,
+  inline = false,
+}) {
   return (
     <>
       <Button
         onClick={onClick}
         className={`shadow-lg ${justSent ? "just-sent" : ""}`}
         style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          zIndex: 1050,
+          ...(inline
+            ? {}
+            : {
+                position: "fixed",
+                bottom: "20px",
+                right: "20px",
+                zIndex: 1050,
+              }),
           borderRadius: "50px",
           padding: "12px 20px",
           fontSize: "16px",

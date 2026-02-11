@@ -10,6 +10,7 @@ import PaginationComponent from "../../components/PaginationComponent";
 import CategoryFilterModal from "../../components/search/CategoryFilterModal";
 import SearchFilters from "../../components/search/SearchFilters";
 import FloatingFilterButton from "../../components/FloatingFilterButton";
+import JoystickFab from "../../components/JoystickFab";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
 import { SelectedWorkspaceContext } from "../layout";
@@ -143,12 +144,14 @@ export default function SearchPage() {
     <div dir="ltr">
       <SearchBar onSearch={handleSearch} initialSearchText={searchText} />
       <div dir="ltr">
-        <PaginationComponent
-          currentPage={currentPage}
-          totalCount={totalCount}
-          perPage={perPage}
-          onPageChange={handlePageChange}
-        />
+        <div className="d-none d-lg-block">
+          <PaginationComponent
+            currentPage={currentPage}
+            totalCount={totalCount}
+            perPage={perPage}
+            onPageChange={handlePageChange}
+          />
+        </div>
         <Row className="m-0 p-0">
           <Col xs={12} lg={3} className="mb-3 mb-lg-0 pe-lg-3">
             <FormCheck
@@ -200,7 +203,16 @@ export default function SearchPage() {
         </Row>
       </div>
 
-      <FloatingFilterButton onClick={() => setShowCategoryModal(true)} />
+      <JoystickFab
+        onPageChange={handlePageChange}
+        currentPage={currentPage}
+        totalPages={Math.ceil(totalCount / perPage)}
+      >
+        <FloatingFilterButton
+          onClick={() => setShowCategoryModal(true)}
+          inline
+        />
+      </JoystickFab>
 
       <CategoryFilterModal
         show={showCategoryModal}

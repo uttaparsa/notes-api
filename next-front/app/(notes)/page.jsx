@@ -14,6 +14,7 @@ import PaginationComponent from "../components/PaginationComponent";
 import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
 import ImportantNotesCenter from "../components/ImportantNotesCenter";
 import FiltersBar from "../components/FiltersBar";
+import JoystickFab from "../components/JoystickFab";
 import {
   useImportantNotes,
   useImportantNotesDisplayMode,
@@ -212,7 +213,7 @@ export default function NotesPage() {
           <Col
             xs={12}
             lg={3}
-            className="mb-3 mb-lg-0 order-2 order-lg-1 pe-lg-3"
+            className="mb-3 mb-lg-0 order-2 order-lg-1 pe-lg-3 mt-lg-3"
           >
             <FiltersBar
               selectedCategorySlug={selectedCategorySlug}
@@ -231,12 +232,14 @@ export default function NotesPage() {
             className="px-3 px-lg-0 order-3 order-lg-2"
             dir="ltr"
           >
-            <PaginationComponent
-              currentPage={currentPage}
-              totalCount={totalCount}
-              perPage={perPage}
-              onPageChange={handlePageChange}
-            />
+            <div className="d-none d-lg-block">
+              <PaginationComponent
+                currentPage={currentPage}
+                totalCount={totalCount}
+                perPage={perPage}
+                onPageChange={handlePageChange}
+              />
+            </div>
             {displayMode === DISPLAY_MODES.CENTER && (
               <ImportantNotesCenter
                 importantNotes={importantNotes}
@@ -278,11 +281,11 @@ export default function NotesPage() {
           <Col
             xs={12}
             lg={2}
-            className="mb-3 mb-lg-0 order-1 order-lg-3 ps-lg-3"
+            className="mb-3 mb-lg-0 order-1 order-lg-3 ps-lg-3 mt-3  "
           >
             <Button
               variant="outline-primary"
-              className="w-100 mb-3"
+              className="w-100 mb-2 d-none d-md-block "
               onClick={() => setShowCreateCollectionModal(true)}
             >
               + New Collection
@@ -304,6 +307,9 @@ export default function NotesPage() {
         onNoteSaved={addNewNote}
         listSlug={selectedCategorySlug || "All"}
         selectedWorkspace={selectedWorkspace}
+        currentPage={currentPage}
+        totalPages={Math.ceil(totalCount / perPage)}
+        onPageChange={handlePageChange}
       />
       <CreateCollectionModal
         show={showCreateCollectionModal}

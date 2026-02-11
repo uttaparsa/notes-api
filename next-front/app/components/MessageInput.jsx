@@ -11,11 +11,15 @@ import RtlToggleButton from "./buttons/edit_buttons/RtlToggleButton";
 import PreviewToggleButton from "./buttons/edit_buttons/PreviewToggleButton";
 import NoteTextRenderer from "./notecard/markdown/MarkdownRenderers";
 import FloatingNoteButton from "./FloatingNoteButton";
+import JoystickFab from "./JoystickFab";
 
 export default function MessageInput({
   listSlug,
   onNoteSaved,
   selectedWorkspace,
+  currentPage,
+  totalPages,
+  onPageChange,
 }) {
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -215,7 +219,27 @@ export default function MessageInput({
 
   if (!isExpanded) {
     return (
-      <FloatingNoteButton onClick={handleMinimizedClick} justSent={justSent} />
+      <>
+        <div className="d-none d-lg-block">
+          <FloatingNoteButton
+            onClick={handleMinimizedClick}
+            justSent={justSent}
+          />
+        </div>
+        {onPageChange && (
+          <JoystickFab
+            onPageChange={onPageChange}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          >
+            <FloatingNoteButton
+              onClick={handleMinimizedClick}
+              justSent={justSent}
+              inline
+            />
+          </JoystickFab>
+        )}
+      </>
     );
   }
 

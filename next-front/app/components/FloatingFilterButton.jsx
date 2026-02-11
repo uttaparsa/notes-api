@@ -2,12 +2,18 @@
 
 import { Button } from "react-bootstrap";
 
-export default function FloatingFilterButton({ onClick }) {
+export default function FloatingFilterButton({ onClick, inline = false }) {
   return (
     <Button
       variant="primary"
-      className="d-lg-none position-fixed bottom-0 end-0 m-3 rounded-circle"
-      style={{ width: "56px", height: "56px", zIndex: 1050 }}
+      className={`rounded-circle ${
+        inline ? "" : "d-lg-none position-fixed bottom-0 end-0 m-3"
+      }`}
+      style={{
+        width: "56px",
+        height: "56px",
+        ...(inline ? {} : { zIndex: 1050 }),
+      }}
       onClick={onClick}
       title="Filter by Categories"
     >
