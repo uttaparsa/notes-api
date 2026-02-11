@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import LocalMessage, NoteEmbedding
+from .file_utils import FileManager
 import threading
 import functools
 import traceback
@@ -46,9 +47,32 @@ def create_or_update_embedding_async(note_id):
         print(f"Failed to process embedding for note {note_id}: {str(e)}")
         traceback.print_exc()
 
+@async_task
+def sync_note_files_async(note_id):
+    """
+    Asynchronously sync file associations for a note
+    """
+    try:
+        note = LocalMessage.objects.get(id=note_id)
+        file_manager = FileManager()
+        associations_created = file_manager.sync_note_files(note)
+        if associations_created > 0:
+            print(f"Auto-synced {associations_created} file associations for note {note_id}")
+    except Exception as e:
+        print(f"Failed to sync files for note {note_id}: {str(e)}")
+        traceback.print_exc()
+
 @receiver(post_save, sender=LocalMessage)
 def trigger_embedding_processing(sender, instance, created, **kwargs):
     """
     Signal to trigger asynchronous embedding creation/update for notes
     """
     create_or_update_embedding_async(instance.id)
+
+@receiver(post_save, sender=LocalMessage)
+def trigger_file_sync(sender, instance, created, **kwargs):
+    """
+    Signal to trigger asynchronous file association sync for notes
+    """
+    if not created:
+        sync_note_files_async(instance.id)

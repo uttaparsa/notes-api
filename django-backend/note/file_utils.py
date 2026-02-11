@@ -2,7 +2,7 @@ import re
 from typing import List
 from django.conf import settings
 from minio import Minio
-from .models import LocalMessage
+from .models import LocalMessage, File
 
 class FileManager:
     def __init__(self):
@@ -55,6 +55,34 @@ class FileManager:
                 print(f"file {file_path} was referenced elsewhere!")
                     
         return deleted_files
+    
+    def sync_note_files(self, note: LocalMessage) -> int:
+        """
+        Sync file associations with files referenced in note markdown.
+        Returns the number of new associations created.
+        """
+        file_paths = self.extract_file_paths(note.text)
+        associations_created = 0
+        
+        for path in file_paths:
+            minio_path = path.replace("note/", "")
+            
+            file_obj, created = File.objects.get_or_create(
+                minio_path=minio_path,
+                defaults={
+                    'name': minio_path.split('/')[-1],
+                    'original_name': minio_path.split('/')[-1],
+                    'size': 0,
+                    'content_type': 'unknown',
+                    'user': note.user
+                }
+            )
+            
+            if not note.files.filter(id=file_obj.id).exists():
+                note.files.add(file_obj)
+                associations_created += 1
+        
+        return associations_created
     
 from django.utils import timezone
 from datetime import timedelta
