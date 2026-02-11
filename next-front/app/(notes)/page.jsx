@@ -12,7 +12,13 @@ import { handleApiError } from "../utils/errorHandler";
 import SearchBar from "../components/search/SearchBar";
 import PaginationComponent from "../components/PaginationComponent";
 import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
+import ImportantNotesCenter from "../components/ImportantNotesCenter";
 import CategorySelector from "../components/CategorySelector";
+import {
+  useImportantNotes,
+  useImportantNotesDisplayMode,
+  DISPLAY_MODES,
+} from "../hooks/useImportantNotes";
 import { SelectedWorkspaceContext, NoteListContext } from "./layout";
 
 export default function NotesPage() {
@@ -30,9 +36,15 @@ export default function NotesPage() {
   const [showCreateCollectionModal, setShowCreateCollectionModal] =
     useState(false);
   const perPage = 20;
-
   const currentPage = parseInt(searchParams.get("page") || "1");
   const selectedCategorySlug = searchParams.get("category") || null;
+
+  const { displayMode, toggleDisplayMode } = useImportantNotesDisplayMode();
+  const { importantNotes, isLoading: importantLoading } = useImportantNotes({
+    listSlug: selectedCategorySlug,
+    selectedWorkspace,
+    showHidden,
+  });
 
   useEffect(() => {
     const highlight = searchParams.get("highlight");
@@ -230,6 +242,17 @@ export default function NotesPage() {
             className="mx-0 px-3 px-lg-0 order-3 order-lg-2"
             dir="ltr"
           >
+            {displayMode === DISPLAY_MODES.CENTER && (
+              <ImportantNotesCenter
+                importantNotes={importantNotes}
+                isLoading={importantLoading}
+                showHidden={showHidden}
+                onUpdateNote={updateNote}
+                onDeleteNote={deleteNote}
+                refreshNotes={getRecords}
+                onToggleDisplayMode={toggleDisplayMode}
+              />
+            )}
             {isBusy ? (
               <div className="text-center py-5">Loading...</div>
             ) : (
@@ -266,10 +289,14 @@ export default function NotesPage() {
               + New Collection
             </Button>
             <ImportantNotesSidebar
+              importantNotes={importantNotes}
+              isLoading={importantLoading}
               listSlug={selectedCategorySlug}
               selectedWorkspace={selectedWorkspace}
               showHidden={showHidden}
               basePath="/"
+              displayMode={displayMode}
+              onToggleDisplayMode={toggleDisplayMode}
             />
           </Col>
         </Row>

@@ -7,65 +7,27 @@ import { useRouter } from "next/navigation";
 import { fetchWithAuth } from "../lib/api";
 import { handleApiError } from "../utils/errorHandler";
 import { CompactMarkdownRenderer } from "./notecard/markdown/MarkdownRenderers";
+import { DISPLAY_MODES } from "../hooks/useImportantNotes";
 
 export default function ImportantNotesSidebar({
+  importantNotes,
+  isLoading,
   listSlug = null,
   basePath = "",
   selectedWorkspace = null,
   showHidden = true,
+  displayMode = DISPLAY_MODES.SIDEBAR,
+  onToggleDisplayMode,
 }) {
-  const [importantNotes, setImportantNotes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    fetchImportantNotes();
-  }, [listSlug, selectedWorkspace, showHidden]);
-
-  useEffect(() => {
-    const handleRefreshImportantNotes = () => {
-      fetchImportantNotes();
-    };
-
-    window.addEventListener(
-      "refreshImportantNotes",
-      handleRefreshImportantNotes,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "refreshImportantNotes",
-        handleRefreshImportantNotes,
-      );
-    };
-  }, []);
-
-  const fetchImportantNotes = async () => {
-    setIsLoading(true);
-    setLoaded(false);
-    try {
-      const slug = listSlug || "All";
-      const params = new URLSearchParams();
-      if (selectedWorkspace) {
-        params.append("workspace", selectedWorkspace.slug);
-      }
-      params.append("show_hidden", showHidden ? "true" : "false");
-      const queryString = params.toString();
-      const url = `/api/note/important/${slug}/${queryString ? `?${queryString}` : ""}`;
-      const response = await fetchWithAuth(url);
-      if (!response.ok) throw new Error("Failed to fetch important notes");
-      const data = await response.json();
-      setImportantNotes(data);
+    if (!isLoading) {
       setTimeout(() => setLoaded(true), 50);
-    } catch (err) {
-      console.error("Error fetching important notes:", err);
-      handleApiError(err);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [isLoading]);
 
   const handleNavigateToNote = async (noteId) => {
     try {
@@ -95,9 +57,8 @@ export default function ImportantNotesSidebar({
     }
   };
 
-  if (importantNotes.length === 0 && !isLoading) {
-    return null;
-  }
+  if (displayMode === DISPLAY_MODES.CENTER) return null;
+  if (importantNotes.length === 0 && !isLoading) return null;
 
   return (
     <>
@@ -132,6 +93,22 @@ export default function ImportantNotesSidebar({
           letter-spacing: 0.5px;
           margin-bottom: 1rem;
           color: var(--bs-secondary);
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .mode-toggle {
+          cursor: pointer;
+          transition:
+            transform 0.3s ease,
+            opacity 0.2s ease;
+          margin-left: 0.25rem;
+          opacity: 0.5;
+        }
+
+        .mode-toggle:hover {
+          opacity: 1;
         }
 
         .section-header-mobile {
@@ -207,8 +184,7 @@ export default function ImportantNotesSidebar({
         }
       `}</style>
 
-      {/* Desktop header - always visible */}
-      <div className="section-header d-none d-lg-block">
+      <div className="section-header d-none d-lg-flex">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="12"
@@ -220,9 +196,25 @@ export default function ImportantNotesSidebar({
           <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z" />
         </svg>
         Important
+        {onToggleDisplayMode && (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            fill="currentColor"
+            className="mode-toggle"
+            viewBox="0 0 16 16"
+            onClick={onToggleDisplayMode}
+            title="Move to center"
+          >
+            <path
+              fillRule="evenodd"
+              d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm4.5 5.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H4.5z"
+            />
+          </svg>
+        )}
       </div>
 
-      {/* Mobile header - collapsible */}
       <div
         className="section-header-mobile d-lg-none"
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -261,7 +253,6 @@ export default function ImportantNotesSidebar({
         </div>
       ) : (
         <>
-          {/* Desktop list - always visible */}
           <div className="d-none d-lg-flex flex-column gap-3">
             {importantNotes.map((note, index) => (
               <div
@@ -288,7 +279,6 @@ export default function ImportantNotesSidebar({
             ))}
           </div>
 
-          {/* Mobile list - collapsible */}
           <div
             className={`d-lg-none important-list ${isCollapsed ? "collapsed" : "expanded"}`}
           >
