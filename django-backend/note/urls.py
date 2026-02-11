@@ -10,9 +10,13 @@ from .views.similar_note_view import SimilarNotesView
 from .views.reminder_view import ReminderView, SingleReminderView
 from .views.workspace_view import WorkspaceListView, WorkspaceDetailView, WorkspaceCategoriesView, DefaultWorkspaceView
 from .views.collection_view import FileCollectionView, CollectionFilesView, UnifiedFeedView
+from .views.hashtag_view import TrendingHashtagsView
 
 
 urlpatterns = [
+    # Hashtag endpoints
+    path('hashtags/trending/', TrendingHashtagsView.as_view(), name='trending-hashtags'),
+
     # Workspace endpoints
     path('workspaces/', WorkspaceListView.as_view(), name='workspaces'),
     path('workspaces/default/', DefaultWorkspaceView.as_view(), name='default-workspace'),

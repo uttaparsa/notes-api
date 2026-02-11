@@ -10,20 +10,48 @@ I have a notes app.
 - I use next js for front end(more info under `.github/instructions/next-front.instructions.md`). Though I am planning to migrate to react because I don't use server side features of it.
 - Also use react bootstrap 5 for the front end.
 - notes are parsed and shown as markdown
-- It has several features such as:
+- It has several features organized as follows:
+
+  ## Basic Note Operations
   - editing a note
   - adding note category(each note should belong to only one category)
-  - dark mode toggle. This is being handled using boostrap. So don't use dark, light variant
-  - linking to other notes, backlinking from them.
-  - file collections - separate from notes, collections organize files with thumbnail previews in feed
-- there is a similar notes feature that basically shows a similar notes. I'm still working to improve this
-- don't write comments.
-- there is a workspaces feature that lets you group categories into workspaces and allows you to focus on certain categories at a time.
-  - each category can belong to 0 to many workspaces
+  - note importance: allows increasing or decreasing the importance level of notes for prioritization. Backend: django-backend/note/views/note_view.py (IncreaseImportanceView, DecreaseImportanceView), URLs: increase_importance/, decrease_importance/
+  - archiving notes: enables archiving and unarchiving notes to hide/show them from main views. Backend: django-backend/note/views/note_view.py (ArchiveMessageView, UnArchiveMessageView), URLs: archive/, unarchive/
+  - moving notes: allows changing the category of a note. Backend: django-backend/note/views/note_view.py (MoveMessageView), URL: move/
+  - note revisions: tracks and stores historical revisions of notes for change history. Backend: django-backend/note/models.py (NoteRevision), views/note_view.py (NoteRevisionView), URL: revisions/<note_id>/
 
-This is main dirs
+  ## Content and Search
+  - linking to other notes, backlinking from them.
+  - hashtags: extracts hashtags from note text and provides trending hashtags based on usage frequency. Backend: django-backend/note/views/hashtag_view.py (TrendingHashtagsView), URL: hashtags/trending/
+  - search functionality: advanced text search with support for AND/OR queries, filtering by categories, hidden/archived status, and file presence. Backend: django-backend/note/views/search_view.py (SearchResultsView), URL: search/
+  - there is a similar notes feature that basically shows a similar notes. I'm still working to improve this
+
+  ## Organization
+  - there is a workspaces feature that lets you group categories into workspaces and allows you to focus on certain categories at a time.
+    - each category can belong to 0 to many workspaces
+  - file collections - separate from notes, collections organize files with thumbnail previews in feed
+  - unified feed: displays a chronological feed combining notes and file collections. Backend: django-backend/note/views/collection_view.py (UnifiedFeedView), URL: feed/
+
+  ## Sharing
+  - public notes: allows sharing notes publicly by placing them in a 'public' category. Backend: django-backend/note/views/public_note_view.py (PublicNoteView), URL: pp/
+
+  ## Notifications
+  - reminders: scheduling reminders for notes with options for frequency (once, daily, weekly, monthly), text highlighting, and email notifications. Backend: django-backend/note/models.py (Reminder), views/reminder_view.py (ReminderView), URLs: reminders/
+  - email notifications: sends email reminders for scheduled notes. Backend: django-backend/note/tasks.py (send_reminder_email Celery task)
+
+  ## Data Insights
+  - statistics: provides stats on note revisions, note creation, and file access over time periods. Backend: django-backend/note/views/stats_view.py (RevisionStatsView, NoteStatsView, FileAccessStatsView), URLs: stats/revisions/, stats/notes/, stats/access/
+
+  ## File Handling
+  - file management: handles file uploads, listing, details, and serving from MinIO storage. Backend: django-backend/note/models.py (File), views/file_view.py, URLs: upload/, files/, etc.
+
+  ## UI/UX
+  - dark mode toggle. This is being handled using boostrap. So don't use dark, light variant
+  - session management: manages user sessions. Frontend: next-front/app/(auth)/ components
+
+current structure of the project main dirs:
 .
-├── django-backend
+├── django-backend (.venv is here)
 ├── docker-compose.yml
 ├── minio-data
 ├── next-front
@@ -31,9 +59,8 @@ This is main dirs
 ├── notes-react-native
 ├── nuxt-front
 ├── README.md
-└── venv
 
-nuxt is just old and deprecated
+nuxt is just old and deprecated and I'm not developing react native for now
 
 some words are used interchangably as the code have evaloved.
 category: LocalMessageList, note list
@@ -44,8 +71,6 @@ note: LocalMessage
 File collections are a separate content type from notes that organize files without text content:
 
 - **Model**: `FileCollection` in `django-backend/note/models.py`
-  - Fields: name, description, category (LocalMessageList), user, files (ManyToMany to File), importance, archived
-  - No revisions (unlike notes)
 - **Display**: Collections appear in the unified feed alongside notes in chronological order
   - Shows thumbnail preview of first 4 files
   - Displays file count and category name
@@ -59,12 +84,6 @@ File collections are a separate content type from notes that organize files with
   - Added to multiple collections
   - Shared across collections and notes (same physical file, multiple references)
   - Files stored at `uploads/{user_id}/{random_str}_{filename}` regardless of collection
-- **API Endpoints**:
-  - `/api/note/collections/` - list/create collections
-  - `/api/note/collections/{id}/` - get/update/delete collection
-  - `/api/note/collections/{id}/files/` - manage files in collection
-  - `/api/note/feed/` - unified feed with notes and collections
-  - `/api/note/feed/{slug}/` - category-specific unified feed
 
 ## Development Operations
 

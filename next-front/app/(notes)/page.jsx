@@ -14,11 +14,13 @@ import PaginationComponent from "../components/PaginationComponent";
 import ImportantNotesSidebar from "../components/ImportantNotesSidebar";
 import ImportantNotesCenter from "../components/ImportantNotesCenter";
 import CategorySelector from "../components/CategorySelector";
+import TrendingHashtags from "../components/TrendingHashtags";
 import {
   useImportantNotes,
   useImportantNotesDisplayMode,
   DISPLAY_MODES,
 } from "../hooks/useImportantNotes";
+import { useTrendingHashtags } from "../hooks/useTrendingHashtags";
 import { SelectedWorkspaceContext, NoteListContext } from "./layout";
 
 export default function NotesPage() {
@@ -45,6 +47,9 @@ export default function NotesPage() {
     selectedWorkspace,
     showHidden,
   });
+
+  const { hashtags: trendingHashtags, loading: hashtagsLoading } =
+    useTrendingHashtags({ selectedWorkspace });
 
   useEffect(() => {
     const highlight = searchParams.get("highlight");
@@ -235,6 +240,10 @@ export default function NotesPage() {
                 onChange={(e) => showMessagesForDate(e.target.value)}
               />
             </Form.Group>
+            <TrendingHashtags
+              hashtags={trendingHashtags}
+              loading={hashtagsLoading}
+            />
           </Col>
           <Col
             xs={12}
