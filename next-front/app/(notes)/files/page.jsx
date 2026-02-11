@@ -54,6 +54,7 @@ export default function FilesPage() {
     useState(false);
   const [selectedCollection, setSelectedCollection] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("date");
 
   useEffect(() => {
     loadFiles();
@@ -120,11 +121,22 @@ export default function FilesPage() {
     }
   };
 
-  const filteredFiles = files.filter(
-    (file) =>
-      file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      file.original_name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredFiles = files
+    .filter(
+      (file) =>
+        file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        file.original_name.toLowerCase().includes(searchTerm.toLowerCase()),
+    )
+    .sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.uploaded_at) - new Date(a.uploaded_at);
+      } else if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      } else if (sortBy === "type") {
+        return a.content_type.localeCompare(b.content_type);
+      }
+      return 0;
+    });
 
   if (loading) {
     return (
@@ -146,7 +158,7 @@ export default function FilesPage() {
       </Row>
 
       <Row className="mb-3">
-        <Col md={6}>
+        <Col md={4}>
           <Form.Control
             type="text"
             placeholder="Search files..."
@@ -154,7 +166,17 @@ export default function FilesPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </Col>
-        <Col md={6} className="text-end">
+        <Col md={4}>
+          <Form.Select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <option value="date">Sort by Date</option>
+            <option value="name">Sort by Name</option>
+            <option value="type">Sort by Type</option>
+          </Form.Select>
+        </Col>
+        <Col md={4} className="text-end">
           <Badge bg="secondary">{filteredFiles.length} files</Badge>
         </Col>
       </Row>
