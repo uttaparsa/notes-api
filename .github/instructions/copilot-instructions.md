@@ -36,7 +36,7 @@ I have a notes app.
   - public notes: allows sharing notes publicly by placing them in a 'public' category. Backend: django-backend/note/views/public_note_view.py (PublicNoteView), URL: pp/
 
   ## Notifications
-  - reminders: scheduling reminders for notes with options for frequency (once, daily, weekly, monthly), text highlighting, and email notifications. Backend: django-backend/note/models.py (Reminder), views/reminder_view.py (ReminderView), URLs: reminders/
+  - reminders: scheduling reminders for notes with options for frequency (once, daily, weekly, monthly),it supports text highlighting. And the notifications are email. Backend: django-backend/note/models.py (Reminder), views/reminder_view.py (ReminderView), URLs: reminders/
   - email notifications: sends email reminders for scheduled notes. Backend: django-backend/note/tasks.py (send_reminder_email Celery task)
 
   ## Data Insights
