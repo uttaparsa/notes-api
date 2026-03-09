@@ -29,7 +29,7 @@ from django.contrib.auth.decorators import login_required
 
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import UserSession, EmailConfirmationToken
+from .models import UserSession, EmailConfirmationToken, UserProfile
 from .tasks import send_email_reminder
 
 from django.contrib.sessions.models import Session
@@ -255,6 +255,44 @@ class Profile(APIView):
         return Response(
             serializer.data,
             status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def notification_profile(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'GET':
+        return Response(serializers.UserProfileSerializer(profile).data)
+
+    serializer = serializers.UserProfileSerializer(profile, data=request.data, partial=True)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    old_token = profile.telegram_bot_token
+    profile = serializer.save()
+    new_token = profile.telegram_bot_token
+
+    if new_token and new_token != old_token:
+        import requests as http_requests
+        webhook_url = f"{settings.WEBSITE_URL}/api/telegram/webhook/"
+        resp = http_requests.post(
+            f"https://api.telegram.org/bot{new_token}/setWebhook",
+            json={
+                'url': webhook_url,
+                'secret_token': str(profile.telegram_webhook_secret),
+                'allowed_updates': ['callback_query'],
+            },
+            timeout=10,
+        )
+        resp_data = resp.json()
+        if not resp.ok or not resp_data.get('ok'):
+            return Response(
+                {'error': 'Saved, but Telegram webhook registration failed. Check your bot token.', 'telegram_error': resp.text},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    return Response(serializers.UserProfileSerializer(profile).data)
 
 
 # from rest_framework_simplejwt.views import TokenViewBase
