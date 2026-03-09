@@ -275,6 +275,7 @@ def notification_profile(request):
 
     if new_token and new_token != old_token:
         import requests as http_requests
+        print(f" the url is {settings.WEBSITE_URL}/api/telegram/webhook/")
         webhook_url = f"{settings.WEBSITE_URL}/api/telegram/webhook/"
         resp = http_requests.post(
             f"https://api.telegram.org/bot{new_token}/setWebhook",
