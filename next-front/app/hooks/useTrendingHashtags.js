@@ -3,25 +3,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchWithAuth } from "../lib/api";
 
-export function useTrendingHashtags({
-  selectedWorkspace = null,
-  selectedWorkspaceSlug = null,
-  enabled = true,
-}) {
+export function useTrendingHashtags({ selectedWorkspace = null }) {
   const [hashtags, setHashtags] = useState([]);
   const [loading, setLoading] = useState(true);
-  const workspaceSlug = selectedWorkspaceSlug || selectedWorkspace?.slug || null;
 
   const fetchHashtags = useCallback(async () => {
-    if (!enabled) {
-      return;
-    }
-
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (workspaceSlug) {
-        params.append("workspace", workspaceSlug);
+      if (selectedWorkspace) {
+        params.append("workspace", selectedWorkspace.slug);
       }
       const qs = params.toString();
       const url = `/api/note/hashtags/trending/${qs ? `?${qs}` : ""}`;
@@ -35,15 +26,11 @@ export function useTrendingHashtags({
     } finally {
       setLoading(false);
     }
-  }, [workspaceSlug, enabled]);
+  }, [selectedWorkspace]);
 
   useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
     fetchHashtags();
-  }, [fetchHashtags, enabled]);
+  }, [fetchHashtags]);
 
   return { hashtags, loading };
 }

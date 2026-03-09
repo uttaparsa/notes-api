@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useContext, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button, Spinner } from "react-bootstrap";
 import NoteCard from "../../../components/notecard/NoteCard";
+import { NoteListContext } from "../../layout";
 import { useNoteData } from "./hooks/useNoteData";
 import RefreshPrompt from "./components/RefreshPrompt";
 import Backlinks from "./components/Backlinks";
@@ -16,6 +17,7 @@ const SingleNoteView = () => {
   const noteComponentRef = useRef(null);
   const noteContainerRef = useRef(null);
   const params = useParams();
+  const noteLists = useContext(NoteListContext);
   const [activeTab, setActiveTab] = useState("preview");
 
   const {
@@ -25,7 +27,7 @@ const SingleNoteView = () => {
     similarNotesLoaded,
     shouldShowRefreshPrompt,
     editNote,
-  } = useNoteData(params.slug);
+  } = useNoteData(params.slug, noteLists);
 
   if (noteBusy) {
     return (

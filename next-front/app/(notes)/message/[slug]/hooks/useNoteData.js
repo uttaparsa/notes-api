@@ -1,10 +1,10 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import { fetchWithAuth } from "@/app/lib/api";
 import { handleApiError } from "@/app/utils/errorHandler";
 import { extractMarkdownTitle } from "@/app/utils/stringUtils";
 import { SelectedWorkspaceContext } from "../../../layout";
 
-export function useNoteData(slug) {
+export function useNoteData(slug, noteLists) {
   const [noteBusy, setNoteBusy] = useState(true);
   const [note, setNote] = useState(null);
   const [similarNotes, setSimilarNotes] = useState([]);
@@ -12,7 +12,6 @@ export function useNoteData(slug) {
   const [noteUpdateConflict, setNoteUpdateConflict] = useState(false);
   const [shouldShowRefreshPrompt, setShouldShowRefreshPrompt] = useState(false);
   const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
-  const loadedSlugRef = useRef(null);
 
   const extractMarkdownTitleFromText = (text) => {
     const title = extractMarkdownTitle(text);
@@ -46,11 +45,13 @@ export function useNoteData(slug) {
       if (!response.ok) {
         throw new Error("Failed to fetch similar notes");
       }
-      return await response.json();
+      const data = await response.json();
+
+      setSimilarNotes(data);
+      setTimeout(() => setSimilarNotesLoaded(true), 50);
     } catch (error) {
       console.error("Error fetching similar notes:", error);
       handleApiError(error);
-      return [];
     }
   };
 
@@ -110,46 +111,31 @@ export function useNoteData(slug) {
   };
 
   useEffect(() => {
-    if (loadedSlugRef.current === slug) return;
-    loadedSlugRef.current = slug;
-
     const loadData = async () => {
       try {
-        setNoteBusy(true);
         const currentNote = await getCurrentNote();
         setNote(currentNote);
         setNoteBusy(false);
+
+        if (currentNote?.text) {
+          document.title = extractMarkdownTitleFromText(currentNote.text);
+        }
+
+        if (currentNote) {
+          await fetchSimilarNotes(currentNote.id);
+        } else {
+          setSimilarNotesLoaded(true);
+        }
       } catch (error) {
         console.error("Error fetching note:", error);
         document.title = "Note - Error";
         setNoteBusy(false);
+        setSimilarNotesLoaded(false);
       }
     };
 
     loadData();
-  }, [slug]);
-
-  useEffect(() => {
-    if (!note?.text) return;
-    document.title = extractMarkdownTitleFromText(note.text);
-  }, [note]);
-
-  useEffect(() => {
-    const loadSimilarNotes = async () => {
-      if (!note?.id) {
-        setSimilarNotes([]);
-        setSimilarNotesLoaded(true);
-        return;
-      }
-
-      setSimilarNotesLoaded(false);
-      const data = await fetchSimilarNotes(note.id);
-      setSimilarNotes(data);
-      setTimeout(() => setSimilarNotesLoaded(true), 50);
-    };
-
-    loadSimilarNotes();
-  }, [note?.id, selectedWorkspace?.slug]);
+  }, [noteLists]);
 
   useEffect(() => {
     if (!note) return;

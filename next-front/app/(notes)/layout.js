@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
@@ -21,48 +21,28 @@ import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 export const NoteListContext = createContext([]);
 export const WorkspaceContext = createContext([]);
 export const SelectedWorkspaceContext = createContext({ selectedWorkspace: null, selectWorkspace: () => {} });
-export const WorkspaceReadyContext = createContext(false);
 export const ModalContext = createContext({});
 export const ToastContext = createContext({});
 export const AuthContext = createContext();
 
 
 export default function RootLayout({ children }) {
-  const NOTE_LISTS_CACHE_KEY = 'cachedNoteLists';
-  const WORKSPACES_CACHE_KEY = 'cachedWorkspaces';
   const [noteLists, setNoteLists] = useState([]);
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
-  const [workspaceReady, setWorkspaceReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [toast, setToast] = useState({ show: false, title: '', body: '', delay: 3000, variant: 'primary' });
-  const initialDataRequestedRef = useRef(false);
   const router = useRouter();
 
   const handleLogout = useCallback(async () => {
+    // Implement your logout logic here
+    // For example:
     await logout();
     
     router.push('/login');
   }, [router]);
-
-  const applyWorkspaceSelection = useCallback((workspaceData) => {
-    const savedWorkspaceSlug = localStorage.getItem('selectedWorkspace');
-    const savedWorkspace = savedWorkspaceSlug
-      ? workspaceData.find((workspace) => workspace.slug === savedWorkspaceSlug)
-      : null;
-    const defaultWorkspace = workspaceData.find((workspace) => workspace.is_default) || workspaceData[0] || null;
-    const resolvedWorkspace = savedWorkspace || defaultWorkspace;
-
-    setSelectedWorkspace(resolvedWorkspace);
-
-    if (resolvedWorkspace) {
-      localStorage.setItem('selectedWorkspace', resolvedWorkspace.slug);
-    } else {
-      localStorage.removeItem('selectedWorkspace');
-    }
-  }, []);
 
   const getLists = useCallback(async () => {
     try {
@@ -73,12 +53,11 @@ export default function RootLayout({ children }) {
       const data = await response.json();
       const sortedData = data.sort((a, b) => a.archived - b.archived);
       setNoteLists(sortedData);
-      localStorage.setItem(NOTE_LISTS_CACHE_KEY, JSON.stringify(sortedData));
     } catch (err) {
       console.error(`Error: ${err}`);
       handleApiError(err);
     }
-  }, [NOTE_LISTS_CACHE_KEY]);
+  }, []);
 
   const getWorkspaces = useCallback(async () => {
     try {
@@ -88,15 +67,23 @@ export default function RootLayout({ children }) {
       }
       const data = await response.json();
       setWorkspaces(data);
-      localStorage.setItem(WORKSPACES_CACHE_KEY, JSON.stringify(data));
-      applyWorkspaceSelection(data);
+      
+      // Set selected workspace from localStorage or default to first workspace
+      const savedWorkspaceSlug = localStorage.getItem('selectedWorkspace');
+      if (savedWorkspaceSlug) {
+        const savedWorkspace = data.find(w => w.slug === savedWorkspaceSlug);
+        if (savedWorkspace) {
+          setSelectedWorkspace(savedWorkspace);
+        } else {
+          // If saved workspace doesn't exist, clear it
+          localStorage.removeItem('selectedWorkspace');
+        }
+      }
     } catch (err) {
       console.error(`Error: ${err}`);
       handleApiError(err);
-    } finally {
-      setWorkspaceReady(true);
     }
-  }, [WORKSPACES_CACHE_KEY, applyWorkspaceSelection]);
+  }, []);
 
   const selectWorkspace = useCallback((workspace) => {
     setSelectedWorkspace(workspace);
@@ -116,49 +103,16 @@ export default function RootLayout({ children }) {
     const accessToken = localStorage.getItem('accessToken');
     setIsAuthenticated(!!accessToken);
 
-    if (accessToken && !initialDataRequestedRef.current){
-      initialDataRequestedRef.current = true;
-
-      const cachedListsRaw = localStorage.getItem(NOTE_LISTS_CACHE_KEY);
-      if (cachedListsRaw) {
-        try {
-          const cachedLists = JSON.parse(cachedListsRaw);
-          if (Array.isArray(cachedLists)) {
-            setNoteLists(cachedLists);
-          } else {
-            getLists();
-          }
-        } catch {
-          getLists();
-        }
-      } else {
-        getLists();
-      }
-
-      const cachedWorkspacesRaw = localStorage.getItem(WORKSPACES_CACHE_KEY);
-      if (cachedWorkspacesRaw) {
-        try {
-          const cachedWorkspaces = JSON.parse(cachedWorkspacesRaw);
-          if (Array.isArray(cachedWorkspaces) && cachedWorkspaces.length > 0) {
-            setWorkspaces(cachedWorkspaces);
-            applyWorkspaceSelection(cachedWorkspaces);
-            setWorkspaceReady(true);
-          } else {
-            getWorkspaces();
-          }
-        } catch {
-          getWorkspaces();
-        }
-      } else {
-        getWorkspaces();
-      }
+    if (accessToken){
+      getLists();
+      getWorkspaces();
     }
     
 
     const showWaitingModal = (e) => {
-      const title = typeof e.detail === 'string' ? e.detail : e.detail?.title;
+      console.log('showWaitingModal', e.detail);
       setShowModal(true);
-      setModalTitle(title || 'Please wait');
+      setModalTitle(e.detail.title);
     };
 
     const hideWaitingModal = () => {
@@ -183,7 +137,7 @@ export default function RootLayout({ children }) {
       window.removeEventListener('updateWorkspaces', getWorkspaces);
       window.removeEventListener('showToast', handleShowToast);
     };
-  }, [getLists, getWorkspaces, showToast, NOTE_LISTS_CACHE_KEY, WORKSPACES_CACHE_KEY, applyWorkspaceSelection]);
+  }, [getLists, getWorkspaces, showToast]);
 
   return (
     <html lang="en"  data-bs-theme="light">
@@ -195,11 +149,10 @@ export default function RootLayout({ children }) {
       <body >
         <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
           <NoteListContext.Provider value={noteLists}>
-            <WorkspaceReadyContext.Provider value={workspaceReady}>
-              <SelectedWorkspaceContext.Provider value={{ selectedWorkspace, selectWorkspace }}>
-                <WorkspaceContext.Provider value={workspaces}>
-                  <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
-                    <ToastContext.Provider value={showToast}>
+            <SelectedWorkspaceContext.Provider value={{ selectedWorkspace, selectWorkspace }}>
+              <WorkspaceContext.Provider value={workspaces}>
+                <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
+                  <ToastContext.Provider value={showToast}>
                 <ExternalLinkProvider>
                   <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} workspaces={workspaces} />
                   <div className="h-100" style={{minHeight: '100vh'}}>
@@ -222,8 +175,8 @@ export default function RootLayout({ children }) {
                     <Toast.Body>{toast.body}</Toast.Body>
                   </Toast>
                 </ToastContainer>
-                  </ToastContext.Provider>
-                  <Modal
+              </ToastContext.Provider>
+              <Modal
                 show={showModal}
                 centered
                 backdrop="static"
@@ -239,10 +192,9 @@ export default function RootLayout({ children }) {
                   </Spinner>
                 </Modal.Body>
               </Modal>
-                  </ModalContext.Provider>
-                </WorkspaceContext.Provider>
-              </SelectedWorkspaceContext.Provider>
-            </WorkspaceReadyContext.Provider>
+            </ModalContext.Provider>
+            </WorkspaceContext.Provider>
+            </SelectedWorkspaceContext.Provider>
           </NoteListContext.Provider>
         </AuthContext.Provider>
       </body>
