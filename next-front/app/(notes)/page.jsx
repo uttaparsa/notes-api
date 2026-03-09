@@ -21,12 +21,18 @@ import {
   DISPLAY_MODES,
 } from "../hooks/useImportantNotes";
 import { useTrendingHashtags } from "../hooks/useTrendingHashtags";
-import { SelectedWorkspaceContext, NoteListContext } from "./layout";
+import {
+  SelectedWorkspaceContext,
+  NoteListContext,
+  WorkspaceReadyContext,
+} from "./layout";
 
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const workspaceReady = useContext(WorkspaceReadyContext);
+  const selectedWorkspaceSlug = selectedWorkspace?.slug || null;
   const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -44,12 +50,13 @@ export default function NotesPage() {
   const { displayMode, toggleDisplayMode } = useImportantNotesDisplayMode();
   const { importantNotes, isLoading: importantLoading } = useImportantNotes({
     listSlug: selectedCategorySlug,
-    selectedWorkspace,
+    selectedWorkspaceSlug,
     showHidden,
+    enabled: workspaceReady,
   });
 
   const { hashtags: trendingHashtags, loading: hashtagsLoading } =
-    useTrendingHashtags({ selectedWorkspace });
+    useTrendingHashtags({ selectedWorkspaceSlug, enabled: workspaceReady });
 
   useEffect(() => {
     const highlight = searchParams.get("highlight");
@@ -66,6 +73,16 @@ export default function NotesPage() {
 
   const getRecords = useCallback(
     async (selectedDate = null) => {
+      // this have a bouncing issue.
+      // log all parameters and see if any of them is changing unexpectedly
+
+      console.log("Fetching records with parameters:", {
+        currentPage,
+        showHidden,
+        selectedWorkspace: selectedWorkspaceSlug,
+        selectedCategorySlug,
+        selectedDate,
+      });
       setIsBusy(true);
       try {
         let url = `/api/note/feed/`;
@@ -73,7 +90,7 @@ export default function NotesPage() {
           page: currentPage,
           archived: showHidden,
           ...(selectedDate && { date: selectedDate }),
-          ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
+          ...(selectedWorkspaceSlug && { workspace: selectedWorkspaceSlug }),
           ...(selectedCategorySlug && { category: selectedCategorySlug }),
         });
 
@@ -113,12 +130,15 @@ export default function NotesPage() {
         setIsBusy(false);
       }
     },
-    [currentPage, showHidden, selectedWorkspace, selectedCategorySlug],
+    [currentPage, showHidden, selectedWorkspaceSlug, selectedCategorySlug],
   );
 
   useEffect(() => {
+    if (!workspaceReady) {
+      return;
+    }
     getRecords();
-  }, [getRecords]);
+  }, [getRecords, workspaceReady]);
 
   const showMessagesForDate = (selectedDate) => {
     setDate(selectedDate);
