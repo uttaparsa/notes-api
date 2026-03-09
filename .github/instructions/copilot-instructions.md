@@ -14,11 +14,17 @@ I have a notes app.
 
   ## Basic Note Operations
   - editing a note
-  - adding note category(each note should belong to only one category)
   - note importance: allows increasing or decreasing the importance level of notes for prioritization. Backend: django-backend/note/views/note_view.py (IncreaseImportanceView, DecreaseImportanceView), URLs: increase_importance/, decrease_importance/
   - archiving notes: enables archiving and unarchiving notes to hide/show them from main views. Backend: django-backend/note/views/note_view.py (ArchiveMessageView, UnArchiveMessageView), URLs: archive/, unarchive/
-  - moving notes: allows changing the category of a note. Backend: django-backend/note/views/note_view.py (MoveMessageView), URL: move/
   - note revisions: tracks and stores historical revisions of notes for change history. Backend: django-backend/note/models.py (NoteRevision), views/note_view.py (NoteRevisionView), URL: revisions/<note_id>/
+
+  ## Organization
+  - Each note belongs to only one category. the user can move notes between categories.
+  - there is a workspaces feature that lets user group categories into workspaces and allows you to focus on certain categories at a time.
+    - each category can belong to 0 to many workspaces
+  - the selected workspace is stored in the local storage of the browser. If visiting, use the default workspace from the backend
+  - file collections - separate from notes, collections organize files with thumbnail previews in feed
+  - unified feed: displays a chronological feed combining notes and file collections. Backend: django-backend/note/views/collection_view.py (UnifiedFeedView), URL: feed/
 
   ## Content and Search
   - linking to other notes, backlinking from them.
@@ -26,24 +32,20 @@ I have a notes app.
   - search functionality: advanced text search with support for AND/OR queries, filtering by categories, hidden/archived status, and file presence. Backend: django-backend/note/views/search_view.py (SearchResultsView), URL: search/
   - there is a similar notes feature that basically shows a similar notes. I'm still working to improve this
 
-  ## Organization
-  - there is a workspaces feature that lets you group categories into workspaces and allows you to focus on certain categories at a time.
-    - each category can belong to 0 to many workspaces
-  - file collections - separate from notes, collections organize files with thumbnail previews in feed
-  - unified feed: displays a chronological feed combining notes and file collections. Backend: django-backend/note/views/collection_view.py (UnifiedFeedView), URL: feed/
-
   ## Sharing
   - public notes: allows sharing notes publicly by placing them in a 'public' category. Backend: django-backend/note/views/public_note_view.py (PublicNoteView), URL: pp/
 
-  ## Notifications
-  - reminders: scheduling reminders for notes with options for frequency (once, daily, weekly, monthly),it supports text highlighting. And the notifications are email. Backend: django-backend/note/models.py (Reminder), views/reminder_view.py (ReminderView), URLs: reminders/
-  - email notifications: sends email reminders for scheduled notes. Backend: django-backend/note/tasks.py (send_reminder_email Celery task)
+  ## Reminders
+  - reminders: scheduling reminders for notes with options for frequency (once, daily, weekly, monthly).And the notifications can be sent using different methods.
+  - each reminder is associated with a note and may highlight only part of it.
+    - email reminders: sends email for scheduled reminders. Backend: django-backend/note/tasks.py (send_reminder_email Celery task)
+    - telegram reminders: sends reminder notifications to users via Telegram bot. It supports snoozing reminders. Once a reminder is dismissed, all the messages related to it will be deleted from the user's Telegram chat.
 
   ## Data Insights
   - statistics: provides stats on note revisions, note creation, and file access over time periods. Backend: django-backend/note/views/stats_view.py (RevisionStatsView, NoteStatsView, FileAccessStatsView), URLs: stats/revisions/, stats/notes/, stats/access/
 
   ## File Handling
-  - file management: handles file uploads, listing, details, and serving from MinIO storage. Backend: django-backend/note/models.py (File), views/file_view.py, URLs: upload/, files/, etc.
+  - file management: handles file uploads, listing, details, and serving from MinIO storage.
 
   ### File Collections
 

@@ -38,18 +38,25 @@ export function useImportantNotesDisplayMode() {
 export function useImportantNotes({
   listSlug = null,
   selectedWorkspace = null,
+  selectedWorkspaceSlug = null,
   showHidden = true,
+  enabled = true,
 }) {
   const [importantNotes, setImportantNotes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const workspaceSlug = selectedWorkspaceSlug || selectedWorkspace?.slug || null;
 
   const fetchImportantNotes = useCallback(async () => {
+    if (!enabled) {
+      return;
+    }
+
     setIsLoading(true);
     try {
       const slug = listSlug || "All";
       const params = new URLSearchParams();
-      if (selectedWorkspace) {
-        params.append("workspace", selectedWorkspace.slug);
+      if (workspaceSlug) {
+        params.append("workspace", workspaceSlug);
       }
       params.append("show_hidden", showHidden ? "true" : "false");
       const queryString = params.toString();
@@ -64,11 +71,15 @@ export function useImportantNotes({
     } finally {
       setIsLoading(false);
     }
-  }, [listSlug, selectedWorkspace, showHidden]);
+  }, [listSlug, workspaceSlug, showHidden, enabled]);
 
   useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      return;
+    }
     fetchImportantNotes();
-  }, [fetchImportantNotes]);
+  }, [fetchImportantNotes, enabled]);
 
   useEffect(() => {
     const handler = () => fetchImportantNotes();

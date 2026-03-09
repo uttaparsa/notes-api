@@ -29,6 +29,7 @@ urlpatterns = [
     path('xpanel/admin/', admin.site.urls),
     path('api/account/', include('account.urls')),
     path('api/note/', include('note.urls')),
+    path('api/telegram/', include('account.telegram_urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 

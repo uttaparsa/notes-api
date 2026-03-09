@@ -139,7 +139,14 @@ export default function RemindersPage() {
               <Card className={!reminder.is_active ? "opacity-75" : ""}>
                 <Card.Body>
                   <div className="d-flex justify-content-between align-items-start mb-2">
-                    {getFrequencyBadge(reminder.frequency)}
+                    <div className="d-flex gap-1 align-items-center">
+                      {getFrequencyBadge(reminder.frequency)}
+                      {reminder.snoozed_until && (
+                        <Badge bg="warning" text="dark">
+                          ⏰ Snoozed until {formatDate(reminder.snoozed_until)}
+                        </Badge>
+                      )}
+                    </div>
                     <Badge bg={reminder.is_active ? "success" : "secondary"}>
                       {reminder.is_active ? "Active" : "Inactive"}
                     </Badge>

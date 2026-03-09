@@ -2,6 +2,7 @@ from celery import shared_task
 from django.core.mail import send_mail
 from django.conf import settings
 import logging
+import requests as http_requests
 
 logger = logging.getLogger(__name__)
 
@@ -97,25 +98,21 @@ This is an automated reminder from your Notes app.
             fail_silently=False,
         )
         
-        # Update last_sent time
         reminder.last_sent = timezone.now()
-        
-        # If it's a recurring reminder, schedule the next one
+        reminder.snoozed_until = None
+
         if reminder.frequency != 'once':
             if reminder.frequency == 'daily':
-                next_time = reminder.scheduled_time + timedelta(days=1)
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(days=1)
             elif reminder.frequency == 'weekly':
-                next_time = reminder.scheduled_time + timedelta(weeks=1)
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(weeks=1)
             elif reminder.frequency == 'monthly':
-                next_time = reminder.scheduled_time + timedelta(days=30)
-            
-            reminder.scheduled_time = next_time
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(days=30)
         else:
-            # Deactivate one-time reminders
             reminder.is_active = False
-        
+
         reminder.save()
-        
+
         logger.info(f"Reminder {reminder_id} sent successfully to {reminder.user.email}")
         return f"Reminder sent to {reminder.user.email}"
         
@@ -125,6 +122,93 @@ This is an automated reminder from your Notes app.
     except Exception as exc:
         logger.error(f"Failed to send reminder {reminder_id}: {str(exc)}")
         raise
+
+
+@shared_task
+def send_reminder_telegram(reminder_id):
+    from note.models import Reminder, TelegramReminderMessage
+    from django.utils import timezone
+    from datetime import timedelta
+
+    try:
+        reminder = Reminder.objects.get(id=reminder_id, is_active=True)
+        profile = reminder.user.profile
+
+        token = profile.telegram_bot_token
+        chat_id = profile.telegram_chat_id
+
+        if not token or not chat_id:
+            logger.error(f"Telegram not configured for user {reminder.user.id}")
+            return
+
+        highlighted_text = reminder.get_highlighted_text()
+        note_url = f"{settings.FRONTEND_URL}{reminder.get_note_url()}"
+        title = reminder.description or 'Note Reminder'
+        text_preview = highlighted_text[:200] + ('...' if len(highlighted_text) > 200 else '')
+
+        message_text = (
+            f"*{title}*\n\n"
+            f"{text_preview}\n\n"
+            f"[View Note]({note_url})"
+        )
+
+        keyboard = {
+            'inline_keyboard': [
+                [
+                    {'text': '⏰ 15m', 'callback_data': f'snooze_15_{reminder.id}'},
+                    {'text': '⏰ 1h', 'callback_data': f'snooze_60_{reminder.id}'},
+                    {'text': '⏰ 4h', 'callback_data': f'snooze_240_{reminder.id}'},
+                    {'text': '⏰ Tomorrow', 'callback_data': f'snooze_1440_{reminder.id}'},
+                ],
+                [
+                    {'text': '✅ Dismiss', 'callback_data': f'dismiss_{reminder.id}'},
+                ],
+            ]
+        }
+
+        resp = http_requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={
+                'chat_id': chat_id,
+                'text': message_text,
+                'parse_mode': 'Markdown',
+                'reply_markup': keyboard,
+            },
+            timeout=10,
+        )
+
+        resp_data = resp.json()
+        if resp_data.get('ok'):
+            msg_id = resp_data['result']['message_id']
+            TelegramReminderMessage.objects.create(reminder=reminder, message_id=msg_id)
+        else:
+            logger.error(f"Telegram sendMessage failed: {resp.text}")
+            return
+
+        reminder.last_sent = timezone.now()
+        reminder.snoozed_until = None
+
+        if reminder.frequency != 'once':
+            if reminder.frequency == 'daily':
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(days=1)
+            elif reminder.frequency == 'weekly':
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(weeks=1)
+            elif reminder.frequency == 'monthly':
+                reminder.scheduled_time = reminder.scheduled_time + timedelta(days=30)
+        else:
+            reminder.is_active = False
+
+        reminder.save()
+
+        logger.info(f"Telegram reminder {reminder_id} sent to chat {chat_id}")
+        return f"Telegram reminder sent to {chat_id}"
+
+    except Reminder.DoesNotExist:
+        logger.error(f"Reminder {reminder_id} not found or inactive")
+    except Exception as exc:
+        logger.error(f"Failed to send Telegram reminder {reminder_id}: {exc}")
+        raise
+
 
 @shared_task
 def check_and_send_reminders():
@@ -143,33 +227,36 @@ def check_and_send_reminders():
     # 2. Are scheduled for now or earlier
     # 3. Either have never been sent (last_sent is None) OR
     #    have been sent but are recurring and enough time has passed
-    due_reminders = Reminder.objects.filter(
-        is_active=True,
-        scheduled_time__lte=now
-    ).filter(
-        models.Q(last_sent__isnull=True) |  # Never sent
-        models.Q(
-            frequency='once',
-            last_sent__isnull=True
-        ) |  # One-time reminder not sent yet
-        models.Q(
-            frequency='daily',
-            last_sent__lt=now - timezone.timedelta(days=1)
-        ) |  # Daily and last sent more than a day ago
-        models.Q(
-            frequency='weekly',
-            last_sent__lt=now - timezone.timedelta(weeks=1)
-        ) |  # Weekly and last sent more than a week ago
-        models.Q(
-            frequency='monthly',
-            last_sent__lt=now - timezone.timedelta(days=30)
-        )  # Monthly and last sent more than 30 days ago
+    snoozed_due = models.Q(snoozed_until__isnull=False, snoozed_until__lte=now)
+
+    normal_due = (
+        models.Q(snoozed_until__isnull=True) &
+        models.Q(scheduled_time__lte=now) &
+        (
+            models.Q(last_sent__isnull=True) |
+            models.Q(frequency='daily', last_sent__lt=now - timezone.timedelta(days=1)) |
+            models.Q(frequency='weekly', last_sent__lt=now - timezone.timedelta(weeks=1)) |
+            models.Q(frequency='monthly', last_sent__lt=now - timezone.timedelta(days=30))
+        )
     )
+
+    due_reminders = Reminder.objects.filter(is_active=True).filter(snoozed_due | normal_due)
     
     count = 0
     for reminder in due_reminders:
-        send_reminder_email.delay(reminder.id)
+        try:
+            profile = reminder.user.profile
+            if (
+                profile.notification_channel == 'telegram'
+                and profile.telegram_bot_token
+                and profile.telegram_chat_id
+            ):
+                send_reminder_telegram.delay(reminder.id)
+            else:
+                send_reminder_email.delay(reminder.id)
+        except Exception:
+            send_reminder_email.delay(reminder.id)
         count += 1
-    
+
     logger.info(f"Scheduled {count} reminder emails")
     return f"Scheduled {count} reminders"

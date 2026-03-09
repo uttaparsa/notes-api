@@ -432,6 +432,7 @@ class Reminder(models.Model):
     scheduled_time = models.DateTimeField()
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='once')
     is_active = models.BooleanField(default=True)
+    snoozed_until = models.DateTimeField(null=True, blank=True)
     last_sent = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -479,3 +480,12 @@ class FileCollection(models.Model):
     def get_file_count(self):
         """Get total number of files in collection"""
         return self.files.count()
+
+
+class TelegramReminderMessage(models.Model):
+    reminder = models.ForeignKey(Reminder, on_delete=models.CASCADE, related_name='telegram_messages')
+    message_id = models.BigIntegerField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'telegram_reminder_messages'
