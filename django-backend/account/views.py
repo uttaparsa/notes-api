@@ -101,7 +101,7 @@ def login_view(request):
 
 
 def send_confirmation_email(user, token):
-    confirmation_url = f"{settings.FRONTEND_URL}/confirm-email/{token}"
+    confirmation_url = f"{settings.WEBSITE_URL}/confirm-email/{token}"
     subject = "Confirm Your Email Address"
     message = (
         f"Hello {user.username},\n\n"

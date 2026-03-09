@@ -70,7 +70,7 @@ def send_reminder_email(reminder_id):
         
         # Build email content
         highlighted_text = reminder.get_highlighted_text()
-        note_url = f"{settings.FRONTEND_URL}{reminder.get_note_url()}"
+        note_url = f"{settings.WEBSITE_URL}{reminder.get_note_url()}"
         
         subject = f"Reminder: {reminder.description or 'Note Reminder'}"
         
@@ -142,7 +142,7 @@ def send_reminder_telegram(reminder_id):
             return
 
         highlighted_text = reminder.get_highlighted_text()
-        note_url = f"{settings.FRONTEND_URL}{reminder.get_note_url()}"
+        note_url = f"{settings.WEBSITE_URL}{reminder.get_note_url()}"
         title = reminder.description or 'Note Reminder'
         text_preview = highlighted_text[:200] + ('...' if len(highlighted_text) > 200 else '')
 
