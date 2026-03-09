@@ -293,7 +293,7 @@ NOTES_PAGE_SIZE = 20
 
 TIME_ZONE = "America/Regina"
 
-WEBSITE_URL = os.environ.get("WEBSITE_URL", "http://localhost:3000")
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://notes.optaira.link")
 
 
 
