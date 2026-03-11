@@ -3,12 +3,7 @@
 import React, { useContext, useEffect } from "react";
 import Link from "next/link";
 import { Container, Row, Col } from "react-bootstrap";
-import {
-  NoteListContext,
-  WorkspaceContext,
-  ToastContext,
-  WorkspaceContext,
-} from "../layout";
+import { NoteListContext, ToastContext, WorkspaceContext } from "../layout";
 import CategorySection from "./components/CategorySection";
 import WorkspaceSection from "./components/WorkspaceSection";
 
