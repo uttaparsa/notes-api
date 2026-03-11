@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useContext, useEffect } from "react";
-import Link from "next/link";
 import { Container, Row, Col } from "react-bootstrap";
 import { NoteListContext, ToastContext, WorkspaceContext } from "../layout";
 import CategorySection from "./components/CategorySection";
@@ -9,8 +8,8 @@ import WorkspaceSection from "./components/WorkspaceSection";
 
 export default function CategoryList() {
   const noteLists = useContext(NoteListContext);
-  const workspaces = useContext(WorkspaceContext);
-  const { selectedWorkspace } = useContext(WorkspaceContext);
+  const { workspaces, selectedWorkspaceSlug } = useContext(WorkspaceContext);
+  const selectedWorkspace = workspaces.find((ws) => ws.slug === selectedWorkspaceSlug) || null;
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
