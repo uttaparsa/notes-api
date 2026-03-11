@@ -42,6 +42,7 @@ const SingleNoteView = () => {
   if (activeTab === "edit" && note) {
     return (
       <div className="container-fluid py-4" dir="ltr">
+        <RefreshPrompt show={shouldShowRefreshPrompt} />
         <NoteEditView
           note={note}
           editNote={editNote}
