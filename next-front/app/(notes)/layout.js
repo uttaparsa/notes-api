@@ -31,7 +31,13 @@ export default function RootLayout({ children }) {
 
   const [noteLists, setNoteLists] = useState([]);
   const [workspaces, setWorkspaces] = useState([]);
-  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(null);
+  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(SELECTED_WORKSPACE_CACHE_KEY) || null;
+    }
+    return null;
+  });
+
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,7 +61,7 @@ const applyWorkspaceSelection = useCallback((workspaceData) => {
   if (resolved && resolved.slug !== savedSlug) {
     localStorage.setItem(SELECTED_WORKSPACE_CACHE_KEY, resolved.slug);
     setSelectedWorkspaceSlug(resolved.slug);
-  } else {
+  } else if (!resolved) {
     localStorage.removeItem(SELECTED_WORKSPACE_CACHE_KEY);
     setSelectedWorkspaceSlug(null);
   }

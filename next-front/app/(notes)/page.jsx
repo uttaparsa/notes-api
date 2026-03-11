@@ -30,12 +30,7 @@ import {
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(SELECTED_WORKSPACE_CACHE_KEY) || null;
-    }
-    return null;
-  });
+  const { workspaces, selectedWorkspaceSlug } = useContext(WorkspaceContext);
 
   const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
