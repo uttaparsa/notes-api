@@ -18,8 +18,7 @@ import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 
 export const NoteListContext = createContext([]);
 export const WorkspaceContext = createContext([]);
-export const SelectedWorkspaceContext = createContext({ selectedWorkspace: null, selectWorkspace: () => {} });
-export const WorkspaceReadyContext = createContext(false);
+export const SelectedWorkspaceContext = createContext({ selectedWorkspaceSlug: null, selectWorkspaceSlug: () => {} });
 export const ModalContext = createContext({});
 export const ToastContext = createContext({});
 export const AuthContext = createContext();
@@ -30,8 +29,7 @@ export default function RootLayout({ children }) {
   const WORKSPACES_CACHE_KEY = 'cachedWorkspaces';
   const [noteLists, setNoteLists] = useState([]);
   const [workspaces, setWorkspaces] = useState([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
-  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(localStorage.getItem('selectedWorkspaceSlug'));
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -45,19 +43,18 @@ export default function RootLayout({ children }) {
   }, [router]);
 
   const applyWorkspaceSelection = useCallback((workspaceData) => {
-    const savedWorkspaceSlug = localStorage.getItem('selectedWorkspace');
+    const savedWorkspaceSlug = localStorage.getItem('selectedWorkspaceSlug');
     const savedWorkspace = savedWorkspaceSlug
       ? workspaceData.find((workspace) => workspace.slug === savedWorkspaceSlug)
       : null;
     const defaultWorkspace = workspaceData.find((workspace) => workspace.is_default) || workspaceData[0] || null;
     const resolvedWorkspace = savedWorkspace || defaultWorkspace;
 
-    setSelectedWorkspace(resolvedWorkspace);
-
-    if (resolvedWorkspace) {
-      localStorage.setItem('selectedWorkspace', resolvedWorkspace.slug);
+    if (resolvedWorkspace && (resolvedWorkspace.slug !== selectedWorkspaceSlug) ) {
+      localStorage.setItem('selectedWorkspaceSlug', resolvedWorkspace.slug);
+      setSelectedWorkspaceSlug(resolvedWorkspace.slug);
     } else {
-      localStorage.removeItem('selectedWorkspace');
+      localStorage.removeItem('selectedWorkspaceSlug');
     }
   }, []);
 
@@ -91,16 +88,15 @@ export default function RootLayout({ children }) {
       console.error(`Error: ${err}`);
       handleApiError(err);
     } finally {
-      setWorkspaceReady(true);
     }
   }, [WORKSPACES_CACHE_KEY, applyWorkspaceSelection]);
 
-  const selectWorkspace = useCallback((workspace) => {
-    setSelectedWorkspace(workspace);
-    if (workspace) {
-      localStorage.setItem('selectedWorkspace', workspace.slug);
+  const selectWorkspaceSlug = useCallback((workspaceSlug) => {
+    setSelectedWorkspaceSlug(workspaceSlug);
+    if (workspaceSlug) {
+      localStorage.setItem('selectedWorkspaceSlug', workspaceSlug);
     } else {
-      localStorage.removeItem('selectedWorkspace');
+      localStorage.removeItem('selectedWorkspaceSlug');
     }
   }, []);
 
@@ -117,34 +113,19 @@ export default function RootLayout({ children }) {
 
       const cachedListsRaw = localStorage.getItem(NOTE_LISTS_CACHE_KEY);
       if (cachedListsRaw) {
-        try {
           const cachedLists = JSON.parse(cachedListsRaw);
-          if (Array.isArray(cachedLists)) {
             setNoteLists(cachedLists);
-          } else {
-            getLists();
-          }
-        } catch {
-          getLists();
-        }
       } else {
         getLists();
       }
 
       const cachedWorkspacesRaw = localStorage.getItem(WORKSPACES_CACHE_KEY);
       if (cachedWorkspacesRaw) {
-        try {
-          const cachedWorkspaces = JSON.parse(cachedWorkspacesRaw);
-          if (Array.isArray(cachedWorkspaces) && cachedWorkspaces.length > 0) {
-            setWorkspaces(cachedWorkspaces);
-            applyWorkspaceSelection(cachedWorkspaces);
-            setWorkspaceReady(true);
-          } else {
-            getWorkspaces();
-          }
-        } catch {
-          getWorkspaces();
-        }
+        const cachedWorkspaces = JSON.parse(cachedWorkspacesRaw);
+
+        setWorkspaces(cachedWorkspaces);
+        applyWorkspaceSelection(cachedWorkspaces);
+
       } else {
         getWorkspaces();
       }
@@ -190,8 +171,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
           <NoteListContext.Provider value={noteLists}>
-            <WorkspaceReadyContext.Provider value={workspaceReady}>
-              <SelectedWorkspaceContext.Provider value={{ selectedWorkspace, selectWorkspace }}>
+              <SelectedWorkspaceContext.Provider value={{ selectedWorkspaceSlug, selectWorkspaceSlug }}>
                 <WorkspaceContext.Provider value={workspaces}>
                   <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
                     <ToastContext.Provider value={showToast}>
@@ -237,7 +217,6 @@ export default function RootLayout({ children }) {
                   </ModalContext.Provider>
                 </WorkspaceContext.Provider>
               </SelectedWorkspaceContext.Provider>
-            </WorkspaceReadyContext.Provider>
           </NoteListContext.Provider>
         </AuthContext.Provider>
       </body>

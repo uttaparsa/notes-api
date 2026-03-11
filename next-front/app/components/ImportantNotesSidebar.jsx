@@ -14,7 +14,7 @@ export default function ImportantNotesSidebar({
   isLoading,
   listSlug = null,
   basePath = "",
-  selectedWorkspace = null,
+  selectedWorkspaceSlug = null,
   showHidden = true,
   displayMode = DISPLAY_MODES.SIDEBAR,
   onToggleDisplayMode,
@@ -34,8 +34,8 @@ export default function ImportantNotesSidebar({
       const params = new URLSearchParams();
       if (listSlug) {
         params.append("slug", listSlug);
-      } else if (selectedWorkspace) {
-        params.append("workspace", selectedWorkspace.slug);
+      } else if (selectedWorkspaceSlug) {
+        params.append("workspace", selectedWorkspaceSlug);
       }
       params.append("show_hidden", showHidden ? "true" : "false");
       const queryString = params.toString();

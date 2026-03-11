@@ -16,7 +16,7 @@ import JoystickFab from "./JoystickFab";
 export default function MessageInput({
   listSlug,
   onNoteSaved,
-  selectedWorkspace,
+  selectedWorkspaceSlug,
   currentPage,
   totalPages,
   onPageChange,
@@ -88,7 +88,7 @@ export default function MessageInput({
           },
           body: JSON.stringify({
             text,
-            ...(selectedWorkspace && { workspace: selectedWorkspace.slug }),
+            ...(selectedWorkspaceSlug && { workspace: selectedWorkspaceSlug }),
           }),
         },
       );

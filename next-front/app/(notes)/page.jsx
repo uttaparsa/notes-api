@@ -21,18 +21,12 @@ import {
   DISPLAY_MODES,
 } from "../hooks/useImportantNotes";
 import { useTrendingHashtags } from "../hooks/useTrendingHashtags";
-import {
-  SelectedWorkspaceContext,
-  NoteListContext,
-  WorkspaceReadyContext,
-} from "./layout";
+import { SelectedWorkspaceContext, NoteListContext } from "./layout";
 
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
-  const workspaceReady = useContext(WorkspaceReadyContext);
-  const selectedWorkspaceSlug = selectedWorkspace?.slug || null;
+  const { selectedWorkspaceSlug } = useContext(SelectedWorkspaceContext);
   const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -50,13 +44,14 @@ export default function NotesPage() {
   const { displayMode, toggleDisplayMode } = useImportantNotesDisplayMode();
   const { importantNotes, isLoading: importantLoading } = useImportantNotes({
     listSlug: selectedCategorySlug,
-    selectedWorkspaceSlug,
+    selectedWorkspaceSlug: selectedWorkspaceSlug,
     showHidden,
-    enabled: workspaceReady,
   });
 
   const { hashtags: trendingHashtags, loading: hashtagsLoading } =
-    useTrendingHashtags({ selectedWorkspaceSlug, enabled: workspaceReady });
+    useTrendingHashtags({
+      selectedWorkspaceSlug: selectedWorkspaceSlug,
+    });
 
   useEffect(() => {
     const highlight = searchParams.get("highlight");
@@ -79,7 +74,7 @@ export default function NotesPage() {
       console.log("Fetching records with parameters:", {
         currentPage,
         showHidden,
-        selectedWorkspace: selectedWorkspaceSlug,
+        selectedWorkspaceSlug,
         selectedCategorySlug,
         selectedDate,
       });
@@ -134,11 +129,8 @@ export default function NotesPage() {
   );
 
   useEffect(() => {
-    if (!workspaceReady) {
-      return;
-    }
     getRecords();
-  }, [getRecords, workspaceReady]);
+  }, [getRecords]);
 
   const showMessagesForDate = (selectedDate) => {
     setDate(selectedDate);
@@ -194,15 +186,20 @@ export default function NotesPage() {
       let url = `/search/?q=${encodeURIComponent(newSearchText || "")}`;
       if (selectedCategorySlug) {
         url += `&list_slug=${encodeURIComponent(selectedCategorySlug)}`;
-      } else if (selectedWorkspace && selectedWorkspace.categories) {
-        const workspaceCategorySlugs = selectedWorkspace.categories
-          .map((cat) => cat.slug)
-          .join(",");
-        url += `&list_slug=${encodeURIComponent(workspaceCategorySlugs)}`;
+      } else if (selectedWorkspaceSlug) {
+        const workspace = workspaces.find(
+          (ws) => ws.slug === selectedWorkspaceSlug,
+        );
+        if (workspace && workspace.categories) {
+          const workspaceCategorySlugs = workspace.categories
+            .map((cat) => cat.slug)
+            .join(",");
+          url += `&list_slug=${encodeURIComponent(workspaceCategorySlugs)}`;
+        }
       }
       router.push(url);
     },
-    [router, selectedWorkspace, selectedCategorySlug],
+    [router, selectedWorkspaceSlug, selectedCategorySlug],
   );
 
   const handlePageChange = (newPage) => {
@@ -313,7 +310,7 @@ export default function NotesPage() {
               importantNotes={importantNotes}
               isLoading={importantLoading}
               listSlug={selectedCategorySlug}
-              selectedWorkspace={selectedWorkspace}
+              selectedWorkspaceSlug={selectedWorkspaceSlug}
               showHidden={showHidden}
               basePath="/"
               displayMode={displayMode}
@@ -325,7 +322,7 @@ export default function NotesPage() {
       <MessageInput
         onNoteSaved={addNewNote}
         listSlug={selectedCategorySlug || "All"}
-        selectedWorkspace={selectedWorkspace}
+        selectedWorkspaceSlug={selectedWorkspaceSlug}
         currentPage={currentPage}
         totalPages={Math.ceil(totalCount / perPage)}
         onPageChange={handlePageChange}

@@ -37,7 +37,7 @@ export function useImportantNotesDisplayMode() {
 
 export function useImportantNotes({
   listSlug = null,
-  selectedWorkspace = null,
+  selectedWorkspaceSlug = null,
   showHidden = true,
 }) {
   const [importantNotes, setImportantNotes] = useState([]);
@@ -48,8 +48,9 @@ export function useImportantNotes({
     try {
       const slug = listSlug || "All";
       const params = new URLSearchParams();
-      if (selectedWorkspace) {
-        params.append("workspace", selectedWorkspace.slug);
+      console.log("selectedWorkspaceSlug in useImportantNotes:", selectedWorkspaceSlug);
+      if (selectedWorkspaceSlug) {
+        params.append("workspace", selectedWorkspaceSlug);
       }
       params.append("show_hidden", showHidden ? "true" : "false");
       const queryString = params.toString();
@@ -64,7 +65,7 @@ export function useImportantNotes({
     } finally {
       setIsLoading(false);
     }
-  }, [listSlug, selectedWorkspace, showHidden]);
+  }, [listSlug, selectedWorkspaceSlug, showHidden]);
 
   useEffect(() => {
     fetchImportantNotes();

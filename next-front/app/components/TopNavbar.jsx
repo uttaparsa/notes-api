@@ -5,8 +5,12 @@ import { Navbar, Nav, Button, ButtonGroup, Dropdown } from "react-bootstrap";
 import { SelectedWorkspaceContext } from "../(notes)/layout";
 
 export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
-  const { selectedWorkspace, selectWorkspace } = useContext(
+  const { selectedWorkspaceSlug, selectWorkspaceSlug } = useContext(
     SelectedWorkspaceContext,
+  );
+
+  const selectedWorkspace = workspaces.find(
+    (ws) => ws.slug === selectedWorkspaceSlug,
   );
   const [theme, setTheme] = useState("light");
 
@@ -31,7 +35,7 @@ export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
                 active={
                   selectedWorkspace && selectedWorkspace.id === workspace.id
                 }
-                onClick={() => selectWorkspace(workspace)}
+                onClick={() => selectWorkspaceSlug(workspace.slug)}
               >
                 {workspace.name}
               </Dropdown.Item>
