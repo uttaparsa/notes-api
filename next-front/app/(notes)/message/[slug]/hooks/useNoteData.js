@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { fetchWithAuth } from "@/app/lib/api";
 import { handleApiError } from "@/app/utils/errorHandler";
 import { extractMarkdownTitle } from "@/app/utils/stringUtils";
-import { SelectedWorkspaceContext } from "../../../layout";
+import { WorkspaceContext } from "../../../layout";
 
 export function useNoteData(slug, noteLists) {
   const [noteBusy, setNoteBusy] = useState(true);
@@ -11,7 +11,7 @@ export function useNoteData(slug, noteLists) {
   const [similarNotesLoaded, setSimilarNotesLoaded] = useState(false);
   const [noteUpdateConflict, setNoteUpdateConflict] = useState(false);
   const [shouldShowRefreshPrompt, setShouldShowRefreshPrompt] = useState(false);
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
 
   const extractMarkdownTitleFromText = (text) => {
     const title = extractMarkdownTitle(text);

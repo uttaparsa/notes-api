@@ -13,7 +13,7 @@ import FloatingFilterButton from "../../components/FloatingFilterButton";
 import JoystickFab from "../../components/JoystickFab";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
-import { SelectedWorkspaceContext } from "../layout";
+import { WorkspaceContext } from "../layout";
 
 export default function SearchPage() {
   const [notes, setNotes] = useState([]);
@@ -22,7 +22,7 @@ export default function SearchPage() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const perPage = 20;
   const getRecordsRef = useRef();
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
   const searchParams = useSearchParams();
   const router = useRouter();
 

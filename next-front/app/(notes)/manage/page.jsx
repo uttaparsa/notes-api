@@ -7,7 +7,7 @@ import {
   NoteListContext,
   WorkspaceContext,
   ToastContext,
-  SelectedWorkspaceContext,
+  WorkspaceContext,
 } from "../layout";
 import CategorySection from "./components/CategorySection";
 import WorkspaceSection from "./components/WorkspaceSection";
@@ -15,7 +15,7 @@ import WorkspaceSection from "./components/WorkspaceSection";
 export default function CategoryList() {
   const noteLists = useContext(NoteListContext);
   const workspaces = useContext(WorkspaceContext);
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
   const showToast = useContext(ToastContext);
 
   useEffect(() => {

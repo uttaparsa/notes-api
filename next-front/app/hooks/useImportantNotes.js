@@ -48,7 +48,6 @@ export function useImportantNotes({
     try {
       const slug = listSlug || "All";
       const params = new URLSearchParams();
-      console.log("selectedWorkspaceSlug in useImportantNotes:", selectedWorkspaceSlug);
       if (selectedWorkspaceSlug) {
         params.append("workspace", selectedWorkspaceSlug);
       }

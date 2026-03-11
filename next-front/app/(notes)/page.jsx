@@ -21,12 +21,22 @@ import {
   DISPLAY_MODES,
 } from "../hooks/useImportantNotes";
 import { useTrendingHashtags } from "../hooks/useTrendingHashtags";
-import { SelectedWorkspaceContext, NoteListContext } from "./layout";
+import {
+  WorkspaceContext,
+  NoteListContext,
+  SELECTED_WORKSPACE_CACHE_KEY,
+} from "./layout";
 
 export default function NotesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { selectedWorkspaceSlug } = useContext(SelectedWorkspaceContext);
+  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(SELECTED_WORKSPACE_CACHE_KEY) || null;
+    }
+    return null;
+  });
+
   const noteLists = useContext(NoteListContext);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -68,16 +78,6 @@ export default function NotesPage() {
 
   const getRecords = useCallback(
     async (selectedDate = null) => {
-      // this have a bouncing issue.
-      // log all parameters and see if any of them is changing unexpectedly
-
-      console.log("Fetching records with parameters:", {
-        currentPage,
-        showHidden,
-        selectedWorkspaceSlug,
-        selectedCategorySlug,
-        selectedDate,
-      });
       setIsBusy(true);
       try {
         let url = `/api/note/feed/`;

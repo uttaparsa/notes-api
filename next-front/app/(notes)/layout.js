@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useState, useEffect, useCallback, useRef , useLayoutEffect} from 'react';
 import { useRouter } from 'next/navigation';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
@@ -17,19 +17,21 @@ import { ExternalLinkProvider } from '../components/notecard/ExternalLinkModal';
 
 
 export const NoteListContext = createContext([]);
-export const WorkspaceContext = createContext([]);
-export const SelectedWorkspaceContext = createContext({ selectedWorkspaceSlug: null, selectWorkspaceSlug: () => {} });
+export const WorkspaceContext = createContext({ selectedWorkspaceSlug: null, selectWorkspaceSlug: () => {}, workspaces: [], setWorkspaces: () => {} });
 export const ModalContext = createContext({});
 export const ToastContext = createContext({});
 export const AuthContext = createContext();
 
 
+  export const NOTE_LISTS_CACHE_KEY = 'cachedNoteLists';
+  export const WORKSPACES_CACHE_KEY = 'cachedWorkspaces';
+  export const SELECTED_WORKSPACE_CACHE_KEY = 'selectedWorkspaceSlug';
+
 export default function RootLayout({ children }) {
-  const NOTE_LISTS_CACHE_KEY = 'cachedNoteLists';
-  const WORKSPACES_CACHE_KEY = 'cachedWorkspaces';
+
   const [noteLists, setNoteLists] = useState([]);
   const [workspaces, setWorkspaces] = useState([]);
-  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(localStorage.getItem('selectedWorkspaceSlug'));
+  const [selectedWorkspaceSlug, setSelectedWorkspaceSlug] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,21 +44,22 @@ export default function RootLayout({ children }) {
     router.push('/login');
   }, [router]);
 
-  const applyWorkspaceSelection = useCallback((workspaceData) => {
-    const savedWorkspaceSlug = localStorage.getItem('selectedWorkspaceSlug');
-    const savedWorkspace = savedWorkspaceSlug
-      ? workspaceData.find((workspace) => workspace.slug === savedWorkspaceSlug)
-      : null;
-    const defaultWorkspace = workspaceData.find((workspace) => workspace.is_default) || workspaceData[0] || null;
-    const resolvedWorkspace = savedWorkspace || defaultWorkspace;
+const applyWorkspaceSelection = useCallback((workspaceData) => {
+  const savedSlug = localStorage.getItem(SELECTED_WORKSPACE_CACHE_KEY);
+  const resolved =
+    workspaceData.find((ws) => ws.slug === savedSlug) ||
+    workspaceData.find((ws) => ws.is_default) ||
+    workspaceData[0] ||
+    null;
 
-    if (resolvedWorkspace && (resolvedWorkspace.slug !== selectedWorkspaceSlug) ) {
-      localStorage.setItem('selectedWorkspaceSlug', resolvedWorkspace.slug);
-      setSelectedWorkspaceSlug(resolvedWorkspace.slug);
-    } else {
-      localStorage.removeItem('selectedWorkspaceSlug');
-    }
-  }, []);
+  if (resolved && resolved.slug !== savedSlug) {
+    localStorage.setItem(SELECTED_WORKSPACE_CACHE_KEY, resolved.slug);
+    setSelectedWorkspaceSlug(resolved.slug);
+  } else {
+    localStorage.removeItem(SELECTED_WORKSPACE_CACHE_KEY);
+    setSelectedWorkspaceSlug(null);
+  }
+}, []); 
 
   const getLists = useCallback(async () => {
     try {
@@ -74,7 +77,7 @@ export default function RootLayout({ children }) {
     }
   }, [NOTE_LISTS_CACHE_KEY]);
 
-  const getWorkspaces = useCallback(async () => {
+  const updateWorkspaces = useCallback(async () => {
     try {
       const response = await fetchWithAuth('/api/note/workspaces/');
       if (!response.ok) {
@@ -82,6 +85,7 @@ export default function RootLayout({ children }) {
       }
       const data = await response.json();
       setWorkspaces(data);
+      console.log("Fetched workspaces:", data);
       localStorage.setItem(WORKSPACES_CACHE_KEY, JSON.stringify(data));
       applyWorkspaceSelection(data);
     } catch (err) {
@@ -94,9 +98,9 @@ export default function RootLayout({ children }) {
   const selectWorkspaceSlug = useCallback((workspaceSlug) => {
     setSelectedWorkspaceSlug(workspaceSlug);
     if (workspaceSlug) {
-      localStorage.setItem('selectedWorkspaceSlug', workspaceSlug);
+      localStorage.setItem(SELECTED_WORKSPACE_CACHE_KEY, workspaceSlug);
     } else {
-      localStorage.removeItem('selectedWorkspaceSlug');
+      localStorage.removeItem(SELECTED_WORKSPACE_CACHE_KEY);
     }
   }, []);
 
@@ -120,15 +124,15 @@ export default function RootLayout({ children }) {
       }
 
       const cachedWorkspacesRaw = localStorage.getItem(WORKSPACES_CACHE_KEY);
+      console.log("Cached workspaces raw:", cachedWorkspacesRaw);
       if (cachedWorkspacesRaw) {
         const cachedWorkspaces = JSON.parse(cachedWorkspacesRaw);
-
         setWorkspaces(cachedWorkspaces);
         applyWorkspaceSelection(cachedWorkspaces);
-
+        updateWorkspaces(); // background refresh
       } else {
-        getWorkspaces();
-      }
+        updateWorkspaces(); // ✅ fetch on first load / cache miss
+}
     }
 
     const showWaitingModal = (e) => {
@@ -149,17 +153,17 @@ export default function RootLayout({ children }) {
     window.addEventListener('showWaitingModal', showWaitingModal);
     window.addEventListener('hideWaitingModal', hideWaitingModal);
     window.addEventListener('updateNoteLists', getLists);
-    window.addEventListener('updateWorkspaces', getWorkspaces);
+    window.addEventListener('updateWorkspaces', updateWorkspaces);
     window.addEventListener('showToast', handleShowToast);
 
     return () => {
       window.removeEventListener('showWaitingModal', showWaitingModal);
       window.removeEventListener('hideWaitingModal', hideWaitingModal);
       window.removeEventListener('updateNoteLists', getLists);
-      window.removeEventListener('updateWorkspaces', getWorkspaces);
+      window.removeEventListener('updateWorkspaces', updateWorkspaces);
       window.removeEventListener('showToast', handleShowToast);
     };
-  }, [getLists, getWorkspaces, showToast, NOTE_LISTS_CACHE_KEY, WORKSPACES_CACHE_KEY, applyWorkspaceSelection]);
+  }, [getLists, updateWorkspaces, showToast, NOTE_LISTS_CACHE_KEY, WORKSPACES_CACHE_KEY, applyWorkspaceSelection]);
 
   return (
     <html lang="en" data-bs-theme="light">
@@ -171,12 +175,16 @@ export default function RootLayout({ children }) {
       <body>
         <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
           <NoteListContext.Provider value={noteLists}>
-              <SelectedWorkspaceContext.Provider value={{ selectedWorkspaceSlug, selectWorkspaceSlug }}>
-                <WorkspaceContext.Provider value={workspaces}>
+                <WorkspaceContext.Provider value={{ 
+                  selectedWorkspaceSlug, 
+                  selectWorkspaceSlug, 
+                  workspaces, 
+                  setWorkspaces 
+                }}>
                   <ModalContext.Provider value={{ showModal, setShowModal, modalTitle, setModalTitle }}>
                     <ToastContext.Provider value={showToast}>
                       <ExternalLinkProvider>
-                        <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} workspaces={workspaces} />
+                        <TopNavbar isLoggedIn={isAuthenticated} onLogout={handleLogout} />
                         <div className="h-100" style={{ minHeight: '100vh' }}>
                           {children}
                           <BootstrapClient />
@@ -216,7 +224,6 @@ export default function RootLayout({ children }) {
                     </Modal>
                   </ModalContext.Provider>
                 </WorkspaceContext.Provider>
-              </SelectedWorkspaceContext.Provider>
           </NoteListContext.Provider>
         </AuthContext.Provider>
       </body>

@@ -2,12 +2,11 @@
 import { useState, useEffect, useContext } from "react";
 import Link from "next/link";
 import { Navbar, Nav, Button, ButtonGroup, Dropdown } from "react-bootstrap";
-import { SelectedWorkspaceContext } from "../(notes)/layout";
+import { WorkspaceContext } from "../(notes)/layout";
 
-export default function NavbarComponent({ isLoggedIn, onLogout, workspaces }) {
-  const { selectedWorkspaceSlug, selectWorkspaceSlug } = useContext(
-    SelectedWorkspaceContext,
-  );
+export default function NavbarComponent({ isLoggedIn, onLogout }) {
+  const { selectedWorkspaceSlug, selectWorkspaceSlug, workspaces } =
+    useContext(WorkspaceContext);
 
   const selectedWorkspace = workspaces.find(
     (ws) => ws.slug === selectedWorkspaceSlug,

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Spinner } from 'react-bootstrap';
-import styles from './NoteCard.module.css';
+import React, { useState, useEffect } from "react";
+import { Spinner } from "react-bootstrap";
+import styles from "./NoteCard.module.css";
 
 const getMetadata = async (url) => {
   const videoUrl = encodeURIComponent(url);
@@ -13,7 +13,6 @@ const getMetadata = async (url) => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error fetching YouTube metadata:", error);
     return null;
   }
 };
@@ -65,7 +64,11 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
   }, [url, shouldLoadLinks]);
 
   if (!shouldLoadLinks || error || (!loading && !metadata)) {
-    return <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>;
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        {url}
+      </a>
+    );
   }
 
   if (loading) {
@@ -76,7 +79,12 @@ const YouTubeLink = ({ url, shouldLoadLinks }) => {
 
   return (
     <span className={styles.youtubeLink}>
-      <a href={url} target="_blank" rel="noopener noreferrer" className={styles.youtubeUrl}>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={styles.youtubeUrl}
+      >
         {url}
       </a>
       <span className={styles.youtubeTitleWrapper}>

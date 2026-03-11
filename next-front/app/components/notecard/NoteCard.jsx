@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { Dropdown, Modal, Button, Collapse } from "react-bootstrap";
 import { NoteListContext, ToastContext } from "../../(notes)/layout";
-import { SelectedWorkspaceContext } from "../../(notes)/layout";
+import { WorkspaceContext } from "../../(notes)/layout";
 import { copyTextToClipboard } from "../../utils/clipboardUtils";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
@@ -25,7 +25,7 @@ const NoteCard = forwardRef(
     ref,
   ) => {
     const showToast = useContext(ToastContext);
-    const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+    const { selectedWorkspace } = useContext(WorkspaceContext);
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);

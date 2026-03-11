@@ -10,7 +10,7 @@ import PaginationComponent from "../PaginationComponent";
 import CategoryFilterModal from "./CategoryFilterModal";
 import { fetchWithAuth } from "../../lib/api";
 import { handleApiError } from "../../utils/errorHandler";
-import { SelectedWorkspaceContext } from "../../(notes)/layout";
+import { WorkspaceContext } from "../../(notes)/layout";
 
 export default function ClientSideSearchWrapper() {
   const [notes, setNotes] = useState([]);
@@ -24,7 +24,7 @@ export default function ClientSideSearchWrapper() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const perPage = 20;
   const getRecordsRef = useRef();
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
   const searchParams = useSearchParams();
 
   const [currentPage, setCurrentPage] = useState(() => {

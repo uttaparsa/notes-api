@@ -2,11 +2,15 @@
 
 import { Form } from "react-bootstrap";
 import { useContext } from "react";
-import { NoteListContext, SelectedWorkspaceContext } from "../(notes)/layout";
+import { NoteListContext, WorkspaceContext } from "../(notes)/layout";
 
 export default function CategorySelector({ selectedSlug, onSelectCategory }) {
   const noteLists = useContext(NoteListContext);
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspaceSlug, workspaces } = useContext(WorkspaceContext);
+
+  const selectedWorkspace = workspaces.find(
+    (ws) => ws.slug === selectedWorkspaceSlug,
+  );
 
   const availableCategories = selectedWorkspace
     ? noteLists.filter((list) =>

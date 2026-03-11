@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useContext } from "react";
 import { Button, Form, Collapse } from "react-bootstrap";
-import {
-  NoteListContext,
-  SelectedWorkspaceContext,
-} from "../../(notes)/layout";
+import { NoteListContext, WorkspaceContext } from "../../(notes)/layout";
 
 export default function SearchFilters({
   selectedCategories,
@@ -13,7 +10,7 @@ export default function SearchFilters({
   onFiltersChange,
 }) {
   const noteLists = useContext(NoteListContext);
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
   const [localSelectedCategories, setLocalSelectedCategories] = useState(
     new Set(selectedCategories),
   );

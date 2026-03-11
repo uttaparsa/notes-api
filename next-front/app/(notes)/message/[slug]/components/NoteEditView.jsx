@@ -16,11 +16,11 @@ import { handleApiError } from "../../../../utils/errorHandler";
 import NoteTextRenderer from "../../../../components/notecard/markdown/MarkdownRenderers";
 import RevisionHistoryModal from "../../../../components/notecard/RevisionHistoryModal";
 import EditNoteButtons from "../../../../components/notecard/EditNoteButtons";
-import { ToastContext, SelectedWorkspaceContext } from "../../../layout";
+import { ToastContext, WorkspaceContext } from "../../../layout";
 
 const NoteEditView = ({ note, editNote, onDone, refreshNotes }) => {
   const showToast = useContext(ToastContext);
-  const { selectedWorkspace } = useContext(SelectedWorkspaceContext);
+  const { selectedWorkspace } = useContext(WorkspaceContext);
   const [editText, setEditText] = useState(note.text);
   const [lastSavedText, setLastSavedText] = useState(note.text);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
