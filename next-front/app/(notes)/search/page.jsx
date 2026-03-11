@@ -32,7 +32,6 @@ export default function SearchPage() {
   const showHidden = searchParams.get("show_hidden") === "true";
   const hasFiles = searchParams.get("has_files") === "true";
   const listSlugParam = searchParams.get("list_slug") || "";
-  // const workspaceParam = searchParams.get("workspace") || "";
 
   // Derive list_slug: if workspace is active, use its categories; else use URL param
   const getListSlug = useCallback(() => {
@@ -153,7 +152,7 @@ export default function SearchPage() {
           />
         </div>
         <Row className="m-0 p-0">
-          <Col xs={12} lg={3} className="mb-3 mb-lg-0 pe-lg-3">
+          <Col xs={12} xl={3} className="mb-3 mb-lg-0 pe-lg-3">
             <FormCheck
               type="checkbox"
               id="show-hidden"
@@ -180,7 +179,7 @@ export default function SearchPage() {
               </Card.Body>
             </Card>
           </Col>
-          <Col xs={12} lg={9} className="px-3 px-lg-0" dir="ltr">
+          <Col xs={12} xl={6} className="px-3 px-lg-0" dir="ltr">
             <NoteList
               notes={notes}
               isBusy={isBusy}
@@ -200,6 +199,7 @@ export default function SearchPage() {
               hasFiles={hasFiles}
             />
           </Col>
+          <Col xs={12} xl={3} className="d-none d-xl-block"></Col>
         </Row>
       </div>
 

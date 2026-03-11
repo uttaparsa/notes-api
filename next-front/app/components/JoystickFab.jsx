@@ -64,14 +64,14 @@ export default function JoystickFab({
   const hasNext = currentPage < totalPages;
 
   if (totalPages <= 1) {
-    return <div className="d-lg-none">{children}</div>;
+    return <div className="d-xl-none">{children}</div>;
   }
 
   return (
     <>
       {showPageNumber && (
         <div
-          className="d-lg-none"
+          className="d-xl-none"
           style={{
             position: "fixed",
             top: 0,
