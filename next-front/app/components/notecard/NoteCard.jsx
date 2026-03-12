@@ -25,7 +25,9 @@ const NoteCard = forwardRef(
     ref,
   ) => {
     const showToast = useContext(ToastContext);
-    const { selectedWorkspace } = useContext(WorkspaceContext);
+    const { selectedWorkspaceSlug, workspaces } = useContext(WorkspaceContext);
+    const selectedWorkspace =
+      workspaces.find((ws) => ws.slug === selectedWorkspaceSlug) || null;
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -199,7 +201,7 @@ const NoteCard = forwardRef(
                 shouldLoadLinks={shouldLoadLinks}
                 showToast={showToast}
                 onDeleteFile={handleDeleteFile}
-                workspaceSlug={selectedWorkspace?.slug}
+                workspaceSlug={selectedWorkspaceSlug}
               />
             </div>
           </div>

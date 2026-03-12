@@ -9,7 +9,8 @@ import WorkspaceSection from "./components/WorkspaceSection";
 export default function CategoryList() {
   const noteLists = useContext(NoteListContext);
   const { workspaces, selectedWorkspaceSlug } = useContext(WorkspaceContext);
-  const selectedWorkspace = workspaces.find((ws) => ws.slug === selectedWorkspaceSlug) || null;
+  const selectedWorkspace =
+    workspaces.find((ws) => ws.slug === selectedWorkspaceSlug) || null;
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
