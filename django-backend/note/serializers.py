@@ -241,6 +241,6 @@ class ReminderSerializer(serializers.ModelSerializer):
             'scheduled_time', 'frequency', 'is_active', 'snoozed_until', 'last_sent',
             'created_at', 'updated_at', 'note_text', 'highlighted_text', 'note_url'
         ]
-        read_only_fields = ['snoozed_until', 'last_sent', 'created_at', 'updated_at']
+        read_only_fields = ['snoozed_until', 'last_sent', 'last_dispatched', 'created_at', 'updated_at']
 
 

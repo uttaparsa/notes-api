@@ -428,12 +428,12 @@ class Reminder(models.Model):
     highlight_start = models.IntegerField(null=True, blank=True)
     highlight_end = models.IntegerField(null=True, blank=True)
     
-    # Scheduling
     scheduled_time = models.DateTimeField()
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default='once')
     is_active = models.BooleanField(default=True)
     snoozed_until = models.DateTimeField(null=True, blank=True)
     last_sent = models.DateTimeField(null=True, blank=True)
+    last_dispatched = models.DateTimeField(null=True, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -442,6 +442,23 @@ class Reminder(models.Model):
         db_table = 'reminders'
         ordering = ['scheduled_time']
     
+    def advance_schedule(self):
+        from dateutil.relativedelta import relativedelta
+
+        self.last_sent = timezone.now()
+        self.snoozed_until = None
+
+        if self.frequency == 'once':
+            self.is_active = False
+        elif self.frequency == 'daily':
+            self.scheduled_time += timezone.timedelta(days=1)
+        elif self.frequency == 'weekly':
+            self.scheduled_time += timezone.timedelta(weeks=1)
+        elif self.frequency == 'monthly':
+            self.scheduled_time += relativedelta(months=1)
+
+        self.save()
+
     def get_note_url(self):
         """Generate the URL for this reminder"""
         base_url = f"/message/{self.note.id}"
