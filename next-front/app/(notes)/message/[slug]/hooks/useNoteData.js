@@ -11,7 +11,7 @@ export function useNoteData(slug, noteLists) {
   const [similarNotesLoaded, setSimilarNotesLoaded] = useState(false);
   const [noteUpdateConflict, setNoteUpdateConflict] = useState(false);
   const [shouldShowRefreshPrompt, setShouldShowRefreshPrompt] = useState(false);
-  const { selectedWorkspace } = useContext(WorkspaceContext);
+  const { selectedWorkspaceSlug } = useContext(WorkspaceContext);
 
   const extractMarkdownTitleFromText = (text) => {
     const title = extractMarkdownTitle(text);
@@ -34,8 +34,8 @@ export function useNoteData(slug, noteLists) {
 
   const fetchSimilarNotes = async (noteId) => {
     try {
-      const workspaceParam = selectedWorkspace?.slug
-        ? `?workspace=${encodeURIComponent(selectedWorkspace.slug)}`
+      const workspaceParam = selectedWorkspaceSlug
+        ? `?workspace=${encodeURIComponent(selectedWorkspaceSlug)}`
         : "";
       const response = await fetchWithAuth(
         `/api/note/message/${noteId}/similar/${workspaceParam}`,
