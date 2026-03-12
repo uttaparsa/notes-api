@@ -74,7 +74,6 @@ def _handle_callback(profile, callback_query_id, data, chat_id, message_id):
                 _answer_callback(base_url, callback_query_id, 'Reminder not found.')
                 return
 
-            reminder.is_active = False
             reminder.snoozed_until = None
             reminder.save()
 
