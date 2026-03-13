@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useRef, forwardRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import moment from "moment";
 import { fetchWithAuth } from "../../lib/api";
+import styles from "./NoteCard.module.css";
 
 const QUICK_PICKS = [
   { label: "In 1 h", getValue: () => moment().add(1, "hour").toDate() },
@@ -37,7 +38,7 @@ const FREQUENCY_OPTIONS = [
   { value: "monthly", label: "Monthly" },
 ];
 
-const DateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
+const DateInput = React.forwardRef(({ value, onClick, placeholder }, ref) => (
   <Form.Control
     ref={ref}
     value={value}
@@ -50,19 +51,100 @@ const DateInput = forwardRef(({ value, onClick, placeholder }, ref) => (
 ));
 DateInput.displayName = "DateInput";
 
+/**
+ * Selectable text container that works on both desktop and touch devices.
+ * Uses the native Selection API instead of textarea selectionStart/End.
+ */
+export function SelectableTextContainer({
+  text,
+  selectionRange,
+  onSelectionChange,
+}) {
+  const containerRef = useRef(null);
+
+  const captureSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return;
+
+    const container = containerRef.current;
+    if (!container || !container.contains(selection.anchorNode)) return;
+
+    try {
+      const range = selection.getRangeAt(0);
+
+      // Compute character offset of the selection start relative to the container
+      const preRange = document.createRange();
+      preRange.selectNodeContents(container);
+      preRange.setEnd(range.startContainer, range.startOffset);
+      const start = preRange.toString().length;
+      const end = start + range.toString().length;
+
+      if (end > start && end <= text.length) {
+        onSelectionChange({ start, end });
+      }
+    } catch {
+      // Ignore selection errors (e.g. cross-boundary selections)
+    }
+  }, [text, onSelectionChange]);
+
+  const selectedText =
+    selectionRange.end > selectionRange.start
+      ? text.substring(selectionRange.start, selectionRange.end)
+      : "";
+
+  return (
+    <>
+      <div
+        ref={containerRef}
+        className={styles.selectableTextContainer}
+        onMouseUp={captureSelection}
+        onTouchEnd={captureSelection}
+      >
+        {text}
+      </div>
+
+      {selectedText && (
+        <div className="mt-2 p-2 bg-light border rounded d-flex justify-content-between align-items-start">
+          <div>
+            <small className="d-block text-muted mb-1">
+              Selected Preview:
+            </small>
+            <div className="text-primary">
+              {selectedText.length > 100
+                ? selectedText.substring(0, 100) + "..."
+                : selectedText}
+            </div>
+          </div>
+          <Button
+            variant="outline-secondary"
+            size="sm"
+            className="ms-2 flex-shrink-0"
+            onClick={() => {
+              onSelectionChange({ start: 0, end: 0 });
+              window.getSelection()?.removeAllRanges();
+            }}
+          >
+            ✕
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function ReminderModal({ show, onHide, note, showToast }) {
   const [description, setDescription] = useState("");
-  const [scheduledDateTime, setScheduledDateTime] = useState(null);
+  const [scheduledDate, setScheduledDate] = useState(null);
+  const [scheduledTime, setScheduledTime] = useState("");
   const [frequency, setFrequency] = useState("once");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
-  const textAreaRef = useRef(null);
 
-  const handleSelect = (e) => {
-    setSelectionRange({
-      start: e.target.selectionStart,
-      end: e.target.selectionEnd,
-    });
+  // Combine date + time into a single moment for submission
+  const getScheduledDateTime = () => {
+    if (!scheduledDate || !scheduledTime) return null;
+    const [hours, minutes] = scheduledTime.split(":").map(Number);
+    return moment(scheduledDate).hour(hours).minute(minutes).second(0);
   };
 
   const handleSubmit = async (e) => {
@@ -71,13 +153,14 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
 
     try {
       const hasSelection = selectionRange.end > selectionRange.start;
-      const scheduledTime =
-        moment(scheduledDateTime).format("YYYY-MM-DDTHH:mm");
+      const combinedDateTime = getScheduledDateTime();
+      const scheduledTimeStr =
+        combinedDateTime.format("YYYY-MM-DDTHH:mm");
 
       const reminderData = {
         note: note.id,
         description: description,
-        scheduled_time: scheduledTime,
+        scheduled_time: scheduledTimeStr,
         frequency: frequency,
         highlight_start: hasSelection ? selectionRange.start : null,
         highlight_end: hasSelection ? selectionRange.end : null,
@@ -110,7 +193,8 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
       onHide();
 
       setDescription("");
-      setScheduledDateTime(null);
+      setScheduledDate(null);
+      setScheduledTime("");
       setFrequency("once");
       setSelectionRange({ start: 0, end: 0 });
     } catch (error) {
@@ -121,11 +205,6 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
     }
   };
 
-  const selectedText = note.text.substring(
-    selectionRange.start,
-    selectionRange.end,
-  );
-
   return (
     <>
       <style>{`
@@ -135,10 +214,6 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
         .react-datepicker__day--keyboard-selected { background-color: #0d6efd !important; color: #fff !important; }
         .react-datepicker__day--selected:hover,
         .react-datepicker__day--keyboard-selected:hover { background-color: #0b5ed7 !important; }
-        .react-datepicker__time-container { width: 120px; }
-        .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box { width: 120px; }
-        .react-datepicker__time-list-item--selected { background-color: #0d6efd !important; color: #fff !important; }
-        .react-datepicker__time-list-item--selected:hover { background-color: #0b5ed7 !important; }
 
         [data-bs-theme=dark] .react-datepicker {
           background-color: #212529;
@@ -151,7 +226,6 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
         }
         [data-bs-theme=dark] .react-datepicker__current-month,
         [data-bs-theme=dark] .react-datepicker__day-name,
-        [data-bs-theme=dark] .react-datepicker-time__header,
         [data-bs-theme=dark] .react-datepicker__day {
           color: #dee2e6;
         }
@@ -167,22 +241,6 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
         [data-bs-theme=dark] .react-datepicker__navigation-icon::before {
           border-color: #adb5bd;
         }
-        [data-bs-theme=dark] .react-datepicker__time-container {
-          border-left-color: #495057;
-        }
-        [data-bs-theme=dark] .react-datepicker__time-container .react-datepicker__time {
-          background-color: #212529;
-        }
-        [data-bs-theme=dark] .react-datepicker__time-list-item {
-          color: #dee2e6;
-        }
-        [data-bs-theme=dark] .react-datepicker__time-list-item:hover {
-          background-color: #495057 !important;
-        }
-        [data-bs-theme=dark] .react-datepicker__header--time {
-          background-color: #343a40;
-          border-bottom-color: #495057;
-        }
       `}</style>
       <Modal show={show} onHide={onHide} size="lg">
         <Modal.Header closeButton>
@@ -192,34 +250,16 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Select text to highlight (optional)</Form.Label>
-              <Form.Control
-                as="textarea"
-                ref={textAreaRef}
-                rows={6}
-                value={note.text}
-                readOnly
-                onSelect={handleSelect}
-                className="font-monospace"
-                style={{ fontSize: "0.9rem", cursor: "text" }}
+              <SelectableTextContainer
+                text={note.text}
+                selectionRange={selectionRange}
+                onSelectionChange={setSelectionRange}
               />
               <Form.Text className="text-muted">
-                Click and drag to select the part of the note you want to be
+                Tap and drag to select the part of the note you want to be
                 reminded about.
               </Form.Text>
             </Form.Group>
-
-            {selectionRange.end > selectionRange.start && (
-              <div className="mb-3 p-2 bg-light border rounded">
-                <small className="d-block text-muted mb-1">
-                  Selected Preview:
-                </small>
-                <div className="text-primary">
-                  {selectedText.length > 100
-                    ? selectedText.substring(0, 100) + "..."
-                    : selectedText}
-                </div>
-              </div>
-            )}
 
             <Form.Group className="mb-3">
               <Form.Label>Description (Optional)</Form.Label>
@@ -237,36 +277,49 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
                 <Form.Group>
                   <Form.Label>When</Form.Label>
                   <div className="mb-2 d-flex flex-wrap gap-1">
-                    {QUICK_PICKS.map((qp) => (
-                      <Button
-                        key={qp.label}
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={() => setScheduledDateTime(qp.getValue())}
-                        active={
-                          scheduledDateTime &&
-                          moment(scheduledDateTime).isSame(
-                            qp.getValue(),
-                            "minute",
-                          )
-                        }
-                      >
-                        {qp.label}
-                      </Button>
-                    ))}
+                    {QUICK_PICKS.map((qp) => {
+                      const qpDate = qp.getValue();
+                      return (
+                        <Button
+                          key={qp.label}
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => {
+                            setScheduledDate(qpDate);
+                            setScheduledTime(moment(qpDate).format("HH:mm"));
+                          }}
+                          active={
+                            scheduledDate &&
+                            scheduledTime &&
+                            moment(scheduledDate).isSame(qpDate, "day") &&
+                            scheduledTime === moment(qpDate).format("HH:mm")
+                          }
+                        >
+                          {qp.label}
+                        </Button>
+                      );
+                    })}
                   </div>
-                  <DatePicker
-                    selected={scheduledDateTime}
-                    onChange={(date) => setScheduledDateTime(date)}
-                    showTimeSelect
-                    timeIntervals={1}
-                    minDate={new Date()}
-                    timeFormat="HH:mm"
-                    dateFormat="MMM d, yyyy HH:mm"
-                    placeholderText="Pick date & time…"
-                    popperClassName="reminder-datepicker-popper"
-                    customInput={<DateInput />}
-                  />
+                  <div className="d-flex gap-2">
+                    <div className="flex-grow-1">
+                      <DatePicker
+                        selected={scheduledDate}
+                        onChange={(date) => setScheduledDate(date)}
+                        minDate={new Date()}
+                        dateFormat="MMM d, yyyy"
+                        placeholderText="Pick date…"
+                        popperClassName="reminder-datepicker-popper"
+                        customInput={<DateInput />}
+                      />
+                    </div>
+                    <div style={{ width: "120px" }}>
+                      <Form.Control
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </Form.Group>
               </div>
               <div className="col-md-4">
@@ -286,11 +339,11 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
               </div>
             </div>
 
-            {scheduledDateTime && (
+            {getScheduledDateTime() && (
               <div className="mt-2">
                 <small className="text-muted">
                   Reminder set for{" "}
-                  {moment(scheduledDateTime).format("dddd, MMMM D [at] h:mm A")}
+                  {getScheduledDateTime().format("dddd, MMMM D [at] h:mm A")}
                 </small>
               </div>
             )}
@@ -303,7 +356,7 @@ export default function ReminderModal({ show, onHide, note, showToast }) {
           <Button
             variant="primary"
             onClick={handleSubmit}
-            disabled={isSubmitting || !scheduledDateTime}
+            disabled={isSubmitting || !scheduledDate || !scheduledTime}
           >
             {isSubmitting ? "Creating…" : "Create Reminder"}
           </Button>

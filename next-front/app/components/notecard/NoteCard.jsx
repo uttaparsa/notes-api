@@ -17,7 +17,7 @@ import { extractMarkdownTitle } from "../../utils/stringUtils";
 import NoteCardBottomBar from "./NoteCardBottomBar";
 import EditNoteModal from "./EditNoteModal";
 import NoteTextRenderer from "./markdown/MarkdownRenderers";
-import ReminderModal from "./ReminderModal";
+import ReminderModal, { SelectableTextContainer } from "./ReminderModal";
 
 const NoteCard = forwardRef(
   (
@@ -38,6 +38,8 @@ const NoteCard = forwardRef(
     const [shouldLoadLinks, setShouldLoadLinks] = useState(true);
     const [showReminderModal, setShowReminderModal] = useState(false);
     const [showOtherCategories, setShowOtherCategories] = useState(false);
+    const [showHighlightModal, setShowHighlightModal] = useState(false);
+    const [highlightSelection, setHighlightSelection] = useState({ start: 0, end: 0 });
 
     const handleDeleteFile = (src) => {
       // Remove the markdown link containing this src from the note text
@@ -99,6 +101,13 @@ const NoteCard = forwardRef(
       const noteLink = `[${title}](/message/${note.id})`;
       copyTextToClipboard(noteLink);
       showToast("Success", "Note link copied to clipboard", 3000, "success");
+    };
+
+    const copyHighlightLink = () => {
+      if (highlightSelection.end <= highlightSelection.start) return;
+      const link = `${window.location.origin}/message/${note.id}?highlight_start=${highlightSelection.start}&highlight_end=${highlightSelection.end}`;
+      copyTextToClipboard(link);
+      showToast("Success", "Highlight link copied to clipboard", 3000, "success");
     };
 
     const handleSave = async () => {
@@ -169,6 +178,12 @@ const NoteCard = forwardRef(
                   </Dropdown.Item>
                   <Dropdown.Item onClick={copyNoteLink}>
                     Copy Link
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => {
+                    setHighlightSelection({ start: 0, end: 0 });
+                    setShowHighlightModal(true);
+                  }}>
+                    Highlight Link
                   </Dropdown.Item>
                   {!hideEdits && !singleView && (
                     <Dropdown.Item onClick={showEditModalHandler}>
@@ -314,6 +329,32 @@ const NoteCard = forwardRef(
           note={note}
           showToast={showToast}
         />
+
+        <Modal show={showHighlightModal} onHide={() => setShowHighlightModal(false)} size="lg">
+          <Modal.Header closeButton>
+            <Modal.Title>Copy Highlight Link</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p className="text-muted mb-2">Select the text you want to highlight, then copy the link.</p>
+            <SelectableTextContainer
+              text={note.text}
+              selectionRange={highlightSelection}
+              onSelectionChange={setHighlightSelection}
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowHighlightModal(false)}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              onClick={copyHighlightLink}
+              disabled={highlightSelection.end <= highlightSelection.start}
+            >
+              Copy Highlight Link
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     );
   },

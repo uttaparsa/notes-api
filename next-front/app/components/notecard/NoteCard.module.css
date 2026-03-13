@@ -226,3 +226,21 @@ pre.codeBlock code {
 [data-bs-theme="dark"] .highlightedText {
   background-color: rgba(255, 193, 7, 0.2);
 }
+
+.selectableTextContainer {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Fira Code', 'Source Code Pro', monospace;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+  max-height: 300px;
+  overflow-y: auto;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+  line-height: 1.6;
+  background-color: var(--bs-tertiary-bg);
+}
