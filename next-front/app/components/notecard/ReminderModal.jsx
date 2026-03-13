@@ -104,7 +104,7 @@ export function SelectableTextContainer({
       </div>
 
       {selectedText && (
-        <div className="mt-2 p-2 bg-light border rounded d-flex justify-content-between align-items-start">
+        <div className="mt-2 p-2 bg-body-secondary border rounded d-flex justify-content-between align-items-start">
           <div>
             <small className="d-block text-muted mb-1">
               Selected Preview:
