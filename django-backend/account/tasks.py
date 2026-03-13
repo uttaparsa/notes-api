@@ -164,12 +164,6 @@ def check_and_send_reminders():
     normal_due = (
         Q(snoozed_until__isnull=True)
         & Q(scheduled_time__lte=now)
-        & (
-            Q(last_sent__isnull=True)
-            | Q(frequency='daily', last_sent__lt=now - timezone.timedelta(days=1))
-            | Q(frequency='weekly', last_sent__lt=now - timezone.timedelta(weeks=1))
-            | Q(frequency='monthly', last_sent__lt=now - timezone.timedelta(days=30))
-        )
     )
 
     due_reminders = (
