@@ -312,8 +312,8 @@ class NoteFilesView(APIView):
         note = get_object_or_404(LocalMessage, id=note_id, user=request.user)
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
         note.files.remove(file_obj)
-        # If no notes reference the file, delete it
-        if not file_obj.notes.exists():
+        # If no notes or collections reference the file, delete it
+        if not file_obj.notes.exists() and not file_obj.collections.exists():
             file_obj.delete()
         return Response(status=204)
 
@@ -323,11 +323,19 @@ class FileDetailView(APIView):
 
     def delete(self, request, file_id):
         file_obj = get_object_or_404(File, id=file_id, user=request.user)
-        # Delete all notes referring to this file
-        notes = list(file_obj.notes.all())  # copy list
-        for note in notes:
-            note.delete()
-        # File.delete() will handle MinIO
+        note_count = file_obj.notes.filter(user=request.user).count()
+        collection_count = file_obj.collections.filter(user=request.user).count()
+
+        if note_count > 0 or collection_count > 0:
+            return Response(
+                {
+                    'error': 'File is still referenced by notes or collections',
+                    'note_count': note_count,
+                    'collection_count': collection_count,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
         file_obj.delete()
         return Response(status=204)
 
@@ -342,6 +350,8 @@ class FileListView(APIView):
         for file in files:
             notes = file.notes.filter(user=request.user)
             collections = file.collections.filter(user=request.user)
+            note_count = notes.count()
+            collection_count = collections.count()
             
             file_data.append({
                 'id': file.id,
@@ -351,8 +361,9 @@ class FileListView(APIView):
                 'content_type': file.content_type,
                 'uploaded_at': file.uploaded_at,
                 'url': f"/api/note/files/{file.minio_path}",
-                'note_count': notes.count(),
-                'collection_count': collections.count(),
+                'note_count': note_count,
+                'collection_count': collection_count,
+                'can_delete': note_count == 0 and collection_count == 0,
                 'notes': [{
                     'id': note.id,
                     'text': note.text[:100] + ('...' if len(note.text) > 100 else ''),

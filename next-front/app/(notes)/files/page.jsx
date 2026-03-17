@@ -121,6 +121,43 @@ export default function FilesPage() {
     }
   };
 
+  const handleDeleteFile = async () => {
+    if (!selectedFile || !selectedFile.can_delete) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${selectedFile.name}" permanently?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(
+        `/api/note/files/${selectedFile.id}/`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      if (response.ok) {
+        showToast("Success", "File deleted", 3000, "success");
+        setShowDetailsModal(false);
+        setSelectedFile(null);
+        loadFiles();
+        return;
+      }
+
+      const error = await response.json();
+      showToast(error.error || "Failed to delete file", "error");
+      loadFiles();
+    } catch (error) {
+      handleApiError(error, showToast);
+    }
+  };
+
   const filteredFiles = files
     .filter(
       (file) =>
@@ -298,6 +335,17 @@ export default function FilesPage() {
                   <i className="bi bi-folder-plus me-1"></i>
                   Add to Collection
                 </Button>
+                {selectedFile.can_delete && (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={handleDeleteFile}
+                    className="ms-2"
+                  >
+                    <i className="bi bi-trash me-1"></i>
+                    Delete
+                  </Button>
+                )}
               </div>
 
               {selectedFile.notes && selectedFile.notes.length > 0 && (
