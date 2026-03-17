@@ -59,13 +59,18 @@ class FileManager:
     def sync_note_files(self, note: LocalMessage) -> int:
         """
         Sync file associations with files referenced in note markdown.
+        Adds associations for newly referenced files and removes associations for files no longer referenced.
         Returns the number of new associations created.
         """
         file_paths = self.extract_file_paths(note.text)
+        
+        # Files that should be associated based on current text
+        should_associate = set()
         associations_created = 0
         
         for path in file_paths:
             minio_path = path.replace("note/", "")
+            should_associate.add(minio_path)
             
             file_obj, created = File.objects.get_or_create(
                 minio_path=minio_path,
@@ -81,6 +86,18 @@ class FileManager:
             if not note.files.filter(id=file_obj.id).exists():
                 note.files.add(file_obj)
                 associations_created += 1
+        
+        # Remove associations for files no longer referenced
+        current_associated = set(note.files.values_list('minio_path', flat=True))
+        to_remove = current_associated - should_associate
+        
+        for minio_path in to_remove:
+            try:
+                file_obj = File.objects.get(minio_path=minio_path, user=note.user)
+                note.files.remove(file_obj)
+            except File.DoesNotExist:
+                # File might have been deleted, skip
+                pass
         
         return associations_created
     
