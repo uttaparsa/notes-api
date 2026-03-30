@@ -290,8 +290,7 @@ export const removeHyphens = (text) => {
 // Helper function to process text for hashtags
 export const processTextForHashtags = (text) => {
   if (!text) return "";
-  // Split by code blocks and process only non-code parts
-  const parts = text.split(/(```[\s\S]*?```)/);
+  const parts = text.split(/(```[\s\S]*?```|`[^`\n]*`)/);
   const processed = parts.map((part, index) => {
     if (index % 2 === 0) {
       return part.replace(

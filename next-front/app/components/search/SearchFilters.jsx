@@ -10,7 +10,7 @@ export default function SearchFilters({
   onFiltersChange,
 }) {
   const noteLists = useContext(NoteListContext);
-  const { selectedWorkspace } = useContext(WorkspaceContext);
+  const { selectedWorkspaceSlug, workspaces } = useContext(WorkspaceContext);
   const [localSelectedCategories, setLocalSelectedCategories] = useState(
     new Set(selectedCategories),
   );
@@ -55,8 +55,14 @@ export default function SearchFilters({
     }
   };
 
+  const selectedWorkspace =
+    workspaces?.find((workspace) => workspace.slug === selectedWorkspaceSlug) ||
+    null;
+
   const workspaceCategorySlugs = selectedWorkspace
-    ? selectedWorkspace.categories.map((cat) => cat.slug)
+    ? selectedWorkspace.categories
+        .map((cat) => (typeof cat === "string" ? cat : cat?.slug))
+        .filter(Boolean)
     : [];
   const workspaceCategories =
     noteLists?.filter((list) => workspaceCategorySlugs.includes(list.slug)) ||

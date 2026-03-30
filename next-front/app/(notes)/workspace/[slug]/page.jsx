@@ -26,39 +26,28 @@ export default function WorkspaceDetail({ params }) {
   const [loading, setLoading] = useState(true);
 
   const noteLists = useContext(NoteListContext);
-  const workspaces = useContext(WorkspaceContext);
+  const { workspaces } = useContext(WorkspaceContext);
   const showToast = useContext(ToastContext);
 
   useEffect(() => {
-    const loadWorkspace = async () => {
-      try {
-        const workspaceSlug = params.slug;
-        const foundWorkspace = workspaces.find((w) => w.slug === workspaceSlug);
-
-        if (foundWorkspace) {
-          setWorkspace(foundWorkspace);
-
-          // Get categories not in this workspace
-          const workspaceCategoryIds = foundWorkspace.categories.map(
-            (c) => c.id,
-          );
-          const available = noteLists.filter(
-            (list) => !workspaceCategoryIds.includes(list.id),
-          );
-          setAvailableCategories(available);
-        }
-      } catch (error) {
-        console.error("Error loading workspace:", error);
-        showToast("Error", "Failed to load workspace", 3000, "danger");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (workspaces.length > 0 && noteLists.length > 0) {
-      loadWorkspace();
+    if (!Array.isArray(workspaces) || !Array.isArray(noteLists)) {
+      return;
     }
-  }, [params.slug, workspaces, noteLists, showToast]);
+
+    const foundWorkspace = workspaces.find((w) => w.slug === params.slug) || null;
+    setWorkspace(foundWorkspace);
+
+    if (foundWorkspace) {
+      const workspaceCategoryIds = (foundWorkspace.categories || []).map((category) => category.id);
+      setAvailableCategories(
+        noteLists.filter((list) => !workspaceCategoryIds.includes(list.id)),
+      );
+    } else {
+      setAvailableCategories([]);
+    }
+
+    setLoading(false);
+  }, [params.slug, workspaces, noteLists]);
 
   const handleApiCall = async (apiCall, successMessage, errorMessage) => {
     try {
@@ -96,9 +85,7 @@ export default function WorkspaceDetail({ params }) {
       );
       setShowAddCategoryModal(false);
       setSelectedCategories([]);
-    } catch (error) {
-      // Error already handled in handleApiCall
-    }
+    } catch (error) {}
   };
 
   const removeCategoryFromWorkspace = async (categoryId) => {
@@ -113,9 +100,7 @@ export default function WorkspaceDetail({ params }) {
         "Category removed from workspace",
         "Failed to remove category",
       );
-    } catch (error) {
-      // Error already handled in handleApiCall
-    }
+    } catch (error) {}
   };
 
   const setDefaultCategory = async (categoryId) => {
@@ -130,9 +115,7 @@ export default function WorkspaceDetail({ params }) {
         "Default category updated",
         "Failed to update default category",
       );
-    } catch (error) {
-      // Error already handled in handleApiCall
-    }
+    } catch (error) {}
   };
 
   if (loading) {
@@ -266,7 +249,6 @@ export default function WorkspaceDetail({ params }) {
         </Col>
       </Row>
 
-      {/* Add Categories Modal */}
       <Modal
         show={showAddCategoryModal}
         onHide={() => setShowAddCategoryModal(false)}
@@ -294,13 +276,10 @@ export default function WorkspaceDetail({ params }) {
                     checked={selectedCategories.includes(category.id)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedCategories([
-                          ...selectedCategories,
-                          category.id,
-                        ]);
+                        setSelectedCategories((prev) => [...prev, category.id]);
                       } else {
-                        setSelectedCategories(
-                          selectedCategories.filter((id) => id !== category.id),
+                        setSelectedCategories((prev) =>
+                          prev.filter((id) => id !== category.id),
                         );
                       }
                     }}

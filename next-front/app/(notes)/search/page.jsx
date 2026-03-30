@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useContext } from "react";
+import { useState, useEffect, useCallback, useRef, useContext, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormCheck, Row, Col, Button, Card } from "react-bootstrap";
 import NoteList from "../../components/NoteList";
@@ -22,7 +22,7 @@ export default function SearchPage() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const perPage = 20;
   const getRecordsRef = useRef();
-  const { selectedWorkspace } = useContext(WorkspaceContext);
+  const { selectedWorkspaceSlug, workspaces } = useContext(WorkspaceContext);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -33,21 +33,44 @@ export default function SearchPage() {
   const hasFiles = searchParams.get("has_files") === "true";
   const listSlugParam = searchParams.get("list_slug") || "";
 
-  // Derive list_slug: if workspace is active, use its categories; else use URL param
-  const getListSlug = useCallback(() => {
-    if (listSlugParam.split(",").length > 0) {
-      return listSlugParam;
-    } else if (selectedWorkspace?.categories?.length > 0) {
-      const slugs = selectedWorkspace.categories
-        .map((cat) => (typeof cat === "string" ? cat : cat.slug))
-        .join(",");
-      return slugs;
-    }
-    return "";
-  }, [selectedWorkspace, listSlugParam]);
+  const selectedWorkspace = useMemo(
+    () => workspaces?.find((workspace) => workspace.slug === selectedWorkspaceSlug) || null,
+    [workspaces, selectedWorkspaceSlug],
+  );
+
+  const urlListSlugs = useMemo(
+    () =>
+      listSlugParam
+        .split(",")
+        .map((slug) => slug.trim())
+        .filter(Boolean),
+    [listSlugParam],
+  );
+
+  const workspaceListSlugs = useMemo(
+    () =>
+      (selectedWorkspace?.categories || [])
+        .map((cat) => (typeof cat === "string" ? cat : cat?.slug))
+        .filter(Boolean),
+    [selectedWorkspace],
+  );
+
+  const hasExplicitListSlug = urlListSlugs.length > 0;
+  const effectiveListSlugs = hasExplicitListSlug
+    ? urlListSlugs
+    : workspaceListSlugs;
+  const shouldForceEmptyScopedResults =
+    !hasExplicitListSlug && workspaceListSlugs.length === 0;
 
   const getRecords = useCallback(async () => {
-    const listSlug = getListSlug();
+    if (shouldForceEmptyScopedResults) {
+      setNotes([]);
+      setTotalCount(0);
+      setIsBusy(false);
+      return;
+    }
+
+    const listSlug = effectiveListSlugs.join(",");
     setIsBusy(true);
     try {
       let url = `/api/note/search/?q=${encodeURIComponent(searchText)}&show_hidden=${showHidden}&has_files=${hasFiles}&page=${currentPage}`;
@@ -65,26 +88,31 @@ export default function SearchPage() {
     } finally {
       setIsBusy(false);
     }
-  }, [searchText, showHidden, hasFiles, currentPage, getListSlug]);
+  }, [searchText, showHidden, hasFiles, currentPage, effectiveListSlugs, shouldForceEmptyScopedResults]);
 
   useEffect(() => {
     getRecordsRef.current = getRecords;
   }, [getRecords]);
 
-  // Helper to build full URL with all params
   const buildUrl = useCallback(
     (overrides = {}) => {
-      const params = {
-        q: overrides.q ?? searchText,
-        page: overrides.page ?? currentPage,
-        show_hidden: overrides.show_hidden ?? showHidden,
-        has_files: overrides.has_files ?? hasFiles,
-        list_slug: overrides.list_slug ?? getListSlug(),
-      };
-      const query = new URLSearchParams(params).toString();
+      const params = new URLSearchParams();
+      const nextListSlug =
+        overrides.list_slug !== undefined ? overrides.list_slug : listSlugParam;
+
+      params.set("q", overrides.q ?? searchText);
+      params.set("page", String(overrides.page ?? currentPage));
+      params.set("show_hidden", String(overrides.show_hidden ?? showHidden));
+      params.set("has_files", String(overrides.has_files ?? hasFiles));
+
+      if (nextListSlug) {
+        params.set("list_slug", nextListSlug);
+      }
+
+      const query = params.toString();
       return `/search/?${query}`;
     },
-    [searchText, currentPage, showHidden, hasFiles, getListSlug],
+    [searchText, currentPage, showHidden, hasFiles, listSlugParam],
   );
 
   const handleFiltersChangeFromModal = useCallback(
@@ -111,22 +139,8 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (
-      searchText.startsWith("#") &&
-      !listSlugParam &&
-      selectedWorkspace?.categories?.length > 0
-    ) {
-      router.replace(
-        buildUrl({
-          list_slug: selectedWorkspace.categories
-            .map((cat) => (typeof cat === "string" ? cat : cat.slug))
-            .join(","),
-        }),
-      );
-      return;
-    }
     getRecordsRef.current();
-  }, [searchParams, searchText, listSlugParam, router, buildUrl]); // Re-run on any param change, handle hashtag URL update and fetch
+  }, [searchParams]);
 
   const handleSearch = useCallback(
     (newSearchText) => {
@@ -172,7 +186,7 @@ export default function SearchPage() {
               </Card.Header>
               <Card.Body>
                 <SearchFilters
-                  selectedCategories={getListSlug().split(",").filter(Boolean)}
+                  selectedCategories={effectiveListSlugs}
                   hasFiles={hasFiles}
                   onFiltersChange={handleFiltersChangeFromModal}
                 />
@@ -195,7 +209,7 @@ export default function SearchPage() {
               onDeleteNote={deleteNote}
               refreshNotes={() => getRecordsRef.current()}
               showHidden={showHidden}
-              listSlug={getListSlug()}
+              listSlug={effectiveListSlugs.join(",")}
               hasFiles={hasFiles}
             />
           </Col>
@@ -217,7 +231,7 @@ export default function SearchPage() {
       <CategoryFilterModal
         show={showCategoryModal}
         onHide={() => setShowCategoryModal(false)}
-        selectedCategories={getListSlug().split(",").filter(Boolean)}
+        selectedCategories={effectiveListSlugs}
         hasFiles={hasFiles}
         onFiltersChange={handleFiltersChangeFromModal}
       />
