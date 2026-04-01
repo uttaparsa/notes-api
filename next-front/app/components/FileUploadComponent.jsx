@@ -37,10 +37,14 @@ const FileUploadComponent = ({
     }
 
     try {
-      const response = await fetchWithAuth("/api/note/upload/", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetchWithAuth(
+        "/api/note/upload/",
+        {
+          method: "POST",
+          body: formData,
+        },
+        (timeout = 30000),
+      );
 
       if (!response.ok) {
         throw new Error("Failed to upload file");
