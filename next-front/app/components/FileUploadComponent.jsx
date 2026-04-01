@@ -43,7 +43,7 @@ const FileUploadComponent = ({
           method: "POST",
           body: formData,
         },
-        (timeout = 30000),
+        30000, // 30 second timeout for large files
       );
 
       if (!response.ok) {
